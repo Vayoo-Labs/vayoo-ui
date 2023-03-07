@@ -1,18 +1,12 @@
-import classNames from "classnames";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { useEffect, useState } from "react";
-import reactLogo from "./assets/react.svg";
 import {
   getAtaTokenBalanceByOwner,
-  getVayooProgramInstance,
   shortenAddress,
-  sleep,
 } from "./utils";
 import { USDC_MINT } from "./utils/constants";
 import { useSubscribeTx, useVMState } from "./contexts/StateProvider";
-import { getATAKey } from "./utils/vayoo-pda";
-import { getAccount } from "@solana/spl-token";
 import AdminComponent from "./components/admin";
 import toast, { Toaster } from "react-hot-toast";
 import {
@@ -22,7 +16,6 @@ import {
   mintAsMm,
   withdrawCollateral,
 } from "./utils/vayoo-web3";
-import SingleInputModal from "./components/Modal";
 
 function App() {
   const wallet = useWallet();
