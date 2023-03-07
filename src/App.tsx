@@ -214,16 +214,18 @@ function App() {
             <div className="flex justify-around gap-2 items-center">
               {connected && (
                 <div className="flex gap-3">
-                  <div
-                    className="border-2 border-gray-400/40 rounded-2xl px-4 py-1 hover:border-gray-400/70 cursor-pointer"
-                    onClick={toggleMode}
-                  >
-                    <div className="py-1 text-sm text-slate-300">
-                      {localState.mmMode
-                        ? "Switch to User Mode"
-                        : "Switch to MM Mode"}
+                  {localState.userExist && (
+                    <div
+                      className="border-2 border-gray-400/40 rounded-2xl px-4 py-1 hover:border-gray-400/70 cursor-pointer"
+                      onClick={toggleMode}
+                    >
+                      <div className="py-1 text-sm text-slate-300">
+                        {localState.mmMode
+                          ? "Switch to User Mode"
+                          : "Switch to MM Mode"}
+                      </div>
                     </div>
-                  </div>
+                  )}
                   <div className="border-2 border-gray-400/40 rounded-2xl px-4 py-1 hover:border-gray-400/70">
                     <div className="py-1 text-sm text-slate-300">
                       {localState.usdBalance.toFixed(2)} $
@@ -346,7 +348,7 @@ function App() {
                   You seem to not have a user account with us.
                   <button
                     onClick={onClickInitUserState}
-                    className="px-4 py-2 border-2 border-lime-100/80 rounded-xl hover:bg-fuchsia-200/20 hover:border-fuchsia-100/80"
+                    className="px-4 py-2 border-2 border-gray-100/40 rounded-xl hover:bg-blue-200/20 hover:border-blue-100/80"
                   >
                     Create Now.
                   </button>
