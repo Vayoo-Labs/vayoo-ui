@@ -159,7 +159,7 @@ export function VMStateProvider({ children = undefined as any }) {
 export function useVMState() {
   const context = React.useContext(VMStateContext);
 
-  return { state: context.state, loading: context.loading };
+  return { state: context.state, loading: context.loading, toggleRefresh: context.toggleRefresh};
 }
 
 export function useSubscribeTx() {

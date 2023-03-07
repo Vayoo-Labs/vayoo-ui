@@ -78,6 +78,35 @@ export async function depositCollateral(
   return txHash.toString();
 }
 
+export async function withdrawCollateral(
+  vayooState: vayooState,
+  amount: number,
+  wallet: WalletContextState
+) {
+  const connection = vayooState!.vayooProgram.provider.connection;
+  const transaction = new Transaction();
+  if (!(await connection.getAccountInfo(vayooState?.accounts.userCollateralAta))) {
+    transaction.add(
+      createAssociatedTokenAccountInstruction(
+        wallet.publicKey!,
+        vayooState?.accounts.userCollateralAta,
+        wallet.publicKey!,
+        COLLATERAL_MINT
+      )
+    );
+  }
+  transaction.add(
+    await withdrawIx(
+      vayooState,
+      amount,
+    )
+  );
+  const txHash = await wallet.sendTransaction(transaction, connection);
+  
+  return txHash.toString();
+}
+
+
 async function initContractIx(
   vayooState: vayooState,
   contractName: string,
@@ -159,3 +188,19 @@ async function depositIx(
   console.log('Depositing :', amount);
   return ix;
 }
+
+async function withdrawIx(
+  vayooState: vayooState,
+  amount: number,
+) {
+  const nativeAmount = new BN(addZeros(amount, 6));
+  const ix = await vayooState!.vayooProgram.methods
+  .withdrawCollateral(
+    nativeAmount
+  ).accounts({
+    ...vayooState?.accounts
+  }).instruction();
+  console.log('Withdrawing :', amount);
+  return ix;
+}
+

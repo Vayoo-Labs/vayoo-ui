@@ -15,7 +15,11 @@ import { getATAKey } from "./utils/vayoo-pda";
 import { getAccount } from "@solana/spl-token";
 import AdminComponent from "./components/admin";
 import toast, { Toaster } from "react-hot-toast";
-import { depositCollateral, initUserState } from "./utils/vayoo-web3";
+import {
+  depositCollateral,
+  initUserState,
+  withdrawCollateral,
+} from "./utils/vayoo-web3";
 import SingleInputModal from "./components/Modal";
 
 function App() {
@@ -23,8 +27,9 @@ function App() {
   const subscribeTx = useSubscribeTx();
   const { connected } = useWallet();
   const { connection } = useConnection();
-  const { state, loading } = useVMState();
+  const { state, toggleRefresh, loading } = useVMState();
   const [refresh, setRefresh] = useState(false);
+  const [inputValue, setInputValue] = useState("0");
   const [localState, setLocalState] = useState({
     usdBalance: 0,
     userExist: false,
@@ -32,11 +37,14 @@ function App() {
     amount: 0,
   });
 
+  const toggleLocalRefresh = () => {
+    toggleRefresh();
+    setRefresh(!refresh);
+  };
+
   useEffect(() => {
     (async () => {
-      console.log(1);
       if (wallet?.publicKey) {
-        console.log(2);
         if (
           wallet.publicKey?.toString() ==
           "4gNFEk4qvgxE6iM8ukfDUDaCT8itAeWXxURbnqNZXZXp"
@@ -47,7 +55,6 @@ function App() {
           }));
         }
         const userExist = state?.userState ? true : false;
-        console.log(userExist);
         const usdBalance =
           (await getAtaTokenBalanceByOwner(
             connection,
@@ -79,7 +86,7 @@ function App() {
         toast.error("Transaction Error!");
       })
       .finally(() => {
-        setRefresh(!refresh);
+        toggleLocalRefresh();
       });
   };
 
@@ -98,19 +105,40 @@ function App() {
         toast.error("Transaction Error!");
       })
       .finally(() => {
-        setRefresh(!refresh);
+        toggleLocalRefresh();
       });
   };
 
-  const onChangeAmount = (value: string) => {
-    let amount = Number.parseInt(value);
-    if (isNaN(amount)) amount = 0;
+  const onClickWithdraw = async () => {
+    await withdrawCollateral(state, localState.amount, wallet)
+      .then((txHash: string) => {
+        subscribeTx(
+          txHash,
+          () => toast("Withdraw Transaction Sent"),
+          () => toast.success("Withdraw Confirmed."),
+          () => toast.error("Withdraw Transaction Failed")
+        );
+      })
+      .catch((e) => {
+        console.log(e);
+        toast.error("Transaction Error!");
+      })
+      .finally(() => {
+        toggleLocalRefresh();
+      });
+  };
+
+  const onChangeAmountValue = (value: string) => {
+    const parsedValue = value.replace(",", ".").replace(/[^0-9.]/g, "");
+    let amount = Number.parseFloat(parsedValue);
+    if (isNaN(amount)) amount = 0.0;
+    setInputValue(parsedValue);
     setLocalState((prev) => ({
       ...prev,
       amount,
     }));
+    console.log(amount);
   };
-
   return (
     <div className="App">
       <div className="flex flex-col w-screen h-screen items-center bg-black relative overflow-hidden">
@@ -124,9 +152,16 @@ function App() {
             </div>
             <div className="flex justify-around gap-2 items-center">
               {connected && (
-                <div className="border-2 border-gray-400/40 rounded-2xl px-4 py-1 hover:border-gray-400/70">
-                  <div className="py-1 text-sm text-slate-300">
-                    {localState.usdBalance.toFixed(2)} USDC
+                <div className="flex gap-3">
+                  <div className="border-2 border-gray-400/40 rounded-2xl px-4 py-1 hover:border-gray-400/70">
+                    <div className="py-1 text-sm text-slate-300">
+                      {localState.usdBalance.toFixed(2)} USDC
+                    </div>
+                  </div>
+                  <div className="border-2 border-gray-400/40 rounded-2xl px-4 py-1 hover:border-gray-400/70">
+                    <div className="py-1 text-sm text-slate-300">
+                      {localState.usdBalance.toFixed(2)} USDC
+                    </div>
                   </div>
                 </div>
               )}
@@ -150,7 +185,9 @@ function App() {
                   <div className="flex justify-between">
                     Total Deposited:
                     <div>
-                      {state?.userState?.usdcDeposited.toNumber().toFixed(2)}
+                      {(
+                        state?.userState?.usdcDeposited.toNumber()! / 1e6
+                      ).toFixed(2)}
                     </div>
                   </div>
                   <div className="flex justify-between">
@@ -164,9 +201,10 @@ function App() {
                   <div className="flex justify-between">
                     Collateral Locked:{" "}
                     <div>
-                      {state?.userState?.usdcCollateralLockedAsUser
-                        .toNumber()
-                        .toFixed(2)}
+                      {(
+                        state?.userState?.usdcCollateralLockedAsUser.toNumber()! /
+                        1e6
+                      ).toFixed(2)}
                     </div>
                   </div>
                   <div className="flex justify-between">
@@ -188,15 +226,17 @@ function App() {
                   <div className="flex justify-between">
                     Total Withdrawn:{" "}
                     <div>
-                      {state?.userState?.usdcWithdrawn.toNumber().toFixed(2)}
+                      {(
+                        state?.userState?.usdcWithdrawn.toNumber()! / 1e6
+                      ).toFixed(2)}
                     </div>
                   </div>
                 </div>
                 <div className="mt-5 flex gap-5 text-xl items-center">
                   Amount:{" "}
                   <input
-                    value={localState.amount}
-                    onChange={(e) => onChangeAmount(e.target.value)}
+                    value={inputValue}
+                    onChange={(e) => onChangeAmountValue(e.target.value)}
                     className="w-full py-3 text-sm font-medium text-center text-gray-100 border-r rounded-lg bg-white-900 dark:bg-gray-800 dark:text-white-900 focus:outline-none rouneded-xl border-white-500 dark:border-gray-600 font-poppins"
                   />
                 </div>
@@ -208,7 +248,7 @@ function App() {
                     Deposit
                   </button>
                   <button
-                    onClick={onClickDeposit}
+                    onClick={onClickWithdraw}
                     className="w-full px-4 py-2 border-2 border-lime-100/80 rounded-xl hover:bg-fuchsia-200/20 hover:border-fuchsia-100/80"
                   >
                     Withdraw
@@ -239,11 +279,11 @@ function App() {
           position="bottom-left"
           reverseOrder={false}
           gutter={8}
-          containerClassName="ml-4 mb-10"
+          containerClassName="ml-6 mb-6"
           containerStyle={{}}
           toastOptions={{
             // Define default options
-            className: "mb-2",
+            className: "mb-2 p-4",
             duration: 5000,
             style: {
               background: "#363636",
@@ -255,13 +295,6 @@ function App() {
               duration: 3000,
               style: {
                 background: "green",
-                color: "black",
-              },
-            },
-            error: {
-              duration: 3000,
-              style: {
-                background: "red",
                 color: "black",
               },
             },
