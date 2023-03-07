@@ -34,7 +34,11 @@ export const addZeros = (inputNumber: number, numDecimals: number) => {
 */
 export async function getAtaTokenBalanceByOwner(connection: Connection, owner: PublicKey | string, mint: PublicKey | string) {
     const ataKey = getAssociatedTokenAddressSync(new PublicKey(mint), new PublicKey(owner), true)
-    return parseInt((await connection.getTokenAccountBalance(ataKey)).value.amount);
+    try {
+        return parseInt((await connection.getTokenAccountBalance(ataKey)).value.amount);
+    } catch (e) {
+        return 0;
+    }
 }
 
 /**

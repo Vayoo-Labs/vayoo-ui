@@ -10,26 +10,33 @@ import {
   sleep,
 } from "./utils";
 import { USDC_MINT } from "./utils/constants";
-import { useVMState } from "./contexts/StateProvider";
+import { useSubscribeTx, useVMState } from "./contexts/StateProvider";
 import { getATAKey } from "./utils/vayoo-pda";
 import { getAccount } from "@solana/spl-token";
 import AdminComponent from "./components/admin";
-import { Toaster } from "react-hot-toast";
+import toast, { Toaster } from "react-hot-toast";
+import { depositCollateral, initUserState } from "./utils/vayoo-web3";
+import SingleInputModal from "./components/Modal";
 
 function App() {
   const wallet = useWallet();
+  const subscribeTx = useSubscribeTx();
   const { connected } = useWallet();
   const { connection } = useConnection();
   const { state, loading } = useVMState();
-  const [refresh, setRefresh] = useState();
+  const [refresh, setRefresh] = useState(false);
   const [localState, setLocalState] = useState({
     usdBalance: 0,
     userExist: false,
     adminMode: false,
+    amount: 0,
   });
+
   useEffect(() => {
     (async () => {
-      if (wallet?.connected) {
+      console.log(1);
+      if (wallet?.publicKey) {
+        console.log(2);
         if (
           wallet.publicKey?.toString() ==
           "4gNFEk4qvgxE6iM8ukfDUDaCT8itAeWXxURbnqNZXZXp"
@@ -40,6 +47,7 @@ function App() {
           }));
         }
         const userExist = state?.userState ? true : false;
+        console.log(userExist);
         const usdBalance =
           (await getAtaTokenBalanceByOwner(
             connection,
@@ -54,7 +62,54 @@ function App() {
         console.log(localState);
       }
     })();
-  }, [refresh, wallet, wallet.connected]);
+  }, [refresh, wallet, wallet.publicKey, state]);
+
+  const onClickInitUserState = async () => {
+    await initUserState(state, wallet)
+      .then((txHash: string) => {
+        subscribeTx(
+          txHash,
+          () => toast("Init Contract Transaction Sent"),
+          () => toast.success("Init Contract Confirmed."),
+          () => toast.error("Init Contract Transaction Failed")
+        );
+      })
+      .catch((e) => {
+        console.log(e);
+        toast.error("Transaction Error!");
+      })
+      .finally(() => {
+        setRefresh(!refresh);
+      });
+  };
+
+  const onClickDeposit = async () => {
+    await depositCollateral(state, localState.amount, wallet)
+      .then((txHash: string) => {
+        subscribeTx(
+          txHash,
+          () => toast("Deposit Transaction Sent"),
+          () => toast.success("Deposit Confirmed."),
+          () => toast.error("Deposit Transaction Failed")
+        );
+      })
+      .catch((e) => {
+        console.log(e);
+        toast.error("Transaction Error!");
+      })
+      .finally(() => {
+        setRefresh(!refresh);
+      });
+  };
+
+  const onChangeAmount = (value: string) => {
+    let amount = Number.parseInt(value);
+    if (isNaN(amount)) amount = 0;
+    setLocalState((prev) => ({
+      ...prev,
+      amount,
+    }));
+  };
 
   return (
     <div className="App">
@@ -70,9 +125,9 @@ function App() {
             <div className="flex justify-around gap-2 items-center">
               {connected && (
                 <div className="border-2 border-gray-400/40 rounded-2xl px-4 py-1 hover:border-gray-400/70">
-                  <p className="text-sm text-slate-300">
+                  <div className="py-1 text-sm text-slate-300">
                     {localState.usdBalance.toFixed(2)} USDC
-                  </p>
+                  </div>
                 </div>
               )}
               <WalletMultiButton className="">
@@ -89,8 +144,76 @@ function App() {
             <AdminComponent />
           ) : localState.userExist ? (
             <div className="w-full flex items-center max-w-5xl gap-7">
-              <div className="mt-10 p-4 text-white flex w-1/2 border-2 border-gray-400 max-w-5xl rounded-xl bg-black/50 z-10 hover:border-lime-100/80">
-                <div className="p-2 text-md">Your Account</div>
+              <div className="mt-10 px-6 py-4 text-white flex flex-col gap-3 w-1/2 border-2 border-gray-400 max-w-5xl rounded-xl bg-black/50 z-10 hover:border-lime-100/80">
+                <div className="text-2xl">Your Account</div>
+                <div className="flex flex-col gap-3 text-sm">
+                  <div className="flex justify-between">
+                    Total Deposited:
+                    <div>
+                      {state?.userState?.usdcDeposited.toNumber().toFixed(2)}
+                    </div>
+                  </div>
+                  <div className="flex justify-between">
+                    Contract Position Net:{" "}
+                    <div>
+                      {state?.userState?.contractPositionNet
+                        .toNumber()
+                        .toFixed(2)}
+                    </div>
+                  </div>
+                  <div className="flex justify-between">
+                    Collateral Locked:{" "}
+                    <div>
+                      {state?.userState?.usdcCollateralLockedAsUser
+                        .toNumber()
+                        .toFixed(2)}
+                    </div>
+                  </div>
+                  <div className="flex justify-between">
+                    L Contract Bought:{" "}
+                    <div>
+                      {state?.userState?.lcontractBoughtAsUser
+                        .toNumber()
+                        .toFixed(2)}
+                    </div>
+                  </div>
+                  <div className="flex justify-between">
+                    S Contract Sold:{" "}
+                    <div>
+                      {state?.userState?.scontractSoldAsUser
+                        .toNumber()
+                        .toFixed(2)}
+                    </div>
+                  </div>
+                  <div className="flex justify-between">
+                    Total Withdrawn:{" "}
+                    <div>
+                      {state?.userState?.usdcWithdrawn.toNumber().toFixed(2)}
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-5 flex gap-5 text-xl items-center">
+                  Amount:{" "}
+                  <input
+                    value={localState.amount}
+                    onChange={(e) => onChangeAmount(e.target.value)}
+                    className="w-full py-3 text-sm font-medium text-center text-gray-100 border-r rounded-lg bg-white-900 dark:bg-gray-800 dark:text-white-900 focus:outline-none rouneded-xl border-white-500 dark:border-gray-600 font-poppins"
+                  />
+                </div>
+                <div className="flex flex-row w-full justify-between p-2 gap-5">
+                  <button
+                    onClick={onClickDeposit}
+                    className="w-full px-4 py-2 border-2 border-lime-100/80 rounded-xl hover:bg-fuchsia-200/20 hover:border-fuchsia-100/80"
+                  >
+                    Deposit
+                  </button>
+                  <button
+                    onClick={onClickDeposit}
+                    className="w-full px-4 py-2 border-2 border-lime-100/80 rounded-xl hover:bg-fuchsia-200/20 hover:border-fuchsia-100/80"
+                  >
+                    Withdraw
+                  </button>
+                </div>
               </div>
             </div>
           ) : (
@@ -98,7 +221,10 @@ function App() {
               <div className="px-12 py-10 text-white border-2 border-gray-400 bg-black/50 z-10 rounded-2xl">
                 <div className="flex flex-col gap-5 justify-between items-center">
                   You seem to not have a user account with us.
-                  <button className="px-4 py-2 border-2 border-lime-100/80 rounded-xl hover:bg-fuchsia-200/20 hover:border-fuchsia-100/80">
+                  <button
+                    onClick={onClickInitUserState}
+                    className="px-4 py-2 border-2 border-lime-100/80 rounded-xl hover:bg-fuchsia-200/20 hover:border-fuchsia-100/80"
+                  >
                     Create Now.
                   </button>
                 </div>

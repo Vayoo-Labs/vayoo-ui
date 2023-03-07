@@ -5,9 +5,10 @@ import React, { useEffect, useState } from "react";
 import { getVayooProgramInstance, sleep } from "../utils";
 import { useWallet, useConnection } from "@solana/wallet-adapter-react";
 
-import { getUserStatePDA } from "../utils/vayoo-pda";
+import { getContractStatePDA, getEscrowVaultCollateralPDA, getFreeVaultCollateralPDA, getFreeVaultScontractPDA, getLcontractMintPDA, getLockedVaultCollateralPDA, getLockedVaultScontractPDA, getScontractMintPDA, getUserStatePDA } from "../utils/vayoo-pda";
 import { vayooState } from "../utils/types";
-import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import { getAssociatedTokenAddressSync, TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import { COLLATERAL_MINT, REFRESH_TIME_INTERVAL, USDC_MINT } from "../utils/constants";
 
 interface VMStateConfig {
   state: vayooState;
@@ -35,6 +36,8 @@ export function VMStateProvider({ children = undefined as any }) {
   const [state, setState] = useState<vayooState>(null);
   const [refresh, setRefresh] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [toogleUpdateState, setToogleUpdateState] = useState(false);
+
 
   const subscribeTx = async (
     txHash: string,
@@ -65,23 +68,51 @@ export function VMStateProvider({ children = undefined as any }) {
   };
 
   const updateState = async () => {
-    const program = await getVayooProgramInstance(connection, wallet);
     let accounts: any = {
+      collateralMint: USDC_MINT,
       systemProgram: SystemProgram.programId,
       rent: SYSVAR_RENT_PUBKEY,
       tokenProgram: TOKEN_PROGRAM_ID
     }
-
-    if (wallet?.connected) {
+    const program = await getVayooProgramInstance(connection, wallet);
+    const contractStateKey = getContractStatePDA().pda;
+    const lcontractMint = getLcontractMintPDA().pda;
+    const scontractMint = getScontractMintPDA().pda;
+    const escrowVaultCollateral = getEscrowVaultCollateralPDA().pda;
+    const contractState = await program.account.contractState.fetchNullable(contractStateKey);
+    
+    if (wallet?.publicKey) {
         const userStateKey = getUserStatePDA(wallet.publicKey!).pda;
+        const vaultFreeCollateralAta = getFreeVaultCollateralPDA(wallet.publicKey!).pda;
+        const vaultLockedCollateralAta = getLockedVaultCollateralPDA(wallet.publicKey!).pda;
+        const vaultFreeScontractAta = getFreeVaultScontractPDA(wallet.publicKey!).pda;
+        const vaultLockedScontractAta = getLockedVaultScontractPDA(wallet.publicKey!).pda;
+        const userCollateralAta = getAssociatedTokenAddressSync(COLLATERAL_MINT, wallet.publicKey!, true);
+
         const userState = await program.account.userState.fetchNullable(userStateKey);
+
+        accounts = {
+          ...accounts,
+          lcontractMint,
+          scontractMint,
+          escrowVaultCollateral,
+          vaultFreeCollateralAta,
+          vaultLockedCollateralAta,
+          vaultFreeScontractAta,
+          vaultLockedScontractAta,
+          userState: userStateKey,
+          userAuthority: wallet.publicKey,
+          contractState: contractStateKey,
+          userCollateralAta
+        }
         
-        setState((prev) => ({
+        setState((prev: vayooState) => ({
+            // ...prev,
             accounts: accounts,
-            contractState: null,
+            contractState: contractState,
             globalState: null,
+            vayooProgram: program,
             userState: userState,
-            vayooProgram: program
         }))
         return
     }
@@ -89,7 +120,7 @@ export function VMStateProvider({ children = undefined as any }) {
     setState({
       vayooProgram: program,
       accounts: null,
-      contractState: null,
+      contractState: contractState,
       globalState: null,
       userState: null
     });
@@ -103,7 +134,13 @@ export function VMStateProvider({ children = undefined as any }) {
       console.log("--updated state--");
       setLoading(false);
     })();
-  }, [connection, wallet, refresh]);
+  }, [connection, wallet, refresh, toogleUpdateState]);
+
+  useEffect(() => {
+    setInterval(() => {
+      setToogleUpdateState((prev) => !prev);
+    }, REFRESH_TIME_INTERVAL);
+  }, []);
 
   return (
     <VMStateContext.Provider

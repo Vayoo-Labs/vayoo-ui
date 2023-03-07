@@ -62,7 +62,6 @@ const AdminComponent = () => {
         })
         .catch((e) => {
           console.log(e);
-          console.log(translateError(e));
           toast.error('Transaction Error!');
         })
         .finally(() => {

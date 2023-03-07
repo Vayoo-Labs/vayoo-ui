@@ -1,11 +1,12 @@
 import * as anchor from "@project-serum/anchor";
 import { vayooState } from "./types";
 import { PublicKey, Transaction } from "@solana/web3.js";
-import { USDC_MINT, VAYOO_CONTRACT_ID as PID } from "./constants";
+import { COLLATERAL_MINT, USDC_MINT, VAYOO_CONTRACT_ID as PID } from "./constants";
 import { useWallet, WalletContextState } from "@solana/wallet-adapter-react";
 import { addZeros } from "./index";
-import { getContractStatePDA, getPda } from "./vayoo-pda";
+import { getContractStatePDA, getPda, getUserStatePDA } from "./vayoo-pda";
 import { BN } from "@project-serum/anchor";
+import { createAssociatedTokenAccountInstruction } from "@solana/spl-token";
 
 export async function initContract(
   vayooState: vayooState,
@@ -32,7 +33,52 @@ export async function initContract(
   return txHash.toString();
 }
 
-export async function initContractIx(
+export async function initUserState(
+  vayooState: vayooState,
+  wallet: WalletContextState
+) {
+  const connection = vayooState!.vayooProgram.provider.connection;
+  const transaction = new Transaction();
+  transaction.add(
+    await initUserStateIx(
+      vayooState,
+      wallet.publicKey!
+    )
+  );
+  const txHash = await wallet.sendTransaction(transaction, connection);
+  
+  return txHash.toString();
+}
+
+export async function depositCollateral(
+  vayooState: vayooState,
+  amount: number,
+  wallet: WalletContextState
+) {
+  const connection = vayooState!.vayooProgram.provider.connection;
+  const transaction = new Transaction();
+  if (!(await connection.getAccountInfo(vayooState?.accounts.userCollateralAta))) {
+    transaction.add(
+      createAssociatedTokenAccountInstruction(
+        wallet.publicKey!,
+        vayooState?.accounts.userCollateralAta,
+        wallet.publicKey!,
+        COLLATERAL_MINT
+      )
+    );
+  }
+  transaction.add(
+    await depositIx(
+      vayooState,
+      amount,
+    )
+  );
+  const txHash = await wallet.sendTransaction(transaction, connection);
+  
+  return txHash.toString();
+}
+
+async function initContractIx(
   vayooState: vayooState,
   contractName: string,
   amplitude: number,
@@ -65,8 +111,8 @@ export async function initContractIx(
     .initializeContract(
       contractName,
       contractStateKeyBump,
-      new BN(amplitude),
-      new BN(contractEndTime)
+      new BN(contractEndTime),
+      new BN(amplitude)
     )
     .accounts({
       contractAuthority: admin,
@@ -80,5 +126,36 @@ export async function initContractIx(
     })
     .instruction();
   console.log('Contract key: ', contractStateKey.toString());
+  return ix;
+}
+
+async function initUserStateIx(
+  vayooState: vayooState,
+  user: PublicKey
+) {
+  const bump = getUserStatePDA(user).bump;
+
+  const ix = await vayooState!.vayooProgram.methods
+  .initializeUser(
+    bump
+  ).accounts({
+    ...vayooState?.accounts
+  }).instruction();
+  console.log('User State Key: ', vayooState?.accounts.userState.toString());
+  return ix;
+}
+
+async function depositIx(
+  vayooState: vayooState,
+  amount: number,
+) {
+  const nativeAmount = new BN(addZeros(amount, 6));
+  const ix = await vayooState!.vayooProgram.methods
+  .depositCollateral(
+    nativeAmount
+  ).accounts({
+    ...vayooState?.accounts
+  }).instruction();
+  console.log('Depositing :', amount);
   return ix;
 }
