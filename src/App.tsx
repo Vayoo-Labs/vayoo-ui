@@ -190,9 +190,54 @@ function App() {
           {localState.adminMode ? (
             <AdminComponent />
           ) : localState.userExist ? (
-            localState.mmMode ? (<div>Hello</div>) : 
+            localState.mmMode ? (<div className="w-full flex items-center max-w-5xl gap-7">
+            <div className="mt-10 px-6 py-6 text-white flex flex-col gap-3 w-1/2 border-2 border-gray-300/10 max-w-5xl rounded-xl bg-black/50 z-10">
+              <div className="text-2xl">Your MM Account</div>
+              <div className="flex flex-col gap-3 text-sm">
+                <div className="flex justify-between">
+                  Collateral Locked:{" "}
+                  <div>
+                    {(
+                      state?.userState?.usdcCollateralLockedAsMm.toNumber()! /
+                      1e6
+                    ).toFixed(2)}
+                  </div>
+                </div>
+                <div className="flex justify-between">
+                  L Contract Minted:{" "}
+                  <div>
+                    {state?.userState?.lcontractMintedAsMm
+                      .toNumber()
+                      .toFixed(2)}
+                  </div>
+                </div>
+              </div>
+              <div className="mt-5 flex gap-5 text-xl items-center">
+                Amount:{" "}
+                <input
+                  value={inputValue}
+                  onChange={(e) => onChangeAmountValue(e.target.value)}
+                  className="w-full py-3 text-sm text-center text-gray-100 rounded-lg border-2 bg-white-900 rouneded-xl border-gray-100/10 bg-gray-100/10 focus:outline-none"
+                />
+              </div>
+              <div className="mt-4 mb-1 flex flex-row w-full justify-between gap-5">
+                <button
+                  // onClick={onClickDeposit}
+                  className="w-full px-4 py-4 border-2 border-gray-100/40 rounded-xl hover:bg-blue-200/20 hover:border-blue-100/80"
+                >
+                  Mint
+                </button>
+                <button
+                  // onClick={onClickWithdraw}
+                  className="w-full px-4 py-4 border-2 border-gray-100/40 rounded-xl hover:bg-blue-200/20 hover:border-blue-100/80"
+                >
+                  Burn
+                </button>
+              </div>
+            </div>
+          </div>) : 
             <div className="w-full flex items-center max-w-5xl gap-7">
-              <div className="mt-10 px-6 py-6 text-white flex flex-col gap-3 w-1/2 border-2 border-gray-400 max-w-5xl rounded-xl bg-black/50 z-10">
+              <div className="mt-10 px-6 py-6 text-white flex flex-col gap-3 w-1/2 border-2 border-gray-300/10 max-w-5xl rounded-xl bg-black/50 z-10">
                 <div className="text-2xl">Your Account</div>
                 <div className="flex flex-col gap-3 text-sm">
                   <div className="flex justify-between">
@@ -250,7 +295,7 @@ function App() {
                   <input
                     value={inputValue}
                     onChange={(e) => onChangeAmountValue(e.target.value)}
-                    className="w-full py-3 text-sm text-center text-gray-100 rounded-lg border-2 bg-white-900 rouneded-xl border-gray-100/50 bg-gray-100/10 focus:outline-none"
+                    className="w-full py-3 text-sm text-center text-gray-100 rounded-lg border-2 bg-white-900 rouneded-xl border-gray-100/10 bg-gray-100/10 focus:outline-none"
                   />
                 </div>
                 <div className="mt-4 mb-1 flex flex-row w-full justify-between gap-5">
