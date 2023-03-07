@@ -34,12 +34,13 @@ function App() {
     usdBalance: 0,
     userExist: false,
     adminMode: false,
+    mmMode: false,
     amount: 0,
   });
 
   const toggleLocalRefresh = () => {
     toggleRefresh();
-    setRefresh(!refresh);
+    setRefresh((refresh) => !refresh);
   };
 
   useEffect(() => {
@@ -69,7 +70,7 @@ function App() {
         console.log(localState);
       }
     })();
-  }, [refresh, wallet, wallet.publicKey, state]);
+  }, [refresh, wallet, wallet.publicKey, state, localState.mmMode]);
 
   const onClickInitUserState = async () => {
     await initUserState(state, wallet)
@@ -105,6 +106,8 @@ function App() {
         toast.error("Transaction Error!");
       })
       .finally(() => {
+        setInputValue('0');
+        setLocalState((prev) => ({ ...prev, amount: 0}));
         toggleLocalRefresh();
       });
   };
@@ -124,6 +127,8 @@ function App() {
         toast.error("Transaction Error!");
       })
       .finally(() => {
+        setInputValue('0');
+        setLocalState((prev) => ({ ...prev, amount: 0}));
         toggleLocalRefresh();
       });
   };
@@ -137,8 +142,15 @@ function App() {
       ...prev,
       amount,
     }));
-    console.log(amount);
   };
+
+  const toggleMode = () => {
+    setLocalState((prev) => ({
+      ...prev,
+      mmMode: !prev.mmMode,
+    }))
+  }
+
   return (
     <div className="App">
       <div className="flex flex-col w-screen h-screen items-center bg-black relative overflow-hidden">
@@ -153,14 +165,14 @@ function App() {
             <div className="flex justify-around gap-2 items-center">
               {connected && (
                 <div className="flex gap-3">
-                  <div className="border-2 border-gray-400/40 rounded-2xl px-4 py-1 hover:border-gray-400/70">
+                  <div className="border-2 border-gray-400/40 rounded-2xl px-4 py-1 hover:border-gray-400/70 cursor-pointer" onClick={toggleMode}>
                     <div className="py-1 text-sm text-slate-300">
-                      {localState.usdBalance.toFixed(2)} USDC
+                      {localState.mmMode ? "Switch to User Mode" : "Switch to MM Mode"}
                     </div>
                   </div>
                   <div className="border-2 border-gray-400/40 rounded-2xl px-4 py-1 hover:border-gray-400/70">
                     <div className="py-1 text-sm text-slate-300">
-                      {localState.usdBalance.toFixed(2)} USDC
+                      {localState.usdBalance.toFixed(2)} $
                     </div>
                   </div>
                 </div>
@@ -178,8 +190,9 @@ function App() {
           {localState.adminMode ? (
             <AdminComponent />
           ) : localState.userExist ? (
+            localState.mmMode ? (<div>Hello</div>) : 
             <div className="w-full flex items-center max-w-5xl gap-7">
-              <div className="mt-10 px-6 py-4 text-white flex flex-col gap-3 w-1/2 border-2 border-gray-400 max-w-5xl rounded-xl bg-black/50 z-10 hover:border-lime-100/80">
+              <div className="mt-10 px-6 py-6 text-white flex flex-col gap-3 w-1/2 border-2 border-gray-400 max-w-5xl rounded-xl bg-black/50 z-10">
                 <div className="text-2xl">Your Account</div>
                 <div className="flex flex-col gap-3 text-sm">
                   <div className="flex justify-between">
@@ -237,19 +250,19 @@ function App() {
                   <input
                     value={inputValue}
                     onChange={(e) => onChangeAmountValue(e.target.value)}
-                    className="w-full py-3 text-sm font-medium text-center text-gray-100 border-r rounded-lg bg-white-900 dark:bg-gray-800 dark:text-white-900 focus:outline-none rouneded-xl border-white-500 dark:border-gray-600 font-poppins"
+                    className="w-full py-3 text-sm text-center text-gray-100 rounded-lg border-2 bg-white-900 rouneded-xl border-gray-100/50 bg-gray-100/10 focus:outline-none"
                   />
                 </div>
-                <div className="flex flex-row w-full justify-between p-2 gap-5">
+                <div className="mt-4 mb-1 flex flex-row w-full justify-between gap-5">
                   <button
                     onClick={onClickDeposit}
-                    className="w-full px-4 py-2 border-2 border-lime-100/80 rounded-xl hover:bg-fuchsia-200/20 hover:border-fuchsia-100/80"
+                    className="w-full px-4 py-4 border-2 border-gray-100/40 rounded-xl hover:bg-blue-200/20 hover:border-blue-100/80"
                   >
                     Deposit
                   </button>
                   <button
                     onClick={onClickWithdraw}
-                    className="w-full px-4 py-2 border-2 border-lime-100/80 rounded-xl hover:bg-fuchsia-200/20 hover:border-fuchsia-100/80"
+                    className="w-full px-4 py-4 border-2 border-gray-100/40 rounded-xl hover:bg-blue-200/20 hover:border-blue-100/80"
                   >
                     Withdraw
                   </button>

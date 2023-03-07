@@ -29,7 +29,7 @@ const WalletContextProvider: FC<{ children: ReactNode }> = ({ children }) => {
     return {
       connection: hostURL,
       config: {
-        commitment: "confirmed",
+        commitment: "processed",
         httpHeaders: headers,
         wsEndpoint: url.href.replace("https", "wss"),
       },

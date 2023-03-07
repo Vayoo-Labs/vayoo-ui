@@ -114,6 +114,7 @@ export function VMStateProvider({ children = undefined as any }) {
             vayooProgram: program,
             userState: userState,
         }))
+
         return
     }
 
@@ -137,6 +138,21 @@ export function VMStateProvider({ children = undefined as any }) {
   }, [connection, wallet, refresh, toogleUpdateState]);
 
   useEffect(() => {
+    if (connection) {
+      if (wallet && wallet.connected && !wallet.disconnecting && !wallet.connecting) {
+        console.log('--Wallet is connected--');
+        connection.onAccountChange(wallet.publicKey!, (acc) => {
+          if (acc) {
+            console.log('--Wallet balance changed--');
+            setRefresh((refresh1) => !refresh1)
+          }
+        });
+      }
+    }
+    return () => {};
+  }, [connection, wallet, toogleUpdateState]);
+
+  useEffect(() => {
     setInterval(() => {
       setToogleUpdateState((prev) => !prev);
     }, REFRESH_TIME_INTERVAL);
@@ -147,7 +163,7 @@ export function VMStateProvider({ children = undefined as any }) {
       value={{
         state,
         subscribeTx,
-        toggleRefresh: () => setRefresh(!refresh),
+        toggleRefresh: () => setRefresh((refresh) => !refresh),
         loading,
       }}
     >
