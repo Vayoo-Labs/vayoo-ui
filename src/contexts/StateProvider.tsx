@@ -88,6 +88,7 @@ export function VMStateProvider({ children = undefined as any }) {
         const vaultFreeScontractAta = getFreeVaultScontractPDA(wallet.publicKey!).pda;
         const vaultLockedScontractAta = getLockedVaultScontractPDA(wallet.publicKey!).pda;
         const userCollateralAta = getAssociatedTokenAddressSync(COLLATERAL_MINT, wallet.publicKey!, true);
+        const mmLcontractAta = getAssociatedTokenAddressSync(lcontractMint, wallet.publicKey, true);
 
         const userState = await program.account.userState.fetchNullable(userStateKey);
 
@@ -103,7 +104,9 @@ export function VMStateProvider({ children = undefined as any }) {
           userState: userStateKey,
           userAuthority: wallet.publicKey,
           contractState: contractStateKey,
-          userCollateralAta
+          userCollateralAta,
+          mmLockedScontractAta: vaultLockedScontractAta,
+          mmLcontractAta
         }
         
         setState((prev: vayooState) => ({
@@ -144,7 +147,7 @@ export function VMStateProvider({ children = undefined as any }) {
         connection.onAccountChange(wallet.publicKey!, (acc) => {
           if (acc) {
             console.log('--Wallet balance changed--');
-            setRefresh((refresh1) => !refresh1)
+            setRefresh((prev) => !prev)
           }
         });
       }

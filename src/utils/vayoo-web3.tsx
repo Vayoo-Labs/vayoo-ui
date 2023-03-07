@@ -6,7 +6,7 @@ import { useWallet, WalletContextState } from "@solana/wallet-adapter-react";
 import { addZeros } from "./index";
 import { getContractStatePDA, getPda, getUserStatePDA } from "./vayoo-pda";
 import { BN } from "@project-serum/anchor";
-import { createAssociatedTokenAccountInstruction } from "@solana/spl-token";
+import { createAssociatedTokenAccountInstruction, createInitializeAccountInstruction } from "@solana/spl-token";
 
 export async function initContract(
   vayooState: vayooState,
@@ -50,6 +50,63 @@ export async function initUserState(
   return txHash.toString();
 }
 
+export async function mintAsMm(
+  vayooState: vayooState,
+  amount: number,
+  wallet: WalletContextState
+) {
+  const connection = vayooState!.vayooProgram.provider.connection;
+  const transaction = new Transaction();
+  if (!(await connection.getAccountInfo(vayooState?.accounts.mmLockedScontractAta))) {
+    transaction.add(
+      createAssociatedTokenAccountInstruction(
+        wallet.publicKey!,
+        vayooState?.accounts.mmLockedScontractAta,
+        vayooState?.accounts.userStateKey,
+        vayooState?.accounts.scontractMint
+      )
+    );
+  }
+  if (!(await connection.getAccountInfo(vayooState?.accounts.mmLcontractAta))) {
+    transaction.add(
+      createAssociatedTokenAccountInstruction(
+        wallet.publicKey!,
+        vayooState?.accounts.mmLcontractAta,
+        wallet.publicKey!,
+        vayooState?.accounts.lcontractMint
+      )
+    );
+  }
+  transaction.add(
+    await mintAsMmIx(
+      vayooState,
+      amount,
+    )
+  );
+  const txHash = await wallet.sendTransaction(transaction, connection);
+  
+  return txHash.toString();
+}
+
+export async function burnAsMm(
+  vayooState: vayooState,
+  amount: number,
+  wallet: WalletContextState
+) {
+  const connection = vayooState!.vayooProgram.provider.connection;
+  const transaction = new Transaction();
+
+  transaction.add(
+    await burnAsMmIx(
+      vayooState,
+      amount,
+    )
+  );
+  const txHash = await wallet.sendTransaction(transaction, connection);
+  
+  return txHash.toString();
+}
+
 export async function depositCollateral(
   vayooState: vayooState,
   amount: number,
@@ -57,16 +114,7 @@ export async function depositCollateral(
 ) {
   const connection = vayooState!.vayooProgram.provider.connection;
   const transaction = new Transaction();
-  if (!(await connection.getAccountInfo(vayooState?.accounts.userCollateralAta))) {
-    transaction.add(
-      createAssociatedTokenAccountInstruction(
-        wallet.publicKey!,
-        vayooState?.accounts.userCollateralAta,
-        wallet.publicKey!,
-        COLLATERAL_MINT
-      )
-    );
-  }
+
   transaction.add(
     await depositIx(
       vayooState,
@@ -186,6 +234,36 @@ async function depositIx(
     ...vayooState?.accounts
   }).instruction();
   console.log('Depositing :', amount);
+  return ix;
+}
+
+async function mintAsMmIx(
+  vayooState: vayooState,
+  amount: number,
+) {
+  const nativeAmount = new BN(addZeros(amount, 6));
+  const ix = await vayooState!.vayooProgram.methods
+  .mintLContractMm(
+    nativeAmount
+  ).accounts({
+    ...vayooState?.accounts
+  }).instruction();
+  console.log('Minting as MM :', amount);
+  return ix;
+}
+
+async function burnAsMmIx(
+  vayooState: vayooState,
+  amount: number,
+) {
+  const nativeAmount = new BN(addZeros(amount, 6));
+  const ix = await vayooState!.vayooProgram.methods
+  .burnLContractMm(
+    nativeAmount
+  ).accounts({
+    ...vayooState?.accounts
+  }).instruction();
+  console.log('Burning as Mm:', amount);
   return ix;
 }
 
