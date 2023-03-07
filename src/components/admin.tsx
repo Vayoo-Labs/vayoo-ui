@@ -106,7 +106,6 @@ const AdminComponent = () => {
             <input
               value={formData.duration}
               onChange={(e) => onChangeEndTime(e.target.value)}
-              
               className="w-32 py-1 text-sm font-medium text-center text-gray-100 border-r rounded-tl-sm rounded-bl-sm bg-white-900 dark:bg-gray-800 dark:text-white-900 focus:outline-none rouneded-xl border-white-500 dark:border-gray-600 font-poppins"
             />
           </div>
