@@ -204,6 +204,8 @@ async function initContractIx(
     })
     .instruction();
   console.log('Contract key: ', contractStateKey.toString());
+  console.log('L Contract Mint: ', lcontractMint.toString())
+  console.log('S Contract Mint: ', scontractMint.toString())
   return ix;
 }
 
