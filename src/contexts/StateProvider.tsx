@@ -8,7 +8,8 @@ import { useWallet, useConnection } from "@solana/wallet-adapter-react";
 import { getContractStatePDA, getEscrowVaultCollateralPDA, getFreeVaultCollateralPDA, getFreeVaultScontractPDA, getLcontractMintPDA, getLockedVaultCollateralPDA, getLockedVaultScontractPDA, getScontractMintPDA, getUserStatePDA } from "../utils/vayoo-pda";
 import { vayooState } from "../utils/types";
 import { getAssociatedTokenAddressSync, TOKEN_PROGRAM_ID } from "@solana/spl-token-v2";
-import { COLLATERAL_MINT, REFRESH_TIME_INTERVAL, USDC_MINT } from "../utils/constants";
+import { COLLATERAL_MINT, REFRESH_TIME_INTERVAL, USDC_MINT, WHIRLPOOL_KEY } from "../utils/constants";
+import { AccountFetcher, buildWhirlpoolClient, ORCA_WHIRLPOOL_PROGRAM_ID, WhirlpoolContext } from "@orca-so/whirlpools-sdk";
 
 interface VMStateConfig {
   state: vayooState;
@@ -37,6 +38,7 @@ export function VMStateProvider({ children = undefined as any }) {
   const [refresh, setRefresh] = useState(false);
   const [loading, setLoading] = useState(true);
   const [toogleUpdateState, setToogleUpdateState] = useState(false);
+  const orcaFetcher = new AccountFetcher(connection);
 
 
   const subscribeTx = async (
@@ -74,6 +76,8 @@ export function VMStateProvider({ children = undefined as any }) {
       rent: SYSVAR_RENT_PUBKEY,
       tokenProgram: TOKEN_PROGRAM_ID
     }
+    const whirlpoolState = await orcaFetcher.getPool(WHIRLPOOL_KEY, true);
+
     const program = await getVayooProgramInstance(connection, wallet);
     const contractStateKey = getContractStatePDA().pda;
     const lcontractMint = getLcontractMintPDA().pda;
@@ -88,6 +92,7 @@ export function VMStateProvider({ children = undefined as any }) {
         const vaultFreeScontractAta = getFreeVaultScontractPDA(wallet.publicKey!).pda;
         const vaultLockedScontractAta = getLockedVaultScontractPDA(wallet.publicKey!).pda;
         const userCollateralAta = getAssociatedTokenAddressSync(COLLATERAL_MINT, wallet.publicKey!, true);
+        const vaultLcontractAta = getAssociatedTokenAddressSync(lcontractMint, userStateKey, true);
         const mmLcontractAta = getAssociatedTokenAddressSync(lcontractMint, wallet.publicKey, true);
 
         const userState = await program.account.userState.fetchNullable(userStateKey);
@@ -106,7 +111,8 @@ export function VMStateProvider({ children = undefined as any }) {
           contractState: contractStateKey,
           userCollateralAta,
           mmLockedScontractAta: vaultLockedScontractAta,
-          mmLcontractAta
+          mmLcontractAta,
+          vaultLcontractAta
         }
         
         setState((prev: vayooState) => ({
@@ -116,6 +122,7 @@ export function VMStateProvider({ children = undefined as any }) {
             globalState: null,
             vayooProgram: program,
             userState: userState,
+            poolState: whirlpoolState,
         }))
 
         return
@@ -126,7 +133,8 @@ export function VMStateProvider({ children = undefined as any }) {
       accounts: null,
       contractState: contractState,
       globalState: null,
-      userState: null
+      userState: null,
+      poolState: whirlpoolState
     });
   };
 
