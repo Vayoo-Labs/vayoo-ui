@@ -6,7 +6,7 @@ import { useWallet, WalletContextState } from "@solana/wallet-adapter-react";
 import { addZeros } from "./index";
 import { getContractStatePDA, getPda, getUserStatePDA } from "./vayoo-pda";
 import { BN } from "@project-serum/anchor";
-import { createAssociatedTokenAccountInstruction, createInitializeAccountInstruction } from "@solana/spl-token";
+import { createAssociatedTokenAccountInstruction } from "@solana/spl-token-v2";
 import { sendTransaction } from "./web3-utils";
 
 export async function initContract(
@@ -193,6 +193,7 @@ async function initContractIx(
       new BN(amplitude)
     )
     .accounts({
+      ...vayooState!.accounts,
       contractAuthority: admin,
       contractState: contractStateKey,
       escrowVaultCollateral: escrowVaultCollateral,
@@ -200,7 +201,6 @@ async function initContractIx(
       scontractMint: scontractMint,
       pythFeed: pyth,
       collateralMint: USDC_MINT,
-      ...vayooState!.accounts,
     })
     .instruction();
   console.log('Contract key: ', contractStateKey.toString());

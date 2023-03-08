@@ -69,7 +69,7 @@ const AdminComponent = () => {
     };
 
   return (
-    <div className="mt-56 flex items-center max-w-5xl">
+    <div className="mt-56 flex items-center">
       <div className="px-12 py-10 text-white border-2 border-gray-400 bg-black/50 z-10 rounded-2xl">
         <div className="flex flex-col gap-5 justify-between">
           <div className="text-xl font-bold">

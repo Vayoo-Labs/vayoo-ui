@@ -1,5 +1,5 @@
 import { AnchorProvider, Idl, Program } from "@project-serum/anchor";
-import { getAssociatedTokenAddressSync } from "@solana/spl-token";
+import { getAssociatedTokenAddressSync } from "@solana/spl-token-v2";
 import { Connection, PublicKey } from "@solana/web3.js";
 import { VAYOO_CONTRACT_ID } from "./constants";
 import { IDL } from "../utils/vayoo_contracts"

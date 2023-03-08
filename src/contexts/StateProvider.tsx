@@ -7,7 +7,7 @@ import { useWallet, useConnection } from "@solana/wallet-adapter-react";
 
 import { getContractStatePDA, getEscrowVaultCollateralPDA, getFreeVaultCollateralPDA, getFreeVaultScontractPDA, getLcontractMintPDA, getLockedVaultCollateralPDA, getLockedVaultScontractPDA, getScontractMintPDA, getUserStatePDA } from "../utils/vayoo-pda";
 import { vayooState } from "../utils/types";
-import { getAssociatedTokenAddressSync, TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import { getAssociatedTokenAddressSync, TOKEN_PROGRAM_ID } from "@solana/spl-token-v2";
 import { COLLATERAL_MINT, REFRESH_TIME_INTERVAL, USDC_MINT } from "../utils/constants";
 
 interface VMStateConfig {

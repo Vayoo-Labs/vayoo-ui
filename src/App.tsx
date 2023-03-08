@@ -5,7 +5,7 @@ import {
   getAtaTokenBalanceByOwner,
   shortenAddress,
 } from "./utils";
-import { USDC_MINT } from "./utils/constants";
+import { ADMIN_KEYS, USDC_MINT } from "./utils/constants";
 import { useSubscribeTx, useVMState } from "./contexts/StateProvider";
 import AdminComponent from "./components/admin";
 import toast, { Toaster } from "react-hot-toast";
@@ -42,8 +42,7 @@ function App() {
     (async () => {
       if (wallet?.publicKey) {
         if (
-          wallet.publicKey?.toString() ==
-          "4gNFEk4qvgxE6iM8ukfDUDaCT8itAeWXxURbnqNZXZXp"
+          ADMIN_KEYS.includes(wallet.publicKey.toString()!)
         ) {
           setLocalState((prev) => ({
             ...prev,
@@ -236,11 +235,13 @@ function App() {
         </div>
         {/* Body */}
         <div className="w-full h-full flex flex-col items-center">
+          <div className="w-full max-w-5xl px-6 lg:px-0">
+
           {localState.adminMode ? (
             <AdminComponent />
           ) : localState.userExist ? (
             localState.mmMode ? (
-              <div className="w-full flex items-center max-w-5xl gap-7">
+              <div className="w-full flex items-center gap-7">
                 <div className="mt-10 px-6 py-6 text-white flex flex-col gap-3 w-1/2 border-2 border-gray-300/10 max-w-5xl rounded-xl bg-black/50 z-10">
                   <div className="text-2xl">Your MM Account</div>
                   <div className="flex flex-col gap-3 text-sm">
@@ -296,7 +297,7 @@ function App() {
                 </div>
               </div>
             ) : (
-              <div className="w-full flex items-center max-w-5xl gap-7">
+              <div className="w-full flex items-center gap-7">
                 <div className="mt-10 px-6 py-6 text-white flex flex-col gap-3 w-1/2 border-2 border-gray-300/10 max-w-5xl rounded-xl bg-black/50 z-10 ite">
                   <div className="text-2xl">Your Account</div>
                   <div className="mt-1 flex flex-col gap-3 text-sm">
@@ -335,7 +336,7 @@ function App() {
               </div>
             )
           ) : (
-            <div className="mt-56 flex items-center max-w-5xl">
+            <div className="mt-56 flex items-center">
               <div className="px-12 py-10 text-white border-2 border-gray-400 bg-black/50 z-10 rounded-2xl">
                 <div className="flex flex-col gap-5 justify-between items-center">
                   You seem to not have a user account with us.
@@ -349,6 +350,7 @@ function App() {
               </div>
             </div>
           )}
+          </div>
         </div>
 
         <div className="absolute z-[0] w-[25%] h-[30%] -left-[20%] -top-10 white__gradient"></div>
