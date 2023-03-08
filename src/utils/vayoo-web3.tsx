@@ -7,6 +7,7 @@ import { addZeros } from "./index";
 import { getContractStatePDA, getPda, getUserStatePDA } from "./vayoo-pda";
 import { BN } from "@project-serum/anchor";
 import { createAssociatedTokenAccountInstruction, createInitializeAccountInstruction } from "@solana/spl-token";
+import { sendTransaction } from "./web3-utils";
 
 export async function initContract(
   vayooState: vayooState,
@@ -121,7 +122,7 @@ export async function depositCollateral(
       amount,
     )
   );
-  const txHash = await wallet.sendTransaction(transaction, connection);
+  const txHash = await sendTransaction(connection, wallet, transaction)
   
   return txHash.toString();
 }
