@@ -6,12 +6,11 @@ import inject from '@rollup/plugin-inject'
 export default defineConfig({
   plugins: [react()],
   define: {
-    global: 'globalThis',
     'process.env.SOME_ENV': `"${process.env.SOME_ENV}"`
   },
   build: {
 		rollupOptions: {
-			plugins: [inject({ Buffer: ['buffer', 'Buffer'], process: 'process' })],
+			plugins: [inject({ Buffer: ['buffer', 'Buffer'], process: 'process'})],
 		},
 	},
 })

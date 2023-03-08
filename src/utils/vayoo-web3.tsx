@@ -122,7 +122,7 @@ export async function depositCollateral(
       amount,
     )
   );
-  const txHash = await sendTransaction(connection, wallet, transaction)
+  const txHash = await wallet.sendTransaction(transaction, connection);
   
   return txHash.toString();
 }

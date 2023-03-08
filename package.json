@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "tsc && vite build && vite preview"
   },
   "dependencies": {
     "@project-serum/anchor": "^0.26.0",
