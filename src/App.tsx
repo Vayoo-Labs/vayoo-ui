@@ -85,7 +85,14 @@ function App() {
         console.log(localState);
       }
     })();
-  }, [refresh, wallet.connected, wallet.publicKey, state, localState.mmMode, state?.pythData]);
+  }, [
+    refresh,
+    wallet.connected,
+    wallet.publicKey,
+    state,
+    localState.mmMode,
+    state?.pythData,
+  ]);
 
   const onClickInitUserState = async () => {
     await initUserState(state, wallet)
@@ -461,14 +468,14 @@ function App() {
                         <div className="flex justify-between items-center text-gray-200 ">
                           Oracle Price (Pyth):
                           <div className="text-gray-200">
-                              {state?.pythData?.price?.toFixed(2) ??
-                                state?.pythData?.previousPrice.toFixed(2)}
+                            {state?.pythData?.price?.toFixed(2) ??
+                              state?.pythData?.previousPrice.toFixed(2)}
                           </div>
                         </div>
                         <div className="flex justify-between items-center text-gray-200 ">
                           Asset Price :
                           <div className="text-gray-200">
-                              {state?.assetPrice.toFixed(2)}
+                            {state?.assetPrice.toFixed(2)}
                           </div>
                         </div>
                       </div>
@@ -543,9 +550,7 @@ function App() {
                           </button>
                         </div>
                       </div>
-                      <div
-                        className="w-full flex flex-col justify-between items-center py-1 border-green-100/60 rounded-xl"
-                      >
+                      <div className="w-full flex flex-col justify-between items-center py-1 border-green-100/60 rounded-xl">
                         <div className="w-full py-2 bg-red-400/30 rounded-t-xl border-2 border-black hover:border-red-400/60">
                           <button
                             onClick={onClickOpenShort}
