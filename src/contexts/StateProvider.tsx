@@ -1,15 +1,42 @@
-import { SignatureResult, SystemProgram, SYSVAR_RENT_PUBKEY } from "@solana/web3.js";
-import * as anchor from "@project-serum/anchor";
+import {
+  SignatureResult,
+  SystemProgram,
+  SYSVAR_RENT_PUBKEY,
+} from "@solana/web3.js";
 import React, { useEffect, useState } from "react";
 
 import { getVayooProgramInstance, sleep } from "../utils";
 import { useWallet, useConnection } from "@solana/wallet-adapter-react";
 
-import { getContractStatePDA, getEscrowVaultCollateralPDA, getFreeVaultCollateralPDA, getFreeVaultScontractPDA, getLcontractMintPDA, getLockedVaultCollateralPDA, getLockedVaultScontractPDA, getScontractMintPDA, getUserStatePDA } from "../utils/vayoo-pda";
+import {
+  getContractStatePDA,
+  getEscrowVaultCollateralPDA,
+  getFreeVaultCollateralPDA,
+  getFreeVaultScontractPDA,
+  getLcontractMintPDA,
+  getLockedVaultCollateralPDA,
+  getLockedVaultScontractPDA,
+  getScontractMintPDA,
+  getUserStatePDA,
+} from "../utils/vayoo-pda";
 import { vayooState } from "../utils/types";
-import { getAssociatedTokenAddressSync, TOKEN_PROGRAM_ID } from "@solana/spl-token-v2";
-import { COLLATERAL_MINT, REFRESH_TIME_INTERVAL, USDC_MINT, WHIRLPOOL_KEY } from "../utils/constants";
-import { AccountFetcher, buildWhirlpoolClient, ORCA_WHIRLPOOL_PROGRAM_ID, WhirlpoolContext } from "@orca-so/whirlpools-sdk";
+import {
+  getAssociatedTokenAddressSync,
+  TOKEN_PROGRAM_ID,
+} from "@solana/spl-token-v2";
+import {
+  COLLATERAL_MINT,
+  PYTH_FEED,
+  REFRESH_TIME_INTERVAL,
+  USDC_MINT,
+  WHIRLPOOL_KEY,
+} from "../utils/constants";
+import {
+  AccountFetcher, PriceMath,
+} from "@orca-so/whirlpools-sdk";
+import {
+  parsePriceData,
+} from "@pythnetwork/client";
 
 interface VMStateConfig {
   state: vayooState;
@@ -39,7 +66,7 @@ export function VMStateProvider({ children = undefined as any }) {
   const [loading, setLoading] = useState(true);
   const [toogleUpdateState, setToogleUpdateState] = useState(false);
   const orcaFetcher = new AccountFetcher(connection);
-
+  const [pythData, setPythData] = useState<any>(null);
 
   const subscribeTx = async (
     txHash: string,
@@ -74,58 +101,89 @@ export function VMStateProvider({ children = undefined as any }) {
       collateralMint: USDC_MINT,
       systemProgram: SystemProgram.programId,
       rent: SYSVAR_RENT_PUBKEY,
-      tokenProgram: TOKEN_PROGRAM_ID
-    }
+      tokenProgram: TOKEN_PROGRAM_ID,
+    };
+
     const whirlpoolState = await orcaFetcher.getPool(WHIRLPOOL_KEY, true);
+   
 
     const program = await getVayooProgramInstance(connection, wallet);
     const contractStateKey = getContractStatePDA().pda;
     const lcontractMint = getLcontractMintPDA().pda;
     const scontractMint = getScontractMintPDA().pda;
     const escrowVaultCollateral = getEscrowVaultCollateralPDA().pda;
-    const contractState = await program.account.contractState.fetchNullable(contractStateKey);
-    
+    const contractState = await program.account.contractState.fetchNullable(
+      contractStateKey
+    );
+
+    const poolPrice = PriceMath.sqrtPriceX64ToPrice(whirlpoolState?.sqrtPrice!, 6, 6);
+    const assetPrice = poolPrice.toNumber() + (contractState?.startingPrice.toNumber()! / 1e5) - (contractState?.limitingAmplitude.toNumber()! / 2)
+
     if (wallet?.publicKey) {
-        const userStateKey = getUserStatePDA(wallet.publicKey!).pda;
-        const vaultFreeCollateralAta = getFreeVaultCollateralPDA(wallet.publicKey!).pda;
-        const vaultLockedCollateralAta = getLockedVaultCollateralPDA(wallet.publicKey!).pda;
-        const vaultFreeScontractAta = getFreeVaultScontractPDA(wallet.publicKey!).pda;
-        const vaultLockedScontractAta = getLockedVaultScontractPDA(wallet.publicKey!).pda;
-        const userCollateralAta = getAssociatedTokenAddressSync(COLLATERAL_MINT, wallet.publicKey!, true);
-        const vaultLcontractAta = getAssociatedTokenAddressSync(lcontractMint, userStateKey, true);
-        const mmLcontractAta = getAssociatedTokenAddressSync(lcontractMint, wallet.publicKey, true);
+      const userStateKey = getUserStatePDA(wallet.publicKey!).pda;
+      const vaultFreeCollateralAta = getFreeVaultCollateralPDA(
+        wallet.publicKey!
+      ).pda;
+      const vaultLockedCollateralAta = getLockedVaultCollateralPDA(
+        wallet.publicKey!
+      ).pda;
+      const vaultFreeScontractAta = getFreeVaultScontractPDA(
+        wallet.publicKey!
+      ).pda;
+      const vaultLockedScontractAta = getLockedVaultScontractPDA(
+        wallet.publicKey!
+      ).pda;
+      const userCollateralAta = getAssociatedTokenAddressSync(
+        COLLATERAL_MINT,
+        wallet.publicKey!,
+        true
+      );
+      const vaultLcontractAta = getAssociatedTokenAddressSync(
+        lcontractMint,
+        userStateKey,
+        true
+      );
+      const mmLcontractAta = getAssociatedTokenAddressSync(
+        lcontractMint,
+        wallet.publicKey,
+        true
+      );
 
-        const userState = await program.account.userState.fetchNullable(userStateKey);
+      const userState = await program.account.userState.fetchNullable(
+        userStateKey
+      );
 
-        accounts = {
-          ...accounts,
-          lcontractMint,
-          scontractMint,
-          escrowVaultCollateral,
-          vaultFreeCollateralAta,
-          vaultLockedCollateralAta,
-          vaultFreeScontractAta,
-          vaultLockedScontractAta,
-          userState: userStateKey,
-          userAuthority: wallet.publicKey,
-          contractState: contractStateKey,
-          userCollateralAta,
-          mmLockedScontractAta: vaultLockedScontractAta,
-          mmLcontractAta,
-          vaultLcontractAta
-        }
-        
-        setState((prev: vayooState) => ({
-            // ...prev,
-            accounts: accounts,
-            contractState: contractState,
-            globalState: null,
-            vayooProgram: program,
-            userState: userState,
-            poolState: whirlpoolState,
-        }))
+      accounts = {
+        ...accounts,
+        lcontractMint,
+        scontractMint,
+        escrowVaultCollateral,
+        vaultFreeCollateralAta,
+        vaultLockedCollateralAta,
+        vaultFreeScontractAta,
+        vaultLockedScontractAta,
+        userState: userStateKey,
+        userAuthority: wallet.publicKey,
+        contractState: contractStateKey,
+        userCollateralAta,
+        mmLockedScontractAta: vaultLockedScontractAta,
+        mmLcontractAta,
+        vaultLcontractAta,
+      };
 
-        return
+      setState((prev: vayooState) => ({
+        // ...prev,
+        accounts: accounts,
+        contractState: contractState,
+        globalState: null,
+        vayooProgram: program,
+        userState: userState,
+        poolState: whirlpoolState,
+        pythData: pythData,
+        assetPrice: assetPrice,
+      }));
+
+      return;
     }
 
     setState({
@@ -134,7 +192,9 @@ export function VMStateProvider({ children = undefined as any }) {
       contractState: contractState,
       globalState: null,
       userState: null,
-      poolState: whirlpoolState
+      poolState: whirlpoolState,
+      pythData: pythData,
+      assetPrice: assetPrice,
     });
   };
 
@@ -150,13 +210,24 @@ export function VMStateProvider({ children = undefined as any }) {
 
   useEffect(() => {
     if (connection) {
-      if (wallet && wallet.connected && !wallet.disconnecting && !wallet.connecting) {
-        console.log('--Wallet is connected--');
+      if (
+        wallet &&
+        wallet.connected &&
+        !wallet.disconnecting &&
+        !wallet.connecting
+      ) {
+        console.log("--Wallet is connected--");
         connection.onAccountChange(wallet.publicKey!, (acc) => {
           if (acc) {
-            console.log('--Wallet balance changed--');
-            setRefresh((prev) => !prev)
+            console.log("--Wallet balance changed--");
+            setRefresh((prev) => !prev);
           }
+        });
+        // Pyth Feed
+        connection.onAccountChange(PYTH_FEED, (account) => {
+          const parsedData = parsePriceData(account.data);
+          setPythData(parsedData);
+          setRefresh((prev) => !prev)
         });
       }
     }
@@ -186,7 +257,11 @@ export function VMStateProvider({ children = undefined as any }) {
 export function useVMState() {
   const context = React.useContext(VMStateContext);
 
-  return { state: context.state, loading: context.loading, toggleRefresh: context.toggleRefresh};
+  return {
+    state: context.state,
+    loading: context.loading,
+    toggleRefresh: context.toggleRefresh,
+  };
 }
 
 export function useSubscribeTx() {
