@@ -1,4 +1,5 @@
 import {
+  PublicKey,
   SignatureResult,
   SystemProgram,
   SYSVAR_RENT_PUBKEY,
@@ -169,6 +170,7 @@ export function VMStateProvider({ children = undefined as any }) {
         mmLockedScontractAta: vaultLockedScontractAta,
         mmLcontractAta,
         vaultLcontractAta,
+        pythFeed: PYTH_FEED
       };
 
       setState((prev: vayooState) => ({

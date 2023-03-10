@@ -1165,6 +1165,14 @@ export type VayooContracts = {
             "type": "u64"
           },
           {
+            "name": "globalCurrentLockedUsdc",
+            "type": "u64"
+          },
+          {
+            "name": "globalCurrentIssuedLcontract",
+            "type": "u64"
+          },
+          {
             "name": "reserved",
             "type": {
               "array": [
@@ -1281,6 +1289,10 @@ export type VayooContracts = {
           },
           {
             "name": "usdcWithdrawn",
+            "type": "u64"
+          },
+          {
+            "name": "usdcFree",
             "type": "u64"
           },
           {
@@ -2552,6 +2564,14 @@ export const IDL: VayooContracts = {
             "type": "u64"
           },
           {
+            "name": "globalCurrentLockedUsdc",
+            "type": "u64"
+          },
+          {
+            "name": "globalCurrentIssuedLcontract",
+            "type": "u64"
+          },
+          {
             "name": "reserved",
             "type": {
               "array": [
@@ -2668,6 +2688,10 @@ export const IDL: VayooContracts = {
           },
           {
             "name": "usdcWithdrawn",
+            "type": "u64"
+          },
+          {
+            "name": "usdcFree",
             "type": "u64"
           },
           {

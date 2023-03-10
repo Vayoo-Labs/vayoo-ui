@@ -36,6 +36,38 @@ export async function initContract(
   return txHash.toString();
 }
 
+export async function triggerSettleMode(
+  vayooState: vayooState,
+  wallet: WalletContextState
+) {
+  const connection = vayooState!.vayooProgram.provider.connection;
+  const transaction = new Transaction();
+  transaction.add(
+    await triggerSettleModeIx(
+      vayooState,
+    )
+  );
+  const txHash = await wallet.sendTransaction(transaction, connection);
+  
+  return txHash.toString();
+}
+
+export async function adminSettle(
+  vayooState: vayooState,
+  wallet: WalletContextState
+) {
+  const connection = vayooState!.vayooProgram.provider.connection;
+  const transaction = new Transaction();
+  transaction.add(
+    await adminSettleIx(
+      vayooState,
+    )
+  );
+  const txHash = await wallet.sendTransaction(transaction, connection);
+  
+  return txHash.toString();
+}
+
 export async function initUserState(
   vayooState: vayooState,
   wallet: WalletContextState
@@ -135,7 +167,10 @@ export async function openLong(
   wallet: WalletContextState
 ) {
   const connection = vayooState!.vayooProgram.provider.connection;
+  try{
   const transaction = new Transaction();
+
+
   if (!(await connection.getAccountInfo(vayooState?.accounts.vaultLcontractAta))) {
     transaction.add(
       createAssociatedTokenAccountInstruction(
@@ -151,13 +186,41 @@ export async function openLong(
     await longIx(
       vayooState,
       amountInCollateral,
-      true
+      true,
+      0
     )
   );
   console.log('herhe')
   const txHash = await wallet.sendTransaction(transaction, connection);
   
   return txHash.toString();
+}catch {
+    const transaction = new Transaction();
+  console.log("New long version")
+
+  if (!(await connection.getAccountInfo(vayooState?.accounts.vaultLcontractAta))) {
+    transaction.add(
+      createAssociatedTokenAccountInstruction(
+        wallet.publicKey!,
+        vayooState?.accounts.vaultLcontractAta,
+        vayooState?.accounts.userState,
+        vayooState?.accounts.lcontractMint
+      )
+    );
+  }
+
+  transaction.add(
+    await longIx(
+      vayooState,
+      amountInCollateral,
+      true,
+      1
+    )
+  );
+  const txHash = await wallet.sendTransaction(transaction, connection);
+  
+  return txHash.toString();
+}
 }
 
 export async function closeLong(
@@ -166,6 +229,7 @@ export async function closeLong(
   wallet: WalletContextState
 ) {
   const connection = vayooState!.vayooProgram.provider.connection;
+  try{
   const transaction = new Transaction();
   if (!(await connection.getAccountInfo(vayooState?.accounts.vaultLcontractAta))) {
     transaction.add(
@@ -182,12 +246,40 @@ export async function closeLong(
     await longIx(
       vayooState,
       amountInCollateral,
-      false
+      false,
+      0
     )
   );
   const txHash = await wallet.sendTransaction(transaction, connection);
   
   return txHash.toString();
+}catch{
+  console.log("New Close long version")
+    const transaction = new Transaction();
+  if (!(await connection.getAccountInfo(vayooState?.accounts.vaultLcontractAta))) {
+    transaction.add(
+      createAssociatedTokenAccountInstruction(
+        wallet.publicKey!,
+        vayooState?.accounts.vaultLcontractAta,
+        vayooState?.accounts.userState,
+        vayooState?.accounts.lcontractMint
+      )
+    );
+  }
+
+  transaction.add(
+    await longIx(
+      vayooState,
+      amountInCollateral,
+      false,
+      1
+    )
+  );
+  const txHash = await wallet.sendTransaction(transaction, connection);
+  
+  return txHash.toString();
+}
+
 }
 
 export async function openShort(
@@ -196,6 +288,7 @@ export async function openShort(
   wallet: WalletContextState
 ) {
   const connection = vayooState!.vayooProgram.provider.connection;
+  try{
   const transaction = new Transaction();
   if (!(await connection.getAccountInfo(vayooState?.accounts.vaultLcontractAta))) {
     transaction.add(
@@ -212,12 +305,38 @@ export async function openShort(
     await shortIx(
       vayooState,
       amountInCollateral,
-      true
+      true,
+      0
     )
   );
   const txHash = await wallet.sendTransaction(transaction, connection);
   
   return txHash.toString();
+}catch{
+    const transaction = new Transaction();
+  if (!(await connection.getAccountInfo(vayooState?.accounts.vaultLcontractAta))) {
+    transaction.add(
+      createAssociatedTokenAccountInstruction(
+        wallet.publicKey!,
+        vayooState?.accounts.vaultLcontractAta,
+        vayooState?.accounts.userState,
+        vayooState?.accounts.lcontractMint
+      )
+    );
+  }
+
+  transaction.add(
+    await shortIx(
+      vayooState,
+      amountInCollateral,
+      true,
+      1
+    )
+  );
+  const txHash = await wallet.sendTransaction(transaction, connection);
+  
+  return txHash.toString();
+}
 }
 
 export async function closeShort(
@@ -226,6 +345,7 @@ export async function closeShort(
   wallet: WalletContextState
 ) {
   const connection = vayooState!.vayooProgram.provider.connection;
+  try{
   const transaction = new Transaction();
   if (!(await connection.getAccountInfo(vayooState?.accounts.vaultLcontractAta))) {
     transaction.add(
@@ -242,12 +362,38 @@ export async function closeShort(
     await shortIx(
       vayooState,
       amountInCollateral,
-      false
+      false,
+      0
     )
   );
   const txHash = await wallet.sendTransaction(transaction, connection);
   
   return txHash.toString();
+}catch{
+  const transaction = new Transaction();
+  if (!(await connection.getAccountInfo(vayooState?.accounts.vaultLcontractAta))) {
+    transaction.add(
+      createAssociatedTokenAccountInstruction(
+        wallet.publicKey!,
+        vayooState?.accounts.vaultLcontractAta,
+        vayooState?.accounts.userState,
+        vayooState?.accounts.lcontractMint
+      )
+    );
+  }
+
+  transaction.add(
+    await shortIx(
+      vayooState,
+      amountInCollateral,
+      false,
+      1
+    )
+  );
+  const txHash = await wallet.sendTransaction(transaction, connection);
+  
+  return txHash.toString();
+}
 }
 
 export async function withdrawCollateral(
@@ -413,9 +559,9 @@ async function withdrawIx(
 async function longIx(
   vayooState: vayooState,
   amountInCollateral: number,
-  open: boolean
+  open: boolean,
+  adjusting_tick_array: number,
 ) {
-  let ix;
   const whirlpool_oracle_pubkey = PDAUtil.getOracle(ORCA_WHIRLPOOL_PROGRAM_ID, WHIRLPOOL_KEY).publicKey;
   const poolData = vayooState?.poolState!;
   const poolPrice = PriceMath.sqrtPriceX64ToPrice(poolData.sqrtPrice, 6 , 6)
@@ -427,21 +573,21 @@ async function longIx(
     const amount = new anchor.BN(a_input);
     const other_amount_threshold = new anchor.BN(0);
     const amount_specified_is_input = true;
-
     // Conditional Swap Direction, Super Important
     const mintAIsCollateral = poolData.tokenMintA.equals(vayooState?.accounts.collateralMint)!;
-    const a_to_b = open ? mintAIsCollateral : !mintAIsCollateral;
+    let a_to_b = open ? mintAIsCollateral : !mintAIsCollateral;
+
     const sqrt_price_limit = SwapUtils.getDefaultSqrtPriceLimit(a_to_b);
-    const tickArrays = TickArrayUtil.getTickArrayPDAs(poolData.tickCurrentIndex, poolData.tickSpacing, 3, ORCA_WHIRLPOOL_PROGRAM_ID, WHIRLPOOL_KEY, a_to_b);
+    const tickArrays = TickArrayUtil.getTickArrayPDAs(poolData.tickCurrentIndex, poolData.tickSpacing, 4, ORCA_WHIRLPOOL_PROGRAM_ID, WHIRLPOOL_KEY, a_to_b);
     const accounts = {
          ...vayooState?.accounts,
         whirlpoolProgram: ORCA_WHIRLPOOL_PROGRAM_ID,
         whirlpool: WHIRLPOOL_KEY,
         tokenVaultA: poolData.tokenVaultA,
         tokenVaultB: poolData.tokenVaultB,
-        tickArray0: tickArrays[0].publicKey,
-        tickArray1: tickArrays[1].publicKey,
-        tickArray2: tickArrays[2].publicKey,
+        tickArray0: tickArrays[0+adjusting_tick_array].publicKey,
+        tickArray1: tickArrays[1+adjusting_tick_array].publicKey,
+        tickArray2: tickArrays[2+adjusting_tick_array].publicKey,
         oracle: whirlpool_oracle_pubkey,
     }
     if (open) {
@@ -478,9 +624,9 @@ async function longIx(
 async function shortIx(
   vayooState: vayooState,
   amountInCollateral: number,
-  open: boolean
+  open: boolean,
+  adjusting_tick_array:number,
 ) {
-  let ix;
   const whirlpool_oracle_pubkey = PDAUtil.getOracle(ORCA_WHIRLPOOL_PROGRAM_ID, WHIRLPOOL_KEY).publicKey;
   const poolData = vayooState?.poolState!;
   const poolPrice = PriceMath.sqrtPriceX64ToPrice(poolData.sqrtPrice, 6 , 6)
@@ -492,21 +638,21 @@ async function shortIx(
     const amount = new anchor.BN(a_input);
     const other_amount_threshold = new anchor.BN(0);
     const amount_specified_is_input = true;
-
     // Conditional Swap Direction, Super Important
     const mintAIsCollateral = poolData.tokenMintA.equals(vayooState?.accounts.collateralMint)!;
-    const a_to_b = open ? !mintAIsCollateral : mintAIsCollateral;
+    let a_to_b = open ? !mintAIsCollateral : mintAIsCollateral;
+
     const sqrt_price_limit = SwapUtils.getDefaultSqrtPriceLimit(a_to_b);
-    const tickArrays = TickArrayUtil.getTickArrayPDAs(poolData.tickCurrentIndex, poolData.tickSpacing, 3, ORCA_WHIRLPOOL_PROGRAM_ID, WHIRLPOOL_KEY, a_to_b);
+    const tickArrays = TickArrayUtil.getTickArrayPDAs(poolData.tickCurrentIndex, poolData.tickSpacing, 4, ORCA_WHIRLPOOL_PROGRAM_ID, WHIRLPOOL_KEY, a_to_b);
     const accounts = {
          ...vayooState?.accounts,
         whirlpoolProgram: ORCA_WHIRLPOOL_PROGRAM_ID,
         whirlpool: WHIRLPOOL_KEY,
         tokenVaultA: poolData.tokenVaultA,
         tokenVaultB: poolData.tokenVaultB,
-        tickArray0: tickArrays[0].publicKey,
-        tickArray1: tickArrays[1].publicKey,
-        tickArray2: tickArrays[2].publicKey,
+        tickArray0: tickArrays[0+adjusting_tick_array].publicKey,
+        tickArray1: tickArrays[1+adjusting_tick_array].publicKey,
+        tickArray2: tickArrays[2+adjusting_tick_array].publicKey,
         oracle: whirlpool_oracle_pubkey,
     }
     if (open) {
@@ -538,4 +684,26 @@ async function shortIx(
       console.log('Closing Short :', amountInCollateral);
       return ix;
     }
+}
+
+async function triggerSettleModeIx(
+  vayooState: vayooState,
+) {
+  const ix = await vayooState!.vayooProgram.methods
+  .triggerSettleMode().accounts({
+    ...vayooState?.accounts
+  }).instruction();
+  console.log('Trigger Settle Mode');
+  return ix;
+}
+
+async function adminSettleIx(
+  vayooState: vayooState,
+) {
+  const ix = await vayooState!.vayooProgram.methods
+  .adminSettle().accounts({
+    ...vayooState?.accounts
+  }).instruction();
+  console.log('Admin Settling');
+  return ix;
 }

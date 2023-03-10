@@ -1,7 +1,7 @@
 import toast, { Toaster } from "react-hot-toast";
 import { useState } from "react";
 import { useSubscribeTx, useVMState } from "../contexts/StateProvider";
-import { initContract } from "../utils/vayoo-web3";
+import { adminSettle, initContract, triggerSettleMode } from "../utils/vayoo-web3";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { VayooContracts } from "../utils/vayoo_contracts";
 import { translateError } from "../utils/errors";
@@ -74,6 +74,46 @@ const AdminComponent = () => {
       .finally(() => {});
   };
 
+  const onClickTriggerSettleMode = async () => {
+    await triggerSettleMode(
+      state,
+      wallet
+    )
+      .then((txHash: string) => {
+        subscribeTx(
+          txHash,
+          () => toast("Trigger Settle Mode Transaction Sent"),
+          () => toast.success("Trigger Settle Mode Contract Confirmed."),
+          () => toast.error("Trigger Settle Mode Contract Transaction Failed")
+        );
+      })
+      .catch((e) => {
+        console.log(e);
+        toast.error("Transaction Error!");
+      })
+      .finally(() => {});
+  };
+
+  const onClickAdminSettle = async () => {
+    await adminSettle(
+      state,
+      wallet
+    )
+      .then((txHash: string) => {
+        subscribeTx(
+          txHash,
+          () => toast("Admin Settle Transaction Sent"),
+          () => toast.success("Admin Settle Mode Contract Confirmed."),
+          () => toast.error("Admin Settle Mode Contract Transaction Failed")
+        );
+      })
+      .catch((e) => {
+        console.log(e);
+        toast.error("Transaction Error!");
+      })
+      .finally(() => {});
+  };
+
   return (
     <div className="flex flex-col items-center">
       <div className="mt-2 flex items-center">
@@ -117,6 +157,18 @@ const AdminComponent = () => {
               className="mt-4 px-4 py-2 border-2 border-lime-100/80 rounded-xl hover:bg-fuchsia-200/20 hover:border-fuchsia-100/80"
             >
               Create Now.
+            </button>
+            <button
+              onClick={onClickTriggerSettleMode}
+              className="mt-2 px-4 py-2 border-2 border-lime-100/80 rounded-xl hover:bg-fuchsia-200/20 hover:border-fuchsia-100/80"
+            >
+              Trigger Settle Mode
+            </button>
+            <button
+              onClick={onClickAdminSettle}
+              className="mt-2 px-4 py-2 border-2 border-lime-100/80 rounded-xl hover:bg-fuchsia-200/20 hover:border-fuchsia-100/80"
+            >
+              Admin Settle
             </button>
           </div>
         </div>

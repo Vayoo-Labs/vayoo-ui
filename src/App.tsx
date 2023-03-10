@@ -30,10 +30,12 @@ function App() {
   const [localState, setLocalState] = useState({
     usdBalance: 0,
     userExist: false,
-    adminMode: false,
+    isAdmin: false,
+    adminMode: true,
     mmMode: false,
     primaryAmount: 0,
     seconderyAmount: 0,
+    isNetLong: true,
   });
 
   const toggleLocalRefresh = () => {
@@ -62,12 +64,12 @@ function App() {
         if (ADMIN_KEYS.includes(wallet.publicKey.toString()!)) {
           setLocalState((prev) => ({
             ...prev,
-            adminMode: true,
+            isAdmin: true,
           }));
         } else {
           setLocalState((prev) => ({
             ...prev,
-            adminMode: false,
+            isAdmin: false,
           }));
         }
         const userExist = state?.userState ? true : false;
@@ -77,10 +79,13 @@ function App() {
             wallet.publicKey!,
             USDC_MINT
           )) / 1e6;
+        const isNetLong =
+          state?.userState?.contractPositionNet.toNumber()! >= 0;
         setLocalState((prev) => ({
           ...prev,
           usdBalance,
           userExist,
+          isNetLong,
         }));
         console.log(localState);
       }
@@ -307,6 +312,13 @@ function App() {
     }));
   };
 
+  const toggleAdminMode = () => {
+    setLocalState((prev) => ({
+      ...prev,
+      adminMode: !prev.adminMode,
+    }));
+  };
+
   return (
     <div className="App">
       <div className="flex flex-col w-screen h-screen items-center bg-black relative overflow-hidden">
@@ -321,6 +333,18 @@ function App() {
             <div className="flex justify-around gap-2 items-center">
               {connected && (
                 <div className="flex gap-3">
+                  {localState.isAdmin && (
+                    <div
+                      className="border-2 border-gray-400/40 rounded-2xl px-4 py-1 hover:border-gray-400/70 cursor-pointer"
+                      onClick={toggleAdminMode}
+                    >
+                      <div className="py-1 text-sm text-slate-300">
+                        {localState.adminMode
+                          ? "Switch to User"
+                          : "Switch to Admin"}
+                      </div>
+                    </div>
+                  )}
                   {localState.userExist && (
                     <div
                       className="border-2 border-gray-400/40 rounded-2xl px-4 py-1 hover:border-gray-400/70 cursor-pointer"
@@ -351,7 +375,7 @@ function App() {
         {/* Body */}
         <div className="w-full h-full flex flex-col items-center">
           <div className="w-full max-w-6xl px-6 lg:px-0">
-            {localState.adminMode ? (
+            {(localState.adminMode && localState.isAdmin) ? (
               <AdminComponent />
             ) : localState.userExist ? (
               localState.mmMode ? (
@@ -419,24 +443,29 @@ function App() {
                       <div className="text-2xl text-lime-200/80">
                         Your Account
                       </div>
-                      <div className="mt-1 flex flex-col gap-3 text-sm">
+                      <div className="mt-1 flex flex-col gap-3 text-md">
                         <div className="flex justify-between items-center text-gray-200">
-                          Total Deposited:
+                          Net Account Value :
                           <div>
                             {(
                               state?.userState?.usdcDeposited.toNumber()! / 1e6
-                            ).toFixed(4)}
+                            ).toFixed(6)} USDC
                           </div>
                         </div>
                       </div>
-                      <div className="mt-5 flex gap-5 text-xl items-center text-gray-200">
-                        Amount:{" "}
+                      <div className="mt-5 flex gap-5 text-xl items-start text-gray-200">
+                      <div className="flex flex-col items-end text-xl">
+                        Amount
+                        <div className="text-gray-500 text-xs underline-offset-4">
+                              (USDC)
+                          </div>
+                        </div>
                         <input
                           value={primaryInputValue}
                           onChange={(e) =>
                             onChangeAmountValue(e.target.value, true)
                           }
-                          className="w-full py-3 text-sm text-center text-gray-100 rounded-lg border-2 bg-white-900 rouneded-xl border-gray-100/10 bg-gray-100/10 focus:outline-none"
+                          className="w-full py-3 px-3 text-sm text-gray-100 rounded-lg border-2 bg-white-900 rouneded-xl border-gray-100/10 bg-gray-100/10 focus:outline-none"
                         />
                       </div>
                       <div className="mt-4 mb-1 flex flex-row w-full justify-between gap-5">
@@ -455,83 +484,108 @@ function App() {
                       </div>
                     </div>
                     <div className="w-full mt-7 px-6 py-6 text-white flex flex-col gap-3 border-2 border-gray-300/10 max-w-5xl rounded-xl bg-black/50 z-10">
-                      <div className="text-2xl">Stats</div>
+                      <div className="text-2xl">Your Position</div>
                       <div className="mt-1 flex flex-col gap-3 text-sm">
+                        <div className="flex justify-between items-center text-gray-200">
+                          Net Position:
+                          <div
+                            className={`font-bold text-2xl ${
+                              state?.userState?.contractPositionNet.toNumber() !=
+                              0 && (localState.isNetLong
+                                ? "text-green-600"
+                                : "text-red-600")
+                            }`}
+                          >
+                            {state?.userState?.contractPositionNet.toNumber() !=
+                              0 &&
+                            (localState.isNetLong &&
+                            state?.userState?.contractPositionNet.toNumber() !=
+                              0
+                              ? "+"
+                              : "-")}
+                            {(
+                              state?.userState?.contractPositionNet.toNumber()! /
+                              1e6
+                            ).toFixed(6)} SPY
+                          </div>
+                        </div>
+                        <div className="flex justify-between items-center text-gray-200">
+                          Long Position:
+                          <div>
+                            {(
+                              state?.userState?.lcontractBoughtAsUser.toNumber()! /
+                              1e6
+                            ).toFixed(6)}
+                          </div>
+                        </div>
+                        <div className="flex justify-between items-center text-gray-200">
+                          Short Position:
+                          <div>
+                            {(
+                              state?.userState?.scontractSoldAsUser.toNumber()! /
+                              1e6
+                            ).toFixed(6)}
+                          </div>
+                        </div>
                         <div className="flex justify-between items-center text-gray-200 ">
-                          Asset Name:
+                          Asset :
                           <div className="text-gray-200 underline underline-offset-4">
                             <a href="https://pyth.network/price-feeds/equity-us-spy-usd?cluster=mainnet-beta">
                               Equity.US.SPY/USD
                             </a>
                           </div>
                         </div>
-                        <div className="flex justify-between items-center text-gray-200 ">
-                          Oracle Price (Pyth):
-                          <div className="text-gray-200">
-                            {state?.pythData?.price?.toFixed(2) ??
-                              state?.pythData?.previousPrice.toFixed(2)}
-                          </div>
-                        </div>
-                        <div className="flex justify-between items-center text-gray-200 ">
-                          Asset Price :
-                          <div className="text-gray-200">
-                            {state?.assetPrice.toFixed(2)}
-                          </div>
-                        </div>
                       </div>
                     </div>
                   </div>
-                  <div className="mt-10 px-6 py-6 text-white flex flex-col gap-3 w-1/2 border-2 border-gray-300/10 max-w-5xl rounded-xl bg-black/50 z-10">
-                    <div className="text-2xl ">Your Position (SPY)</div>
-                    <div className="mt-1 flex flex-col gap-3 text-sm">
-                      <div className="flex justify-between items-center text-gray-200">
-                        Net Position:
-                        <div className="font-bold text-2xl text-green-600">
-                          +
-                          {(
-                            state?.userState?.contractPositionNet.toNumber()! /
-                            1e6
-                          ).toFixed(4)}
+                  <div className="mt-10 py-6 text-white flex flex-col gap-3 w-1/2 border-2 border-gray-300/10 max-w-5xl rounded-xl bg-black/50 z-10">
+                    <div className="px-6 text-2xl ">Trade SPY/USDC</div>
+
+                    <div className="flex flex-col py-3 justify-between items-center text-gray-200 bg-gray-50/10 border-t-4 border-b-4 border-gray-200/30">
+                      <div className="flex justify-between gap-4">
+                        <div className="flex flex-col items-center">
+                          <div className="text-gray-300 text-lg">
+                            {state?.pythData?.price?.toFixed(2) ??
+                              state?.pythData?.previousPrice.toFixed(2) ?? 'NIL'}
+                          </div>
+                          <div className="text-gray-500 text-sm underline-offset-4">
+                            <a href="https://pyth.network/price-feeds/equity-us-spy-usd?cluster=mainnet-beta">
+                              oracle
+                            </a>
+                          </div>
                         </div>
-                      </div>
-                      <div className="flex justify-between items-center text-gray-200">
-                        Long Position:
-                        <div>
-                          {(
-                            state?.userState?.lcontractBoughtAsUser.toNumber()! /
-                            1e6
-                          ).toFixed(4)}
-                        </div>
-                      </div>
-                      <div className="flex justify-between items-center text-gray-200">
-                        Short Position:
-                        <div>
-                          {(
-                            state?.userState?.scontractSoldAsUser.toNumber()! /
-                            1e6
-                          ).toFixed(4)}
-                        </div>
-                      </div>
-                      <div className="flex justify-between items-center text-gray-200">
-                        Free Collateral:
-                        <div>
-                          {(
-                            state?.userState?.usdcDeposited.toNumber()! / 1e6
-                          ).toFixed(4)}
+                        |
+                        <div className="text-lime-200 text-4xl">
+                          {state?.assetPrice.toFixed(2) ?? '382'}
                         </div>
                       </div>
                     </div>
-                    <div className="mt-5 flex gap-5 text-xl items-center text-gray-200">
-                      Amount:{" "}
+                    <div className="px-6 mt-1 flex flex-col gap-3 text-sm">
+                      <div className="flex justify-between items-center text-gray-200">
+                        Available Balance :
+                        <div>
+                          {(
+                            state?.userState?.usdcDeposited.toNumber()! / 1e6
+                          ).toFixed(6)} USDC
+                        </div>
+                      </div>
+                    </div>
+                    <div className="px-6 mt-5 flex gap-5 text-xl items-center text-gray-200">
+                      <div className="flex flex-col items-end text-xl">
+                        Amount
+                        <div className="text-gray-500 text-xs underline-offset-4">
+                              (USDC)
+                          </div>
+                        </div>
                       <input
                         value={seconderyInputValue}
                         onChange={(e) =>
                           onChangeAmountValue(e.target.value, false)
                         }
-                        className="w-full py-3 text-sm text-center text-gray-100 rounded-lg border-2 bg-white-900 rouneded-xl border-gray-100/10 bg-gray-100/10 focus:outline-none"
+                        className="w-full py-3 text-sm px-3 text-gray-100 rounded-lg border-2 bg-white-900 rouneded-xl border-gray-100/10 bg-gray-100/10 focus:outline-none"
                       />
                     </div>
-                    <div className="mt-4 mb-1 flex flex-row w-full justify-between gap-2">
+                    <div className="px-6 mt-4 mb-1 flex flex-row w-full justify-between gap-3">
                       <div className="w-full flex flex-col justify-between items-center py-1 rounded-xl gap-[0.5px]">
                         <div className="w-full py-2 bg-green-400/30 rounded-t-xl border-2 border-black hover:border-green-400/60">
                           <button
