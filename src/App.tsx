@@ -500,13 +500,13 @@ function App() {
               localState.mmMode ? (
                 <div className="w-full flex items-center gap-7">
                   <div className="mt-10 px-6 py-6 text-white flex flex-col gap-3 w-1/2 border-2 border-gray-300/10 max-w-5xl rounded-xl bg-black/50 z-10">
-                    <div className="text-2xl">Your MM Account</div>
+                    <div className="text-2xl text-lime-200/80">Your MM Account</div>
                     <div className="flex flex-col gap-3 text-sm">
                       <div className="flex justify-between">
-                        Total Deposited:
+                        Available Balance:
                         <div>
                           {(
-                            state?.userState?.usdcDeposited.toNumber()! / 1e6
+                            state?.userState?.usdcFree.toNumber()! / 1e6
                           ).toFixed(4)}
                         </div>
                       </div>
