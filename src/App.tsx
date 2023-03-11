@@ -13,8 +13,10 @@ import {
   depositCollateral,
   initUserState,
   mintAsMm,
+  mmSettle,
   openLong,
   openShort,
+  userSettle,
   withdrawCollateral,
 } from "./utils/vayoo-web3";
 
@@ -36,6 +38,7 @@ function App() {
     primaryAmount: 0,
     seconderyAmount: 0,
     isNetLong: true,
+    isSettling: false,
   });
 
   const toggleLocalRefresh = () => {
@@ -81,11 +84,13 @@ function App() {
           )) / 1e6;
         const isNetLong =
           state?.userState?.contractPositionNet.toNumber()! >= 0;
+        const isSettling = state?.contractState?.isSettling!;
         setLocalState((prev) => ({
           ...prev,
           usdBalance,
           userExist,
           isNetLong,
+          isSettling,
         }));
         console.log(localState);
       }
@@ -286,6 +291,46 @@ function App() {
       });
   };
 
+  const onClickMmSettle = async () => {
+    await mmSettle(state, localState.primaryAmount, wallet)
+      .then((txHash: string) => {
+        subscribeTx(
+          txHash,
+          () => toast("Mm Settle Transaction Sent"),
+          () => toast.success("Mm Settle Transaction Confirmed."),
+          () => toast.error("Mm Settle Transaction Failed")
+        );
+      })
+      .catch((e) => {
+        console.log(e);
+        toast.error("Transaction Error!");
+      })
+      .finally(() => {
+        setPrimaryInputValue("0");
+        setLocalState((prev) => ({ ...prev, primaryAmount: 0 }));
+        toggleLocalRefresh();
+      });
+  };
+
+  const onClickUserSettle = async () => {
+    await userSettle(state, wallet)
+      .then((txHash: string) => {
+        subscribeTx(
+          txHash,
+          () => toast("User Settle Transaction Sent"),
+          () => toast.success("User Settle Transaction Confirmed."),
+          () => toast.error("User Settle Transaction Failed")
+        );
+      })
+      .catch((e) => {
+        console.log(e);
+        toast.error("Transaction Error!");
+      })
+      .finally(() => {
+        toggleLocalRefresh();
+      });
+  };
+
   const onChangeAmountValue = (value: string, primary: boolean) => {
     const parsedValue = value.replace(",", ".").replace(/[^0-9.]/g, "");
     let amount = Number.parseFloat(parsedValue);
@@ -375,7 +420,7 @@ function App() {
         {/* Body */}
         <div className="w-full h-full flex flex-col items-center">
           <div className="w-full max-w-6xl px-6 lg:px-0">
-            {(localState.adminMode && localState.isAdmin) ? (
+            {localState.adminMode && localState.isAdmin ? (
               <AdminComponent />
             ) : localState.userExist ? (
               localState.mmMode ? (
@@ -420,20 +465,32 @@ function App() {
                         className="w-full py-3 text-sm text-center text-gray-100 rounded-lg border-2 bg-white-900 rouneded-xl border-gray-100/10 bg-gray-100/10 focus:outline-none"
                       />
                     </div>
-                    <div className="mt-4 mb-1 flex flex-row w-full justify-between gap-5">
-                      <button
-                        onClick={onClickMintAsMm}
-                        className="w-full px-4 py-4 border-2 border-gray-100/40 rounded-xl hover:bg-blue-200/20 hover:border-blue-100/80"
-                      >
-                        Mint
-                      </button>
-                      <button
-                        onClick={onClickBurnAsMm}
-                        className="w-full px-4 py-4 border-2 border-gray-100/40 rounded-xl hover:bg-blue-200/20 hover:border-blue-100/80"
-                      >
-                        Burn
-                      </button>
-                    </div>
+                    {localState.isSettling ? (
+                      <div className="my-3 flex flex-col items-center">
+                        Contract is in settling mode.
+                        <button
+                          onClick={onClickMmSettle}
+                          className="mt-4 px-16 py-2 border-2 border-gray-100/40 rounded-xl hover:bg-blue-200/20 hover:border-blue-100/80"
+                        >
+                          Settle MM Position
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="mt-4 mb-1 flex flex-row w-full justify-between gap-5">
+                        <button
+                          onClick={onClickMintAsMm}
+                          className="w-full px-4 py-4 border-2 border-gray-100/40 rounded-xl hover:bg-blue-200/20 hover:border-blue-100/80"
+                        >
+                          Mint
+                        </button>
+                        <button
+                          onClick={onClickBurnAsMm}
+                          className="w-full px-4 py-4 border-2 border-gray-100/40 rounded-xl hover:bg-blue-200/20 hover:border-blue-100/80"
+                        >
+                          Burn
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               ) : (
@@ -449,15 +506,16 @@ function App() {
                           <div>
                             {(
                               state?.userState?.usdcDeposited.toNumber()! / 1e6
-                            ).toFixed(6)} USDC
+                            ).toFixed(6)}{" "}
+                            USDC
                           </div>
                         </div>
                       </div>
                       <div className="mt-5 flex gap-5 text-xl items-start text-gray-200">
-                      <div className="flex flex-col items-end text-xl">
-                        Amount
-                        <div className="text-gray-500 text-xs underline-offset-4">
-                              (USDC)
+                        <div className="flex flex-col items-end text-xl">
+                          Amount
+                          <div className="text-gray-500 text-xs underline-offset-4">
+                            (USDC)
                           </div>
                         </div>
                         <input
@@ -491,22 +549,24 @@ function App() {
                           <div
                             className={`font-bold text-2xl ${
                               state?.userState?.contractPositionNet.toNumber() !=
-                              0 && (localState.isNetLong
+                                0 &&
+                              (localState.isNetLong
                                 ? "text-green-600"
                                 : "text-red-600")
                             }`}
                           >
                             {state?.userState?.contractPositionNet.toNumber() !=
                               0 &&
-                            (localState.isNetLong &&
-                            state?.userState?.contractPositionNet.toNumber() !=
-                              0
-                              ? "+"
-                              : "-")}
+                              (localState.isNetLong &&
+                              state?.userState?.contractPositionNet.toNumber() !=
+                                0
+                                ? "+"
+                                : "-")}
                             {(
                               state?.userState?.contractPositionNet.toNumber()! /
                               1e6
-                            ).toFixed(6)} SPY
+                            ).toFixed(6)}{" "}
+                            SPY
                           </div>
                         </div>
                         <div className="flex justify-between items-center text-gray-200">
@@ -546,7 +606,8 @@ function App() {
                         <div className="flex flex-col items-center">
                           <div className="text-gray-300 text-lg">
                             {state?.pythData?.price?.toFixed(2) ??
-                              state?.pythData?.previousPrice.toFixed(2) ?? 'NIL'}
+                              state?.pythData?.previousPrice.toFixed(2) ??
+                              "NIL"}
                           </div>
                           <div className="text-gray-500 text-sm underline-offset-4">
                             <a href="https://pyth.network/price-feeds/equity-us-spy-usd?cluster=mainnet-beta">
@@ -556,73 +617,89 @@ function App() {
                         </div>
                         |
                         <div className="text-lime-200 text-4xl">
-                          {state?.assetPrice.toFixed(2) ?? '382'}
+                          {state?.assetPrice.toFixed(2) ?? "382"}
                         </div>
                       </div>
                     </div>
-                    <div className="px-6 mt-1 flex flex-col gap-3 text-sm">
-                      <div className="flex justify-between items-center text-gray-200">
-                        Available Balance :
-                        <div>
-                          {(
-                            state?.userState?.usdcDeposited.toNumber()! / 1e6
-                          ).toFixed(6)} USDC
-                        </div>
+                    {localState.isSettling ? (
+                      <div className="my-3 flex flex-col items-center">
+                        Contract is in settling mode.
+                        <button
+                          onClick={onClickUserSettle}
+                          className="mt-4 px-16 py-2 border-2 border-gray-100/40 rounded-xl hover:bg-blue-200/20 hover:border-blue-100/80"
+                        >
+                          Settle Long Position
+                        </button>
                       </div>
-                    </div>
-                    <div className="px-6 mt-5 flex gap-5 text-xl items-center text-gray-200">
-                      <div className="flex flex-col items-end text-xl">
-                        Amount
-                        <div className="text-gray-500 text-xs underline-offset-4">
-                              (USDC)
+                    ) : (
+                      <div>
+                        <div className="px-6 mt-1 flex flex-col gap-3 text-sm">
+                          <div className="flex justify-between items-center text-gray-200">
+                            Available Balance :
+                            <div>
+                              {(
+                                state?.userState?.usdcDeposited.toNumber()! /
+                                1e6
+                              ).toFixed(6)}{" "}
+                              USDC
+                            </div>
                           </div>
                         </div>
-                      <input
-                        value={seconderyInputValue}
-                        onChange={(e) =>
-                          onChangeAmountValue(e.target.value, false)
-                        }
-                        className="w-full py-3 text-sm px-3 text-gray-100 rounded-lg border-2 bg-white-900 rouneded-xl border-gray-100/10 bg-gray-100/10 focus:outline-none"
-                      />
-                    </div>
-                    <div className="px-6 mt-4 mb-1 flex flex-row w-full justify-between gap-3">
-                      <div className="w-full flex flex-col justify-between items-center py-1 rounded-xl gap-[0.5px]">
-                        <div className="w-full py-2 bg-green-400/30 rounded-t-xl border-2 border-black hover:border-green-400/60">
-                          <button
-                            onClick={onClickOpenLong}
-                            className="w-full text-sm"
-                          >
-                            Open Long
-                          </button>
+                        <div className="px-6 mt-5 flex gap-5 text-xl items-center text-gray-200">
+                          <div className="flex flex-col items-end text-xl">
+                            Amount
+                            <div className="text-gray-500 text-xs underline-offset-4">
+                              (USDC)
+                            </div>
+                          </div>
+                          <input
+                            value={seconderyInputValue}
+                            onChange={(e) =>
+                              onChangeAmountValue(e.target.value, false)
+                            }
+                            className="w-full py-3 text-sm px-3 text-gray-100 rounded-lg border-2 bg-white-900 rouneded-xl border-gray-100/10 bg-gray-100/10 focus:outline-none"
+                          />
                         </div>
-                        <div className="w-full py-2 bg-green-400/10 rounded-b-xl border-2 border-black hover:border-green-400/40">
-                          <button
-                            onClick={onClickCloseLong}
-                            className="w-full text-sm"
-                          >
-                            Close Long
-                          </button>
+                        <div className="px-6 mt-4 mb-1 flex flex-row w-full justify-between gap-3">
+                          <div className="w-full flex flex-col justify-between items-center py-1 rounded-xl gap-[0.5px]">
+                            <div className="w-full py-2 bg-green-400/30 rounded-t-xl border-2 border-black hover:border-green-400/60">
+                              <button
+                                onClick={onClickOpenLong}
+                                className="w-full text-sm"
+                              >
+                                Open Long
+                              </button>
+                            </div>
+                            <div className="w-full py-2 bg-green-400/10 rounded-b-xl border-2 border-black hover:border-green-400/40">
+                              <button
+                                onClick={onClickCloseLong}
+                                className="w-full text-sm"
+                              >
+                                Close Long
+                              </button>
+                            </div>
+                          </div>
+                          <div className="w-full flex flex-col justify-between items-center py-1 border-green-100/60 rounded-xl">
+                            <div className="w-full py-2 bg-red-400/30 rounded-t-xl border-2 border-black hover:border-red-400/60">
+                              <button
+                                onClick={onClickOpenShort}
+                                className="w-full text-sm"
+                              >
+                                Open Short
+                              </button>
+                            </div>
+                            <div className="w-full py-2 bg-red-400/10 rounded-b-xl border-2 border-black hover:border-red-400/40">
+                              <button
+                                onClick={onClickCloseShort}
+                                className="w-full text-sm"
+                              >
+                                Close Short
+                              </button>
+                            </div>
+                          </div>
                         </div>
                       </div>
-                      <div className="w-full flex flex-col justify-between items-center py-1 border-green-100/60 rounded-xl">
-                        <div className="w-full py-2 bg-red-400/30 rounded-t-xl border-2 border-black hover:border-red-400/60">
-                          <button
-                            onClick={onClickOpenShort}
-                            className="w-full text-sm"
-                          >
-                            Open Short
-                          </button>
-                        </div>
-                        <div className="w-full py-2 bg-red-400/10 rounded-b-xl border-2 border-black hover:border-red-400/40">
-                          <button
-                            onClick={onClickCloseShort}
-                            className="w-full text-sm"
-                          >
-                            Close Short
-                          </button>
-                        </div>
-                      </div>
-                    </div>
+                    )}
                   </div>
                 </div>
               )

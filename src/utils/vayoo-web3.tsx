@@ -68,6 +68,39 @@ export async function adminSettle(
   return txHash.toString();
 }
 
+export async function userSettle(
+  vayooState: vayooState,
+  wallet: WalletContextState
+) {
+  const connection = vayooState!.vayooProgram.provider.connection;
+  const transaction = new Transaction();
+  transaction.add(
+    await userSettleIx(
+      vayooState,
+    )
+  );
+  const txHash = await wallet.sendTransaction(transaction, connection);
+  
+  return txHash.toString();
+}
+
+export async function mmSettle(
+  vayooState: vayooState,
+  amountToRedeem: number,
+  wallet: WalletContextState
+) {
+  const connection = vayooState!.vayooProgram.provider.connection;
+  const transaction = new Transaction();
+  transaction.add(
+    await mmSettleIx(
+      vayooState,
+      amountToRedeem
+    )
+  );
+  const txHash = await wallet.sendTransaction(transaction, connection);
+  
+  return txHash.toString();
+}
 export async function initUserState(
   vayooState: vayooState,
   wallet: WalletContextState
@@ -705,5 +738,29 @@ async function adminSettleIx(
     ...vayooState?.accounts
   }).instruction();
   console.log('Admin Settling');
+  return ix;
+}
+
+async function userSettleIx(
+  vayooState: vayooState,
+) {
+  const ix = await vayooState!.vayooProgram.methods
+  .userSettleLong().accounts({
+    ...vayooState?.accounts
+  }).instruction();
+  console.log('User Settling');
+  return ix;
+}
+
+async function mmSettleIx(
+  vayooState: vayooState,
+  amountToRedeem: number
+) {
+  const nativeAmount = new BN(addZeros(amountToRedeem, 6));
+  const ix = await vayooState!.vayooProgram.methods
+  .mmSettleLong(nativeAmount).accounts({
+    ...vayooState?.accounts
+  }).instruction();
+  console.log('Mm Settling :',amountToRedeem);
   return ix;
 }
