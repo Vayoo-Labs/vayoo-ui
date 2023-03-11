@@ -1,5 +1,4 @@
 import {
-  PublicKey,
   SignatureResult,
   SystemProgram,
   SYSVAR_RENT_PUBKEY,
@@ -33,11 +32,12 @@ import {
   WHIRLPOOL_KEY,
 } from "../utils/constants";
 import {
-  AccountFetcher, PriceMath,
+  AccountFetcher, buildWhirlpoolClient, ORCA_WHIRLPOOL_PROGRAM_ID, PriceMath, WhirlpoolContext,
 } from "@orca-so/whirlpools-sdk";
 import {
   parsePriceData,
 } from "@pythnetwork/client";
+import { WalletOrca } from "../utils/web3-utils";
 
 interface VMStateConfig {
   state: vayooState;
@@ -106,7 +106,8 @@ export function VMStateProvider({ children = undefined as any }) {
     };
 
     const whirlpoolState = await orcaFetcher.getPool(WHIRLPOOL_KEY, true);
-   
+    const whirlpoolClient = buildWhirlpoolClient(WhirlpoolContext.from(connection, wallet as WalletOrca, ORCA_WHIRLPOOL_PROGRAM_ID));
+    const whirlpool = await whirlpoolClient.getPool(WHIRLPOOL_KEY);
 
     const program = await getVayooProgramInstance(connection, wallet);
     const contractStateKey = getContractStatePDA().pda;
@@ -183,6 +184,8 @@ export function VMStateProvider({ children = undefined as any }) {
         poolState: whirlpoolState,
         pythData: pythData,
         assetPrice: assetPrice,
+        whirlpool: whirlpool,
+        orcaFetcher
       }));
 
       return;
@@ -197,6 +200,8 @@ export function VMStateProvider({ children = undefined as any }) {
       poolState: whirlpoolState,
       pythData: pythData,
       assetPrice: assetPrice,
+      whirlpool: null,
+      orcaFetcher
     });
   };
 

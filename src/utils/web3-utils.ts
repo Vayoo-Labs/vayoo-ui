@@ -1,4 +1,4 @@
-import { Connection, Keypair, Transaction, TransactionSignature } from "@solana/web3.js";
+import { Connection, Keypair, PublicKey, Transaction, TransactionSignature } from "@solana/web3.js";
 
 async function covertToProgramWalletTransaction(
     connection: Connection,
@@ -54,3 +54,10 @@ async function covertToProgramWalletTransaction(
   
     return txid;
   }
+
+  // Anchor Wallet Definition
+export interface WalletOrca {
+  signTransaction(tx: Transaction): Promise<Transaction>;
+  signAllTransactions(txs: Transaction[]): Promise<Transaction[]>;
+  publicKey: PublicKey;
+}

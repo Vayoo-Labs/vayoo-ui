@@ -19,6 +19,16 @@ import {
   userSettle,
   withdrawCollateral,
 } from "./utils/vayoo-web3";
+import {
+  ORCA_WHIRLPOOL_PROGRAM_ID,
+  swapQuoteByInputToken,
+} from "@orca-so/whirlpools-sdk";
+import { DecimalUtil, Percentage } from "@orca-so/common-sdk";
+import { UserPosition } from "./utils/types";
+
+// Some Naming Conventions to remember
+// Primary Amount = The input field used for depositing/withdrawing
+// Secondery Amount = The input field used for long/short tradnig
 
 function App() {
   const wallet = useWallet();
@@ -28,7 +38,9 @@ function App() {
   const { state, toggleRefresh, loading } = useVMState();
   const [refresh, setRefresh] = useState(false);
   const [primaryInputValue, setPrimaryInputValue] = useState("0");
-  const [seconderyInputValue, setSeconderyInputValue] = useState("0");
+  const [seconderyUsdcInputValue, setSeconderyUsdcInputValue] = useState("0");
+  const [seconderyContractInputValue, setSeconderyContractInputValue] =
+    useState("0");
   const [localState, setLocalState] = useState({
     usdBalance: 0,
     userExist: false,
@@ -36,9 +48,10 @@ function App() {
     adminMode: true,
     mmMode: false,
     primaryAmount: 0,
-    seconderyAmount: 0,
-    isNetLong: true,
+    seconderyUsdcAmount: 0,
+    seconderyContractAmount: 0,
     isSettling: false,
+    userPosition: UserPosition.Neutral
   });
 
   const toggleLocalRefresh = () => {
@@ -62,7 +75,6 @@ function App() {
 
   useEffect(() => {
     (async () => {
-      console.log(state?.pythData);
       if (wallet?.publicKey) {
         if (ADMIN_KEYS.includes(wallet.publicKey.toString()!)) {
           setLocalState((prev) => ({
@@ -82,15 +94,21 @@ function App() {
             wallet.publicKey!,
             USDC_MINT
           )) / 1e6;
-        const isNetLong =
-          state?.userState?.contractPositionNet.toNumber()! >= 0;
+        let userPosition: UserPosition;
+        if (state?.userState?.contractPositionNet.toNumber()! > 0) {
+          userPosition = (UserPosition.Long)
+        } else if (state?.userState?.contractPositionNet.toNumber()! < 0) {
+          userPosition = (UserPosition.Short)
+        } else {
+          userPosition = (UserPosition.Neutral)
+        }
         const isSettling = state?.contractState?.isSettling!;
         setLocalState((prev) => ({
           ...prev,
           usdBalance,
           userExist,
-          isNetLong,
           isSettling,
+          userPosition
         }));
         console.log(localState);
       }
@@ -166,7 +184,7 @@ function App() {
   };
 
   const onClickOpenLong = async () => {
-    await openLong(state, localState.seconderyAmount, wallet)
+    await openLong(state, localState.seconderyUsdcAmount, wallet)
       .then((txHash: string) => {
         subscribeTx(
           txHash,
@@ -180,14 +198,14 @@ function App() {
         toast.error("Transaction Error!");
       })
       .finally(() => {
-        setSeconderyInputValue("0");
-        setLocalState((prev) => ({ ...prev, seconderyAmount: 0 }));
+        setSeconderyUsdcInputValue("0");
+        setLocalState((prev) => ({ ...prev, seconderyUsdcAmount: 0 }));
         toggleLocalRefresh();
       });
   };
 
   const onClickCloseLong = async () => {
-    await closeLong(state, localState.seconderyAmount, wallet)
+    await closeLong(state, localState.seconderyUsdcAmount, wallet)
       .then((txHash: string) => {
         subscribeTx(
           txHash,
@@ -201,14 +219,14 @@ function App() {
         toast.error("Transaction Error!");
       })
       .finally(() => {
-        setSeconderyInputValue("0");
-        setLocalState((prev) => ({ ...prev, seconderyAmount: 0 }));
+        setSeconderyUsdcInputValue("0");
+        setLocalState((prev) => ({ ...prev, seconderyUsdcAmount: 0 }));
         toggleLocalRefresh();
       });
   };
 
   const onClickOpenShort = async () => {
-    await openShort(state, localState.seconderyAmount, wallet)
+    await openShort(state, localState.seconderyUsdcAmount, wallet)
       .then((txHash: string) => {
         subscribeTx(
           txHash,
@@ -222,14 +240,14 @@ function App() {
         toast.error("Transaction Error!");
       })
       .finally(() => {
-        setSeconderyInputValue("0");
-        setLocalState((prev) => ({ ...prev, seconderyAmount: 0 }));
+        setSeconderyUsdcInputValue("0");
+        setLocalState((prev) => ({ ...prev, seconderyUsdcAmount: 0 }));
         toggleLocalRefresh();
       });
   };
 
   const onClickCloseShort = async () => {
-    await closeShort(state, localState.seconderyAmount, wallet)
+    await closeShort(state, localState.seconderyUsdcAmount, wallet)
       .then((txHash: string) => {
         subscribeTx(
           txHash,
@@ -243,8 +261,8 @@ function App() {
         toast.error("Transaction Error!");
       })
       .finally(() => {
-        setSeconderyInputValue("0");
-        setLocalState((prev) => ({ ...prev, seconderyAmount: 0 }));
+        setSeconderyUsdcInputValue("0");
+        setLocalState((prev) => ({ ...prev, seconderyUsdcAmount: 0 }));
         toggleLocalRefresh();
       });
   };
@@ -331,23 +349,79 @@ function App() {
       });
   };
 
-  const onChangeAmountValue = (value: string, primary: boolean) => {
+  const onChangePrimaryAmountValue = (value: string) => {
     const parsedValue = value.replace(",", ".").replace(/[^0-9.]/g, "");
     let amount = Number.parseFloat(parsedValue);
     if (isNaN(amount)) amount = 0.0;
-    if (primary) {
       setPrimaryInputValue(parsedValue);
       setLocalState((prev) => ({
         ...prev,
         primaryAmount: amount,
       }));
-    } else {
-      setSeconderyInputValue(parsedValue);
-      setLocalState((prev) => ({
-        ...prev,
-        seconderyAmount: amount,
-      }));
-    }
+  };
+
+  const onChangeSeconderyUsdValue = (value: string) => {
+    const parsedValue = value.replace(",", ".").replace(/[^0-9.]/g, "");
+    let amountInUsd = Number.parseFloat(parsedValue);
+    let contractValue: number;
+    if (isNaN(amountInUsd)) amountInUsd = 0.0;
+    (async () => {
+      if (amountInUsd == 0.0) {
+        contractValue = 0;
+      } else {
+        contractValue =
+          (
+            await swapQuoteByInputToken(
+              state?.whirlpool!,
+              USDC_MINT,
+              DecimalUtil.toU64(DecimalUtil.fromNumber(amountInUsd), 6),
+              Percentage.fromDecimal(DecimalUtil.fromNumber(10)),
+              ORCA_WHIRLPOOL_PROGRAM_ID,
+              state?.orcaFetcher!,
+              true
+            )
+          ).estimatedAmountOut.toNumber() / 1e6;
+      }
+      setSeconderyContractInputValue(contractValue.toString());
+    })();
+    setSeconderyUsdcInputValue(parsedValue);
+    setLocalState((prev) => ({
+      ...prev,
+      seconderyUsdcAmount: amountInUsd,
+      seconderyContractAmount: contractValue,
+    }));
+  };
+
+  const onChangeSeconderyContractValue = (value: string) => {
+    const parsedValue = value.replace(",", ".").replace(/[^0-9.]/g, "");
+    let amountInContract = Number.parseFloat(parsedValue);
+    let usdcValue: number;
+    if (isNaN(amountInContract)) amountInContract = 0.0;
+    (async () => {
+      if (amountInContract == 0.0) {
+        usdcValue = 0;
+      } else {
+        usdcValue =
+          (
+            await swapQuoteByInputToken(
+              state?.whirlpool!,
+              state?.accounts.lcontractMint,
+              DecimalUtil.toU64(DecimalUtil.fromNumber(amountInContract), 6),
+              Percentage.fromDecimal(DecimalUtil.fromNumber(10)),
+              ORCA_WHIRLPOOL_PROGRAM_ID,
+              state?.orcaFetcher!,
+              true
+            )
+          ).estimatedAmountOut.toNumber() / 1e6;
+      }
+      setSeconderyUsdcInputValue(usdcValue.toString());
+    })();
+    setSeconderyUsdcInputValue(parsedValue);
+    setLocalState((prev) => ({
+      ...prev,
+      seconderyUsdcAmount: usdcValue,
+      seconderyContractAmount: amountInContract,
+    }));
   };
 
   const toggleMode = () => {
@@ -460,7 +534,7 @@ function App() {
                       <input
                         value={primaryInputValue}
                         onChange={(e) =>
-                          onChangeAmountValue(e.target.value, true)
+                          onChangePrimaryAmountValue(e.target.value)
                         }
                         className="w-full py-3 text-sm text-center text-gray-100 rounded-lg border-2 bg-white-900 rouneded-xl border-gray-100/10 bg-gray-100/10 focus:outline-none"
                       />
@@ -521,7 +595,7 @@ function App() {
                         <input
                           value={primaryInputValue}
                           onChange={(e) =>
-                            onChangeAmountValue(e.target.value, true)
+                            onChangePrimaryAmountValue(e.target.value)
                           }
                           className="w-full py-3 px-3 text-sm text-gray-100 rounded-lg border-2 bg-white-900 rouneded-xl border-gray-100/10 bg-gray-100/10 focus:outline-none"
                         />
@@ -548,18 +622,14 @@ function App() {
                           Net Position:
                           <div
                             className={`font-bold text-2xl ${
-                              state?.userState?.contractPositionNet.toNumber() !=
-                                0 &&
-                              (localState.isNetLong
+                              localState.userPosition != UserPosition.Neutral &&
+                              (localState.userPosition == UserPosition.Long
                                 ? "text-green-600"
                                 : "text-red-600")
                             }`}
                           >
-                            {state?.userState?.contractPositionNet.toNumber() !=
-                              0 &&
-                              (localState.isNetLong &&
-                              state?.userState?.contractPositionNet.toNumber() !=
-                                0
+                            {localState.userPosition != UserPosition.Neutral &&
+                              (localState.userPosition == UserPosition.Long
                                 ? "+"
                                 : "-")}
                             {(
@@ -601,7 +671,7 @@ function App() {
                   <div className="mt-10 py-6 text-white flex flex-col gap-3 w-1/2 border-2 border-gray-300/10 max-w-5xl rounded-xl bg-black/50 z-10">
                     <div className="px-6 text-2xl ">Trade SPY/USDC</div>
 
-                    <div className="flex flex-col py-3 justify-between items-center text-gray-200 bg-gray-50/10 border-t-4 border-b-4 border-gray-200/30">
+                    <div className="flex flex-col py-3 justify-between items-center text-gray-200 bg-gray-50/10 border-t-2 border-b-2 border-gray-200/30">
                       <div className="flex justify-between gap-4">
                         <div className="flex flex-col items-center">
                           <div className="text-gray-300 text-lg">
@@ -634,7 +704,7 @@ function App() {
                     ) : (
                       <div>
                         <div className="px-6 mt-1 flex flex-col gap-3 text-sm">
-                          <div className="flex justify-between items-center text-gray-200">
+                          <div className="flex justify-between items-center text-gray-400">
                             Available Balance :
                             <div>
                               {(
@@ -645,57 +715,70 @@ function App() {
                             </div>
                           </div>
                         </div>
-                        <div className="px-6 mt-5 flex gap-5 text-xl items-center text-gray-200">
-                          <div className="flex flex-col items-end text-xl">
-                            Amount
-                            <div className="text-gray-500 text-xs underline-offset-4">
-                              (USDC)
+                        <div className="px-6 mt-3 flex gap-5 text-xl items-start text-gray-200">
+                          <div className="flex flex-col gap-4 items-start">
+                            <div className="flex flex-col items-end text-lg">
+                              Amount
+                              <div className="mt-5 text-gray-500 text-xs underline-offset-4">
+                                USDC
+                              </div>
+                            </div>
+                            <div className="mt-6 w-full flex flex-col items-end text-lg">
+                              <div className="text-gray-500 text-xs underline-offset-4 text-right">
+                                No of contracts
+                              </div>
                             </div>
                           </div>
-                          <input
-                            value={seconderyInputValue}
-                            onChange={(e) =>
-                              onChangeAmountValue(e.target.value, false)
-                            }
-                            className="w-full py-3 text-sm px-3 text-gray-100 rounded-lg border-2 bg-white-900 rouneded-xl border-gray-100/10 bg-gray-100/10 focus:outline-none"
-                          />
+                          <div className="mt-8 w-full flex flex-col gap-4">
+                            <input
+                              value={seconderyUsdcInputValue}
+                              onChange={(e) =>
+                                onChangeSeconderyUsdValue(e.target.value)
+                              }
+                              className="w-full py-3 text-sm px-3 text-gray-100 rounded-lg border-2 bg-white-900 rouneded-xl border-gray-100/10 bg-gray-100/10 focus:outline-none"
+                            />
+                            <input
+                              value={seconderyContractInputValue}
+                              onChange={(e) =>
+                                onChangeSeconderyContractValue(e.target.value)
+                              }
+                              className="w-full py-3 text-sm px-3 text-gray-100 rounded-lg border-2 bg-white-900 rouneded-xl border-gray-100/10 bg-gray-100/10 focus:outline-none"
+                            />
+                          </div>
                         </div>
-                        <div className="px-6 mt-4 mb-1 flex flex-row w-full justify-between gap-3">
+
+                        <div className="px-6 mt-5 mb-1 flex flex-row w-full justify-between gap-3">
                           <div className="w-full flex flex-col justify-between items-center py-1 rounded-xl gap-[0.5px]">
-                            <div className="w-full py-2 bg-green-400/30 rounded-t-xl border-2 border-black hover:border-green-400/60">
                               <button
+                                disabled={localState.userPosition == UserPosition.Short}
                                 onClick={onClickOpenLong}
-                                className="w-full text-sm"
+                                className="w-full py-2 text-gray-100 bg-green-400/30 rounded-t-xl border-2 border-black hover:border-green-400/60 text-sm disabled:border disabled:border-gray-500/40 disabled:bg-black disabled:text-gray-400"
                               >
                                 Open Long
                               </button>
-                            </div>
-                            <div className="w-full py-2 bg-green-400/10 rounded-b-xl border-2 border-black hover:border-green-400/40">
                               <button
+                                disabled={localState.userPosition == UserPosition.Short || localState.userPosition == UserPosition.Neutral}
                                 onClick={onClickCloseLong}
-                                className="w-full text-sm"
+                                className="w-full py-2 text-gray-100 bg-green-400/10 rounded-b-xl border-2 border-black hover:border-green-400/40 text-sm disabled:border disabled:border-gray-500/40 disabled:bg-black disabled:text-gray-400"
                               >
                                 Close Long
                               </button>
-                            </div>
                           </div>
                           <div className="w-full flex flex-col justify-between items-center py-1 border-green-100/60 rounded-xl">
-                            <div className="w-full py-2 bg-red-400/30 rounded-t-xl border-2 border-black hover:border-red-400/60">
                               <button
+                                disabled={localState.userPosition == UserPosition.Long}
                                 onClick={onClickOpenShort}
-                                className="w-full text-sm"
+                                className="w-full py-2 text-gray-100 bg-red-400/30 rounded-t-xl border-2 border-black hover:border-red-400/60 text-sm disabled:border disabled:border-gray-500/40 disabled:bg-black disabled:text-gray-400"
                               >
-                                Open Short
+                                Open Shorts
                               </button>
-                            </div>
-                            <div className="w-full py-2 bg-red-400/10 rounded-b-xl border-2 border-black hover:border-red-400/40">
                               <button
+                                disabled={localState.userPosition == UserPosition.Long || localState.userPosition == UserPosition.Neutral}
                                 onClick={onClickCloseShort}
-                                className="w-full text-sm"
+                                className="w-full py-2 text-gray-100 bg-red-400/10 rounded-b-xl border-2 border-black hover:border-red-400/40 text-sm disabled:border disabled:border-gray-500/40 disabled:bg-black disabled:text-gray-400"
                               >
                                 Close Short
                               </button>
-                            </div>
                           </div>
                         </div>
                       </div>
