@@ -22,3 +22,7 @@ export enum UserPosition {
   Short,
   Neutral,
 }
+
+export type PositionComponentParams = {
+  userPosition: UserPosition
+};

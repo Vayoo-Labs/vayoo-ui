@@ -2,7 +2,7 @@ import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { useEffect, useState } from "react";
 import { getAtaTokenBalanceByOwner, shortenAddress } from "./utils";
-import { ADMIN_KEYS, USDC_MINT } from "./utils/constants";
+import { ADMIN_KEYS, TRADE_SLIPPAGE, USDC_MINT } from "./utils/constants";
 import { useSubscribeTx, useVMState } from "./contexts/StateProvider";
 import AdminComponent from "./components/admin";
 import toast, { Toaster } from "react-hot-toast";
@@ -25,6 +25,7 @@ import {
 } from "@orca-so/whirlpools-sdk";
 import { DecimalUtil, Percentage } from "@orca-so/common-sdk";
 import { UserPosition } from "./utils/types";
+import PositionComponent from "./components/position";
 
 // Some Naming Conventions to remember
 // Primary Amount = The input field used for depositing/withdrawing
@@ -51,7 +52,8 @@ function App() {
     seconderyUsdcAmount: 0,
     seconderyContractAmount: 0,
     isSettling: false,
-    userPosition: UserPosition.Neutral
+    userPosition: UserPosition.Neutral,
+    isAmountInUsdc: true,
   });
 
   const toggleLocalRefresh = () => {
@@ -59,19 +61,19 @@ function App() {
     setRefresh((refresh) => !refresh);
   };
 
-  useEffect(() => {
-    async () => {
-      if (wallet.publicKey) {
-        const cSubId = connection.onAccountChange(wallet.publicKey!, (acc) => {
-          if (acc) {
-            console.log("--Wallet balance changed--");
-            setRefresh((prev) => !prev);
-          }
-        });
-        return await connection.removeAccountChangeListener(cSubId);
-      }
-    };
-  }, [wallet.connected, wallet.publicKey]);
+  // useEffect(() => {
+  //   async () => {
+  //     if (wallet.publicKey) {
+  //       const cSubId = connection.onAccountChange(wallet.publicKey!, (acc) => {
+  //         if (acc) {
+  //           console.log("--Wallet balance changed--");
+  //           setRefresh((prev) => !prev);
+  //         }
+  //       });
+  //       return await connection.removeAccountChangeListener(cSubId);
+  //     }
+  //   };
+  // }, [wallet.connected, wallet.publicKey]);
 
   useEffect(() => {
     (async () => {
@@ -90,17 +92,17 @@ function App() {
         const userExist = state?.userState ? true : false;
         const usdBalance =
           (await getAtaTokenBalanceByOwner(
-            connection,
+          connection,
             wallet.publicKey!,
             USDC_MINT
           )) / 1e6;
         let userPosition: UserPosition;
         if (state?.userState?.contractPositionNet.toNumber()! > 0) {
-          userPosition = (UserPosition.Long)
+          userPosition = UserPosition.Long;
         } else if (state?.userState?.contractPositionNet.toNumber()! < 0) {
-          userPosition = (UserPosition.Short)
+          userPosition = UserPosition.Short;
         } else {
-          userPosition = (UserPosition.Neutral)
+          userPosition = UserPosition.Neutral;
         }
         const isSettling = state?.contractState?.isSettling!;
         setLocalState((prev) => ({
@@ -108,7 +110,7 @@ function App() {
           usdBalance,
           userExist,
           isSettling,
-          userPosition
+          userPosition,
         }));
         console.log(localState);
       }
@@ -184,7 +186,12 @@ function App() {
   };
 
   const onClickOpenLong = async () => {
-    await openLong(state, localState.seconderyUsdcAmount, wallet)
+    await openLong(
+      state,
+      localState.seconderyUsdcAmount,
+      localState.isAmountInUsdc,
+      wallet
+    )
       .then((txHash: string) => {
         subscribeTx(
           txHash,
@@ -205,7 +212,12 @@ function App() {
   };
 
   const onClickCloseLong = async () => {
-    await closeLong(state, localState.seconderyUsdcAmount, wallet)
+    await closeLong(
+      state,
+      localState.seconderyUsdcAmount,
+      localState.isAmountInUsdc,
+      wallet
+    )
       .then((txHash: string) => {
         subscribeTx(
           txHash,
@@ -226,7 +238,12 @@ function App() {
   };
 
   const onClickOpenShort = async () => {
-    await openShort(state, localState.seconderyUsdcAmount, wallet)
+    await openShort(
+      state,
+      localState.seconderyUsdcAmount,
+      localState.isAmountInUsdc,
+      wallet
+    )
       .then((txHash: string) => {
         subscribeTx(
           txHash,
@@ -247,7 +264,12 @@ function App() {
   };
 
   const onClickCloseShort = async () => {
-    await closeShort(state, localState.seconderyUsdcAmount, wallet)
+    await closeShort(
+      state,
+      localState.seconderyUsdcAmount,
+      localState.isAmountInUsdc,
+      wallet
+    )
       .then((txHash: string) => {
         subscribeTx(
           txHash,
@@ -353,11 +375,11 @@ function App() {
     const parsedValue = value.replace(",", ".").replace(/[^0-9.]/g, "");
     let amount = Number.parseFloat(parsedValue);
     if (isNaN(amount)) amount = 0.0;
-      setPrimaryInputValue(parsedValue);
-      setLocalState((prev) => ({
-        ...prev,
-        primaryAmount: amount,
-      }));
+    setPrimaryInputValue(parsedValue);
+    setLocalState((prev) => ({
+      ...prev,
+      primaryAmount: amount,
+    }));
   };
 
   const onChangeSeconderyUsdValue = (value: string) => {
@@ -369,18 +391,19 @@ function App() {
       if (amountInUsd == 0.0) {
         contractValue = 0;
       } else {
-        contractValue =
-          (
-            await swapQuoteByInputToken(
-              state?.whirlpool!,
-              USDC_MINT,
-              DecimalUtil.toU64(DecimalUtil.fromNumber(amountInUsd), 6),
-              Percentage.fromDecimal(DecimalUtil.fromNumber(10)),
-              ORCA_WHIRLPOOL_PROGRAM_ID,
-              state?.orcaFetcher!,
-              true
-            )
-          ).estimatedAmountOut.toNumber() / 1e6;
+        // contractValue =
+        //   (
+        //     await swapQuoteByInputToken(
+        //       state?.whirlpool!,
+        //       USDC_MINT,
+        //       DecimalUtil.toU64(DecimalUtil.fromNumber(amountInUsd), 6),
+        //       Percentage.fromDecimal(DecimalUtil.fromNumber(TRADE_SLIPPAGE)),
+        //       ORCA_WHIRLPOOL_PROGRAM_ID,
+        //       state?.orcaFetcher!,
+        //       true
+        //     )
+        //   ).estimatedAmountOut.toNumber() / 1e6;
+        contractValue = 10;
       }
       setSeconderyContractInputValue(contractValue.toString());
     })();
@@ -389,6 +412,7 @@ function App() {
       ...prev,
       seconderyUsdcAmount: amountInUsd,
       seconderyContractAmount: contractValue,
+      isAmountInUsdc: true,
     }));
   };
 
@@ -396,31 +420,35 @@ function App() {
     const parsedValue = value.replace(",", ".").replace(/[^0-9.]/g, "");
     let amountInContract = Number.parseFloat(parsedValue);
     let usdcValue: number;
+    console.log(value);
     if (isNaN(amountInContract)) amountInContract = 0.0;
     (async () => {
       if (amountInContract == 0.0) {
         usdcValue = 0;
       } else {
-        usdcValue =
-          (
-            await swapQuoteByInputToken(
-              state?.whirlpool!,
-              state?.accounts.lcontractMint,
-              DecimalUtil.toU64(DecimalUtil.fromNumber(amountInContract), 6),
-              Percentage.fromDecimal(DecimalUtil.fromNumber(10)),
-              ORCA_WHIRLPOOL_PROGRAM_ID,
-              state?.orcaFetcher!,
-              true
-            )
-          ).estimatedAmountOut.toNumber() / 1e6;
+        // usdcValue =
+        //   (
+        //     await swapQuoteByInputToken(
+        //       state?.whirlpool!,
+        //       state?.accounts.lcontractMint,
+        //       DecimalUtil.toU64(DecimalUtil.fromNumber(amountInContract), 6),
+        //       Percentage.fromDecimal(DecimalUtil.fromNumber(TRADE_SLIPPAGE)),
+        //       ORCA_WHIRLPOOL_PROGRAM_ID,
+        //       state?.orcaFetcher!,
+        //       true
+        //     )
+        //   ).estimatedAmountOut.toNumber() / 1e6;
+        usdcValue = 20;
+        console.log("here");
       }
       setSeconderyUsdcInputValue(usdcValue.toString());
     })();
-    setSeconderyUsdcInputValue(parsedValue);
+    setSeconderyContractInputValue(parsedValue);
     setLocalState((prev) => ({
       ...prev,
       seconderyUsdcAmount: usdcValue,
       seconderyContractAmount: amountInContract,
+      isAmountInUsdc: false,
     }));
   };
 
@@ -500,7 +528,9 @@ function App() {
               localState.mmMode ? (
                 <div className="w-full flex items-center gap-7">
                   <div className="mt-10 px-6 py-6 text-white flex flex-col gap-3 w-1/2 border-2 border-gray-300/10 max-w-5xl rounded-xl bg-black/50 z-10">
-                    <div className="text-2xl text-lime-200/80">Your MM Account</div>
+                    <div className="text-2xl text-lime-200/80">
+                      Your MM Account
+                    </div>
                     <div className="flex flex-col gap-3 text-sm">
                       <div className="flex justify-between">
                         Available Balance:
@@ -615,57 +645,10 @@ function App() {
                         </button>
                       </div>
                     </div>
-                    <div className="w-full mt-7 px-6 py-6 text-white flex flex-col gap-3 border-2 border-gray-300/10 max-w-5xl rounded-xl bg-black/50 z-10">
-                      <div className="text-2xl">Your Position</div>
-                      <div className="mt-1 flex flex-col gap-3 text-sm">
-                        <div className="flex justify-between items-center text-gray-200">
-                          Net Position:
-                          <div
-                            className={`font-bold text-2xl ${
-                              localState.userPosition != UserPosition.Neutral &&
-                              (localState.userPosition == UserPosition.Long
-                                ? "text-green-600"
-                                : "text-red-600")
-                            }`}
-                          >
-                            {localState.userPosition != UserPosition.Neutral &&
-                              (localState.userPosition == UserPosition.Long
-                                ? "+"
-                                : "-")}
-                            {(
-                              state?.userState?.contractPositionNet.toNumber()! /
-                              1e6
-                            ).toFixed(6)}{" "}
-                            SPY
-                          </div>
-                        </div>
-                        <div className="flex justify-between items-center text-gray-200">
-                          Long Position:
-                          <div>
-                            {(
-                              state?.userState?.lcontractBoughtAsUser.toNumber()! /
-                              1e6
-                            ).toFixed(6)}
-                          </div>
-                        </div>
-                        <div className="flex justify-between items-center text-gray-200">
-                          Short Position:
-                          <div>
-                            {(
-                              state?.userState?.scontractSoldAsUser.toNumber()! /
-                              1e6
-                            ).toFixed(6)}
-                          </div>
-                        </div>
-                        <div className="flex justify-between items-center text-gray-200 ">
-                          Asset :
-                          <div className="text-gray-200 underline underline-offset-4">
-                            <a href="https://pyth.network/price-feeds/equity-us-spy-usd?cluster=mainnet-beta">
-                              Equity.US.SPY/USD
-                            </a>
-                          </div>
-                        </div>
-                      </div>
+                    <div className="mt-7 z-10">
+                      <PositionComponent
+                        userPosition={localState.userPosition}
+                      />
                     </div>
                   </div>
                   <div className="mt-10 py-6 text-white flex flex-col gap-3 w-1/2 border-2 border-gray-300/10 max-w-5xl rounded-xl bg-black/50 z-10">
@@ -749,36 +732,46 @@ function App() {
 
                         <div className="px-6 mt-5 mb-1 flex flex-row w-full justify-between gap-3">
                           <div className="w-full flex flex-col justify-between items-center py-1 rounded-xl gap-[0.5px]">
-                              <button
-                                disabled={localState.userPosition == UserPosition.Short}
-                                onClick={onClickOpenLong}
-                                className="w-full py-2 text-gray-100 bg-green-400/30 rounded-t-xl border-2 border-black hover:border-green-400/60 text-sm disabled:border disabled:border-gray-500/40 disabled:bg-black disabled:text-gray-400"
-                              >
-                                Open Long
-                              </button>
-                              <button
-                                disabled={localState.userPosition == UserPosition.Short || localState.userPosition == UserPosition.Neutral}
-                                onClick={onClickCloseLong}
-                                className="w-full py-2 text-gray-100 bg-green-400/10 rounded-b-xl border-2 border-black hover:border-green-400/40 text-sm disabled:border disabled:border-gray-500/40 disabled:bg-black disabled:text-gray-400"
-                              >
-                                Close Long
-                              </button>
+                            <button
+                              disabled={
+                                localState.userPosition == UserPosition.Short
+                              }
+                              onClick={onClickOpenLong}
+                              className="w-full py-2 text-gray-100 bg-green-400/30 rounded-t-xl border-2 border-black hover:border-green-400/60 text-sm disabled:border disabled:border-gray-500/40 disabled:bg-black disabled:text-gray-400"
+                            >
+                              Open Long
+                            </button>
+                            <button
+                              disabled={
+                                localState.userPosition == UserPosition.Short ||
+                                localState.userPosition == UserPosition.Neutral
+                              }
+                              onClick={onClickCloseLong}
+                              className="w-full py-2 text-gray-100 bg-green-400/10 rounded-b-xl border-2 border-black hover:border-green-400/40 text-sm disabled:border disabled:border-gray-500/40 disabled:bg-black disabled:text-gray-400"
+                            >
+                              Close Long
+                            </button>
                           </div>
                           <div className="w-full flex flex-col justify-between items-center py-1 border-green-100/60 rounded-xl">
-                              <button
-                                disabled={localState.userPosition == UserPosition.Long}
-                                onClick={onClickOpenShort}
-                                className="w-full py-2 text-gray-100 bg-red-400/30 rounded-t-xl border-2 border-black hover:border-red-400/60 text-sm disabled:border disabled:border-gray-500/40 disabled:bg-black disabled:text-gray-400"
-                              >
-                                Open Shorts
-                              </button>
-                              <button
-                                disabled={localState.userPosition == UserPosition.Long || localState.userPosition == UserPosition.Neutral}
-                                onClick={onClickCloseShort}
-                                className="w-full py-2 text-gray-100 bg-red-400/10 rounded-b-xl border-2 border-black hover:border-red-400/40 text-sm disabled:border disabled:border-gray-500/40 disabled:bg-black disabled:text-gray-400"
-                              >
-                                Close Short
-                              </button>
+                            <button
+                              disabled={
+                                localState.userPosition == UserPosition.Long
+                              }
+                              onClick={onClickOpenShort}
+                              className="w-full py-2 text-gray-100 bg-red-400/30 rounded-t-xl border-2 border-black hover:border-red-400/60 text-sm disabled:border disabled:border-gray-500/40 disabled:bg-black disabled:text-gray-400"
+                            >
+                              Open Shorts
+                            </button>
+                            <button
+                              disabled={
+                                localState.userPosition == UserPosition.Long ||
+                                localState.userPosition == UserPosition.Neutral
+                              }
+                              onClick={onClickCloseShort}
+                              className="w-full py-2 text-gray-100 bg-red-400/10 rounded-b-xl border-2 border-black hover:border-red-400/40 text-sm disabled:border disabled:border-gray-500/40 disabled:bg-black disabled:text-gray-400"
+                            >
+                              Close Short
+                            </button>
                           </div>
                         </div>
                       </div>

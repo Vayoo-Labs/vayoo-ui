@@ -1,15 +1,30 @@
 import * as anchor from "@project-serum/anchor";
 import { vayooState } from "./types";
 import { PublicKey, Transaction } from "@solana/web3.js";
-import { COLLATERAL_MINT, USDC_MINT, VAYOO_CONTRACT_ID as PID, WHIRLPOOL_KEY } from "./constants";
-import { useWallet, WalletContextState } from "@solana/wallet-adapter-react";
+import {
+  COLLATERAL_MINT,
+  TRADE_SLIPPAGE,
+  USDC_MINT,
+  VAYOO_CONTRACT_ID as PID,
+  WHIRLPOOL_KEY,
+} from "./constants";
+import { WalletContextState } from "@solana/wallet-adapter-react";
 import { addZeros } from "./index";
-import { getATAKey, getContractStatePDA, getPda, getUserStatePDA } from "./vayoo-pda";
+import {
+  getPda,
+  getUserStatePDA,
+} from "./vayoo-pda";
 import { BN } from "@project-serum/anchor";
 import { createAssociatedTokenAccountInstruction } from "@solana/spl-token-v2";
-import { sendTransaction } from "./web3-utils";
-import { ORCA_WHIRLPOOL_PROGRAM_ID, PDAUtil, PriceMath, SwapUtils, TickArrayUtil } from "@orca-so/whirlpools-sdk";
-import { DecimalUtil } from "@orca-so/common-sdk";
+import {
+  ORCA_WHIRLPOOL_PROGRAM_ID,
+  PDAUtil,
+  PriceMath,
+  SwapQuote,
+  swapQuoteByInputToken,
+  swapQuoteByOutputToken,
+} from "@orca-so/whirlpools-sdk";
+import { DecimalUtil, Percentage } from "@orca-so/common-sdk";
 
 export async function initContract(
   vayooState: vayooState,
@@ -32,7 +47,7 @@ export async function initContract(
     )
   );
   const txHash = await wallet.sendTransaction(transaction, connection);
-  
+
   return txHash.toString();
 }
 
@@ -42,13 +57,9 @@ export async function triggerSettleMode(
 ) {
   const connection = vayooState!.vayooProgram.provider.connection;
   const transaction = new Transaction();
-  transaction.add(
-    await triggerSettleModeIx(
-      vayooState,
-    )
-  );
+  transaction.add(await triggerSettleModeIx(vayooState));
   const txHash = await wallet.sendTransaction(transaction, connection);
-  
+
   return txHash.toString();
 }
 
@@ -58,13 +69,9 @@ export async function adminSettle(
 ) {
   const connection = vayooState!.vayooProgram.provider.connection;
   const transaction = new Transaction();
-  transaction.add(
-    await adminSettleIx(
-      vayooState,
-    )
-  );
+  transaction.add(await adminSettleIx(vayooState));
   const txHash = await wallet.sendTransaction(transaction, connection);
-  
+
   return txHash.toString();
 }
 
@@ -74,13 +81,9 @@ export async function userSettle(
 ) {
   const connection = vayooState!.vayooProgram.provider.connection;
   const transaction = new Transaction();
-  transaction.add(
-    await userSettleIx(
-      vayooState,
-    )
-  );
+  transaction.add(await userSettleIx(vayooState));
   const txHash = await wallet.sendTransaction(transaction, connection);
-  
+
   return txHash.toString();
 }
 
@@ -91,14 +94,9 @@ export async function mmSettle(
 ) {
   const connection = vayooState!.vayooProgram.provider.connection;
   const transaction = new Transaction();
-  transaction.add(
-    await mmSettleIx(
-      vayooState,
-      amountToRedeem
-    )
-  );
+  transaction.add(await mmSettleIx(vayooState, amountToRedeem));
   const txHash = await wallet.sendTransaction(transaction, connection);
-  
+
   return txHash.toString();
 }
 export async function initUserState(
@@ -107,14 +105,9 @@ export async function initUserState(
 ) {
   const connection = vayooState!.vayooProgram.provider.connection;
   const transaction = new Transaction();
-  transaction.add(
-    await initUserStateIx(
-      vayooState,
-      wallet.publicKey!
-    )
-  );
+  transaction.add(await initUserStateIx(vayooState, wallet.publicKey!));
   const txHash = await wallet.sendTransaction(transaction, connection);
-  
+
   return txHash.toString();
 }
 
@@ -125,7 +118,11 @@ export async function mintAsMm(
 ) {
   const connection = vayooState!.vayooProgram.provider.connection;
   const transaction = new Transaction();
-  if (!(await connection.getAccountInfo(vayooState?.accounts.mmLockedScontractAta))) {
+  if (
+    !(await connection.getAccountInfo(
+      vayooState?.accounts.mmLockedScontractAta
+    ))
+  ) {
     transaction.add(
       createAssociatedTokenAccountInstruction(
         wallet.publicKey!,
@@ -145,14 +142,9 @@ export async function mintAsMm(
       )
     );
   }
-  transaction.add(
-    await mintAsMmIx(
-      vayooState,
-      amount,
-    )
-  );
+  transaction.add(await mintAsMmIx(vayooState, amount));
   const txHash = await wallet.sendTransaction(transaction, connection);
-  
+
   return txHash.toString();
 }
 
@@ -164,14 +156,9 @@ export async function burnAsMm(
   const connection = vayooState!.vayooProgram.provider.connection;
   const transaction = new Transaction();
 
-  transaction.add(
-    await burnAsMmIx(
-      vayooState,
-      amount,
-    )
-  );
+  transaction.add(await burnAsMmIx(vayooState, amount));
   const txHash = await wallet.sendTransaction(transaction, connection);
-  
+
   return txHash.toString();
 }
 
@@ -183,28 +170,24 @@ export async function depositCollateral(
   const connection = vayooState!.vayooProgram.provider.connection;
   const transaction = new Transaction();
 
-  transaction.add(
-    await depositIx(
-      vayooState,
-      amount,
-    )
-  );
+  transaction.add(await depositIx(vayooState, amount));
   const txHash = await wallet.sendTransaction(transaction, connection);
-  
+
   return txHash.toString();
 }
 
 export async function openLong(
   vayooState: vayooState,
   amountInCollateral: number,
+  isAmountInUsdc: boolean = false,
   wallet: WalletContextState
 ) {
   const connection = vayooState!.vayooProgram.provider.connection;
-  try{
   const transaction = new Transaction();
 
-
-  if (!(await connection.getAccountInfo(vayooState?.accounts.vaultLcontractAta))) {
+  if (
+    !(await connection.getAccountInfo(vayooState?.accounts.vaultLcontractAta))
+  ) {
     transaction.add(
       createAssociatedTokenAccountInstruction(
         wallet.publicKey!,
@@ -215,56 +198,23 @@ export async function openLong(
     );
   }
 
-  transaction.add(
-    await longIx(
-      vayooState,
-      amountInCollateral,
-      true,
-      0
-    )
-  );
-  console.log('herhe')
+  transaction.add(await longIx(vayooState, amountInCollateral, true, isAmountInUsdc));
   const txHash = await wallet.sendTransaction(transaction, connection);
-  
-  return txHash.toString();
-}catch {
-    const transaction = new Transaction();
-  console.log("New long version")
 
-  if (!(await connection.getAccountInfo(vayooState?.accounts.vaultLcontractAta))) {
-    transaction.add(
-      createAssociatedTokenAccountInstruction(
-        wallet.publicKey!,
-        vayooState?.accounts.vaultLcontractAta,
-        vayooState?.accounts.userState,
-        vayooState?.accounts.lcontractMint
-      )
-    );
-  }
-
-  transaction.add(
-    await longIx(
-      vayooState,
-      amountInCollateral,
-      true,
-      1
-    )
-  );
-  const txHash = await wallet.sendTransaction(transaction, connection);
-  
   return txHash.toString();
-}
 }
 
 export async function closeLong(
   vayooState: vayooState,
   amountInCollateral: number,
+  isAmountInUsdc: boolean = false,
   wallet: WalletContextState
 ) {
   const connection = vayooState!.vayooProgram.provider.connection;
-  try{
   const transaction = new Transaction();
-  if (!(await connection.getAccountInfo(vayooState?.accounts.vaultLcontractAta))) {
+  if (
+    !(await connection.getAccountInfo(vayooState?.accounts.vaultLcontractAta))
+  ) {
     transaction.add(
       createAssociatedTokenAccountInstruction(
         wallet.publicKey!,
@@ -275,55 +225,23 @@ export async function closeLong(
     );
   }
 
-  transaction.add(
-    await longIx(
-      vayooState,
-      amountInCollateral,
-      false,
-      0
-    )
-  );
+  transaction.add(await longIx(vayooState, amountInCollateral, false, isAmountInUsdc));
   const txHash = await wallet.sendTransaction(transaction, connection);
-  
-  return txHash.toString();
-}catch{
-  console.log("New Close long version")
-    const transaction = new Transaction();
-  if (!(await connection.getAccountInfo(vayooState?.accounts.vaultLcontractAta))) {
-    transaction.add(
-      createAssociatedTokenAccountInstruction(
-        wallet.publicKey!,
-        vayooState?.accounts.vaultLcontractAta,
-        vayooState?.accounts.userState,
-        vayooState?.accounts.lcontractMint
-      )
-    );
-  }
 
-  transaction.add(
-    await longIx(
-      vayooState,
-      amountInCollateral,
-      false,
-      1
-    )
-  );
-  const txHash = await wallet.sendTransaction(transaction, connection);
-  
   return txHash.toString();
-}
-
 }
 
 export async function openShort(
   vayooState: vayooState,
   amountInCollateral: number,
+  isAmountInUsdc: boolean = false,
   wallet: WalletContextState
 ) {
   const connection = vayooState!.vayooProgram.provider.connection;
-  try{
   const transaction = new Transaction();
-  if (!(await connection.getAccountInfo(vayooState?.accounts.vaultLcontractAta))) {
+  if (
+    !(await connection.getAccountInfo(vayooState?.accounts.vaultLcontractAta))
+  ) {
     transaction.add(
       createAssociatedTokenAccountInstruction(
         wallet.publicKey!,
@@ -334,53 +252,23 @@ export async function openShort(
     );
   }
 
-  transaction.add(
-    await shortIx(
-      vayooState,
-      amountInCollateral,
-      true,
-      0
-    )
-  );
+  transaction.add(await shortIx(vayooState, amountInCollateral, true, isAmountInUsdc));
   const txHash = await wallet.sendTransaction(transaction, connection);
-  
-  return txHash.toString();
-}catch{
-    const transaction = new Transaction();
-  if (!(await connection.getAccountInfo(vayooState?.accounts.vaultLcontractAta))) {
-    transaction.add(
-      createAssociatedTokenAccountInstruction(
-        wallet.publicKey!,
-        vayooState?.accounts.vaultLcontractAta,
-        vayooState?.accounts.userState,
-        vayooState?.accounts.lcontractMint
-      )
-    );
-  }
 
-  transaction.add(
-    await shortIx(
-      vayooState,
-      amountInCollateral,
-      true,
-      1
-    )
-  );
-  const txHash = await wallet.sendTransaction(transaction, connection);
-  
   return txHash.toString();
-}
 }
 
 export async function closeShort(
   vayooState: vayooState,
   amountInCollateral: number,
+  isAmountInUsdc: boolean = false,
   wallet: WalletContextState
 ) {
   const connection = vayooState!.vayooProgram.provider.connection;
-  try{
   const transaction = new Transaction();
-  if (!(await connection.getAccountInfo(vayooState?.accounts.vaultLcontractAta))) {
+  if (
+    !(await connection.getAccountInfo(vayooState?.accounts.vaultLcontractAta))
+  ) {
     transaction.add(
       createAssociatedTokenAccountInstruction(
         wallet.publicKey!,
@@ -391,42 +279,10 @@ export async function closeShort(
     );
   }
 
-  transaction.add(
-    await shortIx(
-      vayooState,
-      amountInCollateral,
-      false,
-      0
-    )
-  );
+  transaction.add(await shortIx(vayooState, amountInCollateral, false, isAmountInUsdc));
   const txHash = await wallet.sendTransaction(transaction, connection);
-  
-  return txHash.toString();
-}catch{
-  const transaction = new Transaction();
-  if (!(await connection.getAccountInfo(vayooState?.accounts.vaultLcontractAta))) {
-    transaction.add(
-      createAssociatedTokenAccountInstruction(
-        wallet.publicKey!,
-        vayooState?.accounts.vaultLcontractAta,
-        vayooState?.accounts.userState,
-        vayooState?.accounts.lcontractMint
-      )
-    );
-  }
 
-  transaction.add(
-    await shortIx(
-      vayooState,
-      amountInCollateral,
-      false,
-      1
-    )
-  );
-  const txHash = await wallet.sendTransaction(transaction, connection);
-  
   return txHash.toString();
-}
 }
 
 export async function withdrawCollateral(
@@ -436,7 +292,9 @@ export async function withdrawCollateral(
 ) {
   const connection = vayooState!.vayooProgram.provider.connection;
   const transaction = new Transaction();
-  if (!(await connection.getAccountInfo(vayooState?.accounts.userCollateralAta))) {
+  if (
+    !(await connection.getAccountInfo(vayooState?.accounts.userCollateralAta))
+  ) {
     transaction.add(
       createAssociatedTokenAccountInstruction(
         wallet.publicKey!,
@@ -446,17 +304,11 @@ export async function withdrawCollateral(
       )
     );
   }
-  transaction.add(
-    await withdrawIx(
-      vayooState,
-      amount,
-    )
-  );
+  transaction.add(await withdrawIx(vayooState, amount));
   const txHash = await wallet.sendTransaction(transaction, connection);
-  
+
   return txHash.toString();
 }
-
 
 async function initContractIx(
   vayooState: vayooState,
@@ -505,262 +357,322 @@ async function initContractIx(
       collateralMint: USDC_MINT,
     })
     .instruction();
-  console.log('Contract key: ', contractStateKey.toString());
-  console.log('L Contract Mint: ', lcontractMint.toString())
-  console.log('S Contract Mint: ', scontractMint.toString())
+  console.log("Contract key: ", contractStateKey.toString());
+  console.log("L Contract Mint: ", lcontractMint.toString());
+  console.log("S Contract Mint: ", scontractMint.toString());
   return ix;
 }
 
-async function initUserStateIx(
-  vayooState: vayooState,
-  user: PublicKey
-) {
+async function initUserStateIx(vayooState: vayooState, user: PublicKey) {
   const bump = getUserStatePDA(user).bump;
 
   const ix = await vayooState!.vayooProgram.methods
-  .initializeUser(
-    bump
-  ).accounts({
-    ...vayooState?.accounts
-  }).instruction();
-  console.log('User State Key: ', vayooState?.accounts.userState.toString());
+    .initializeUser(bump)
+    .accounts({
+      ...vayooState?.accounts,
+    })
+    .instruction();
+  console.log("User State Key: ", vayooState?.accounts.userState.toString());
   return ix;
 }
 
-async function depositIx(
-  vayooState: vayooState,
-  amount: number,
-) {
+async function depositIx(vayooState: vayooState, amount: number) {
   const nativeAmount = new BN(addZeros(amount, 6));
   const ix = await vayooState!.vayooProgram.methods
-  .depositCollateral(
-    nativeAmount
-  ).accounts({
-    ...vayooState?.accounts
-  }).instruction();
-  console.log('Depositing :', amount);
+    .depositCollateral(nativeAmount)
+    .accounts({
+      ...vayooState?.accounts,
+    })
+    .instruction();
+  console.log("Depositing :", amount);
   return ix;
 }
 
-async function mintAsMmIx(
-  vayooState: vayooState,
-  amount: number,
-) {
+async function mintAsMmIx(vayooState: vayooState, amount: number) {
   const nativeAmount = new BN(addZeros(amount, 6));
   const ix = await vayooState!.vayooProgram.methods
-  .mintLContractMm(
-    nativeAmount
-  ).accounts({
-    ...vayooState?.accounts
-  }).instruction();
-  console.log('Minting as MM :', amount);
+    .mintLContractMm(nativeAmount)
+    .accounts({
+      ...vayooState?.accounts,
+    })
+    .instruction();
+  console.log("Minting as MM :", amount);
   return ix;
 }
 
-async function burnAsMmIx(
-  vayooState: vayooState,
-  amount: number,
-) {
+async function burnAsMmIx(vayooState: vayooState, amount: number) {
   const nativeAmount = new BN(addZeros(amount, 6));
   const ix = await vayooState!.vayooProgram.methods
-  .burnLContractMm(
-    nativeAmount
-  ).accounts({
-    ...vayooState?.accounts
-  }).instruction();
-  console.log('Burning as Mm:', amount);
+    .burnLContractMm(nativeAmount)
+    .accounts({
+      ...vayooState?.accounts,
+    })
+    .instruction();
+  console.log("Burning as Mm:", amount);
   return ix;
 }
 
-async function withdrawIx(
-  vayooState: vayooState,
-  amount: number,
-) {
+async function withdrawIx(vayooState: vayooState, amount: number) {
   const nativeAmount = new BN(addZeros(amount, 6));
   const ix = await vayooState!.vayooProgram.methods
-  .withdrawCollateral(
-    nativeAmount
-  ).accounts({
-    ...vayooState?.accounts
-  }).instruction();
-  console.log('Withdrawing :', amount);
+    .withdrawCollateral(nativeAmount)
+    .accounts({
+      ...vayooState?.accounts,
+    })
+    .instruction();
+  console.log("Withdrawing :", amount);
   return ix;
 }
-
-
 
 async function longIx(
   vayooState: vayooState,
-  amountInCollateral: number,
+  amount: number,
   open: boolean,
-  adjusting_tick_array: number,
+  isAmountInUsdc: boolean
 ) {
-  const whirlpool_oracle_pubkey = PDAUtil.getOracle(ORCA_WHIRLPOOL_PROGRAM_ID, WHIRLPOOL_KEY).publicKey;
   const poolData = vayooState?.poolState!;
-  const poolPrice = PriceMath.sqrtPriceX64ToPrice(poolData.sqrtPrice, 6 , 6)
-  console.log("Price:", poolPrice.toString())
-  console.log("Liquidity:", poolData.liquidity.toString())
+  const poolPrice = PriceMath.sqrtPriceX64ToPrice(poolData.sqrtPrice, 6, 6);
+  console.log("Price:", poolPrice.toString());
+  console.log("Liquidity:", poolData.liquidity.toString());
 
-    // Arguments for swap
-    const a_input = DecimalUtil.toU64(DecimalUtil.fromNumber(amountInCollateral), 6);
-    const amount = new anchor.BN(a_input);
-    const other_amount_threshold = new anchor.BN(0);
-    const amount_specified_is_input = true;
-    // Conditional Swap Direction, Super Important
-    const mintAIsCollateral = poolData.tokenMintA.equals(vayooState?.accounts.collateralMint)!;
-    let a_to_b = open ? mintAIsCollateral : !mintAIsCollateral;
-
-    const sqrt_price_limit = SwapUtils.getDefaultSqrtPriceLimit(a_to_b);
-    const tickArrays = TickArrayUtil.getTickArrayPDAs(poolData.tickCurrentIndex, poolData.tickSpacing, 4, ORCA_WHIRLPOOL_PROGRAM_ID, WHIRLPOOL_KEY, a_to_b);
-    const accounts = {
-         ...vayooState?.accounts,
-        whirlpoolProgram: ORCA_WHIRLPOOL_PROGRAM_ID,
-        whirlpool: WHIRLPOOL_KEY,
-        tokenVaultA: poolData.tokenVaultA,
-        tokenVaultB: poolData.tokenVaultB,
-        tickArray0: tickArrays[0+adjusting_tick_array].publicKey,
-        tickArray1: tickArrays[1+adjusting_tick_array].publicKey,
-        tickArray2: tickArrays[2+adjusting_tick_array].publicKey,
-        oracle: whirlpool_oracle_pubkey,
-    }
-    if (open) {
-      const ix = await vayooState!.vayooProgram.methods
-      .longUser(
-        amount,
-        other_amount_threshold,
-        sqrt_price_limit,
-        amount_specified_is_input,
-        a_to_b,
-      )
-      .accounts(accounts)
-      .instruction();
-
-      console.log('Opening Long :', amountInCollateral);
-      return ix;
+  if (open) {
+    let swapQuote: SwapQuote;
+    if (isAmountInUsdc) {
+      swapQuote = await swapQuoteByInputToken(
+        vayooState?.whirlpool!,
+        vayooState?.accounts.collateralMint,
+        DecimalUtil.toU64(DecimalUtil.fromNumber(amount), 6),
+        Percentage.fromDecimal(DecimalUtil.fromNumber(10)),
+        ORCA_WHIRLPOOL_PROGRAM_ID,
+        vayooState?.orcaFetcher!,
+        true
+      );
     } else {
-      const ix = await vayooState!.vayooProgram.methods
-      .closeLongUser(
-        amount,
-        other_amount_threshold,
-        sqrt_price_limit,
-        amount_specified_is_input,
-        a_to_b,
+      swapQuote = await swapQuoteByOutputToken(
+        vayooState?.whirlpool!,
+        vayooState?.accounts.lcontractMint,
+        DecimalUtil.toU64(DecimalUtil.fromNumber(amount), 6),
+        Percentage.fromDecimal(DecimalUtil.fromNumber(10)),
+        ORCA_WHIRLPOOL_PROGRAM_ID,
+        vayooState?.orcaFetcher!,
+        true
+      );
+    }
+    const ix = await vayooState!.vayooProgram.methods
+      .longUser(
+        swapQuote.amount,
+        swapQuote.otherAmountThreshold,
+        swapQuote.sqrtPriceLimit,
+        swapQuote.amountSpecifiedIsInput,
+        swapQuote.aToB
       )
-      .accounts(accounts)
+      .accounts({
+        ...vayooState?.accounts,
+        tickArray0: swapQuote.tickArray0,
+        tickArray1: swapQuote.tickArray1,
+        tickArray2: swapQuote.tickArray2,
+      })
       .instruction();
 
-      console.log('Closing Long :', amountInCollateral);
-      return ix;
+    console.log(
+      "Opening Long : %d, in usdc amount ?: %s",
+      amount,
+      isAmountInUsdc
+    );
+    return ix;
+  } else {
+    let swapQuote: SwapQuote;
+    if (isAmountInUsdc) {
+      swapQuote = await swapQuoteByOutputToken(
+        vayooState?.whirlpool!,
+        vayooState?.accounts.collateralMint,
+        DecimalUtil.toU64(DecimalUtil.fromNumber(amount), 6),
+        Percentage.fromDecimal(DecimalUtil.fromNumber(TRADE_SLIPPAGE)),
+        ORCA_WHIRLPOOL_PROGRAM_ID,
+        vayooState?.orcaFetcher!,
+        true
+      );
+    } else {
+      swapQuote = await swapQuoteByInputToken(
+        vayooState?.whirlpool!,
+        vayooState?.accounts.lcontractMint,
+        DecimalUtil.toU64(DecimalUtil.fromNumber(amount), 6),
+        Percentage.fromDecimal(DecimalUtil.fromNumber(TRADE_SLIPPAGE)),
+        ORCA_WHIRLPOOL_PROGRAM_ID,
+        vayooState?.orcaFetcher!,
+        true
+      );
     }
+    const ix = await vayooState!.vayooProgram.methods
+      .closeLongUser(
+        swapQuote.amount,
+        swapQuote.otherAmountThreshold,
+        swapQuote.sqrtPriceLimit,
+        swapQuote.amountSpecifiedIsInput,
+        swapQuote.aToB
+      )
+      .accounts({
+        ...vayooState?.accounts,
+        tickArray0: swapQuote.tickArray0,
+        tickArray1: swapQuote.tickArray1,
+        tickArray2: swapQuote.tickArray2,
+      })
+      .instruction();
+
+    console.log(
+      "Closing Long : %d, in usdc amount ?: %s",
+      amount,
+      isAmountInUsdc
+    );
+    return ix;
+  }
 }
 
 async function shortIx(
   vayooState: vayooState,
-  amountInCollateral: number,
+  amount: number,
   open: boolean,
-  adjusting_tick_array:number,
+  isAmountInUsdc: boolean
 ) {
-  const whirlpool_oracle_pubkey = PDAUtil.getOracle(ORCA_WHIRLPOOL_PROGRAM_ID, WHIRLPOOL_KEY).publicKey;
   const poolData = vayooState?.poolState!;
-  const poolPrice = PriceMath.sqrtPriceX64ToPrice(poolData.sqrtPrice, 6 , 6)
-  console.log("Price:", poolPrice.toString())
-  console.log("Liquidity:", poolData.liquidity.toString())
+  const poolPrice = PriceMath.sqrtPriceX64ToPrice(poolData.sqrtPrice, 6, 6);
+  console.log("Price:", poolPrice.toString());
+  console.log("Liquidity:", poolData.liquidity.toString());
 
-    // Arguments for swap
-    const a_input = DecimalUtil.toU64(DecimalUtil.fromNumber(amountInCollateral), 6);
-    const amount = new anchor.BN(a_input);
-    const other_amount_threshold = new anchor.BN(0);
-    const amount_specified_is_input = true;
-    // Conditional Swap Direction, Super Important
-    const mintAIsCollateral = poolData.tokenMintA.equals(vayooState?.accounts.collateralMint)!;
-    let a_to_b = open ? !mintAIsCollateral : mintAIsCollateral;
-
-    const sqrt_price_limit = SwapUtils.getDefaultSqrtPriceLimit(a_to_b);
-    const tickArrays = TickArrayUtil.getTickArrayPDAs(poolData.tickCurrentIndex, poolData.tickSpacing, 4, ORCA_WHIRLPOOL_PROGRAM_ID, WHIRLPOOL_KEY, a_to_b);
-    const accounts = {
-         ...vayooState?.accounts,
-        whirlpoolProgram: ORCA_WHIRLPOOL_PROGRAM_ID,
-        whirlpool: WHIRLPOOL_KEY,
-        tokenVaultA: poolData.tokenVaultA,
-        tokenVaultB: poolData.tokenVaultB,
-        tickArray0: tickArrays[0+adjusting_tick_array].publicKey,
-        tickArray1: tickArrays[1+adjusting_tick_array].publicKey,
-        tickArray2: tickArrays[2+adjusting_tick_array].publicKey,
-        oracle: whirlpool_oracle_pubkey,
-    }
-    if (open) {
-      const ix = await vayooState!.vayooProgram.methods
-      .shortUser(
-        amount,
-        other_amount_threshold,
-        sqrt_price_limit,
-        amount_specified_is_input,
-        a_to_b,
-      )
-      .accounts(accounts)
-      .instruction();
-
-      console.log('Opening Short :', amountInCollateral);
-      return ix;
+  if (open) {
+    let swapQuote: SwapQuote;
+    if (isAmountInUsdc) {
+      swapQuote = await swapQuoteByOutputToken(
+        vayooState?.whirlpool!,
+        vayooState?.accounts.collateralMint,
+        DecimalUtil.toU64(DecimalUtil.fromNumber(amount), 6),
+        Percentage.fromDecimal(DecimalUtil.fromNumber(TRADE_SLIPPAGE)),
+        ORCA_WHIRLPOOL_PROGRAM_ID,
+        vayooState?.orcaFetcher!,
+        true
+      );
     } else {
-      const ix = await vayooState!.vayooProgram.methods
-      .closeShortUser(
-        amount,
-        other_amount_threshold,
-        sqrt_price_limit,
-        amount_specified_is_input,
-        a_to_b,
+      swapQuote = await swapQuoteByInputToken(
+        vayooState?.whirlpool!,
+        vayooState?.accounts.lcontractMint,
+        DecimalUtil.toU64(DecimalUtil.fromNumber(amount), 6),
+        Percentage.fromDecimal(DecimalUtil.fromNumber(TRADE_SLIPPAGE)),
+        ORCA_WHIRLPOOL_PROGRAM_ID,
+        vayooState?.orcaFetcher!,
+        true
+      );
+    }
+    const ix = await vayooState!.vayooProgram.methods
+      .shortUser(
+        swapQuote.amount,
+        swapQuote.otherAmountThreshold,
+        swapQuote.sqrtPriceLimit,
+        swapQuote.amountSpecifiedIsInput,
+        swapQuote.aToB
       )
-      .accounts(accounts)
+      .accounts({
+        ...vayooState?.accounts,
+        tickArray0: swapQuote.tickArray0,
+        tickArray1: swapQuote.tickArray1,
+        tickArray2: swapQuote.tickArray2,
+      })
       .instruction();
 
-      console.log('Closing Short :', amountInCollateral);
-      return ix;
+    console.log(
+      "Opening Short : %d, in usdc amount ?: %s",
+      amount,
+      isAmountInUsdc
+    );
+    return ix;
+  } else {
+    let swapQuote: SwapQuote;
+    if (isAmountInUsdc) {
+      swapQuote = await swapQuoteByInputToken(
+        vayooState?.whirlpool!,
+        vayooState?.accounts.collateralMint,
+        DecimalUtil.toU64(DecimalUtil.fromNumber(amount), 6),
+        Percentage.fromDecimal(DecimalUtil.fromNumber(TRADE_SLIPPAGE)),
+        ORCA_WHIRLPOOL_PROGRAM_ID,
+        vayooState?.orcaFetcher!,
+        true
+      );
+    } else {
+      swapQuote = await swapQuoteByOutputToken(
+        vayooState?.whirlpool!,
+        vayooState?.accounts.lcontractMint,
+        DecimalUtil.toU64(DecimalUtil.fromNumber(amount), 6),
+        Percentage.fromDecimal(DecimalUtil.fromNumber(TRADE_SLIPPAGE)),
+        ORCA_WHIRLPOOL_PROGRAM_ID,
+        vayooState?.orcaFetcher!,
+        true
+      );
     }
+    const ix = await vayooState!.vayooProgram.methods
+      .closeShortUser(
+        swapQuote.amount,
+        swapQuote.otherAmountThreshold,
+        swapQuote.sqrtPriceLimit,
+        swapQuote.amountSpecifiedIsInput,
+        swapQuote.aToB
+      )
+      .accounts({
+        ...vayooState?.accounts,
+        tickArray0: swapQuote.tickArray0,
+        tickArray1: swapQuote.tickArray1,
+        tickArray2: swapQuote.tickArray2,
+      })
+      .instruction();
+
+    console.log(
+      "Closing Short : %d, in usdc amount ?: %s",
+      amount,
+      isAmountInUsdc
+    );
+    return ix;
+  }
 }
 
-async function triggerSettleModeIx(
-  vayooState: vayooState,
-) {
+async function triggerSettleModeIx(vayooState: vayooState) {
   const ix = await vayooState!.vayooProgram.methods
-  .triggerSettleMode().accounts({
-    ...vayooState?.accounts
-  }).instruction();
-  console.log('Trigger Settle Mode');
+    .triggerSettleMode()
+    .accounts({
+      ...vayooState?.accounts,
+    })
+    .instruction();
+  console.log("Trigger Settle Mode");
   return ix;
 }
 
-async function adminSettleIx(
-  vayooState: vayooState,
-) {
+async function adminSettleIx(vayooState: vayooState) {
   const ix = await vayooState!.vayooProgram.methods
-  .adminSettle().accounts({
-    ...vayooState?.accounts
-  }).instruction();
-  console.log('Admin Settling');
+    .adminSettle()
+    .accounts({
+      ...vayooState?.accounts,
+    })
+    .instruction();
+  console.log("Admin Settling");
   return ix;
 }
 
-async function userSettleIx(
-  vayooState: vayooState,
-) {
+async function userSettleIx(vayooState: vayooState) {
   const ix = await vayooState!.vayooProgram.methods
-  .userSettleLong().accounts({
-    ...vayooState?.accounts
-  }).instruction();
-  console.log('User Settling');
+    .userSettleLong()
+    .accounts({
+      ...vayooState?.accounts,
+    })
+    .instruction();
+  console.log("User Settling");
   return ix;
 }
 
-async function mmSettleIx(
-  vayooState: vayooState,
-  amountToRedeem: number
-) {
+async function mmSettleIx(vayooState: vayooState, amountToRedeem: number) {
   const nativeAmount = new BN(addZeros(amountToRedeem, 6));
   const ix = await vayooState!.vayooProgram.methods
-  .mmSettleLong(nativeAmount).accounts({
-    ...vayooState?.accounts
-  }).instruction();
-  console.log('Mm Settling :',amountToRedeem);
+    .mmSettleLong(nativeAmount)
+    .accounts({
+      ...vayooState?.accounts,
+    })
+    .instruction();
+  console.log("Mm Settling :", amountToRedeem);
   return ix;
 }

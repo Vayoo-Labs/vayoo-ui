@@ -21,21 +21,23 @@ import {
 } from "../utils/vayoo-pda";
 import { vayooState } from "../utils/types";
 import {
+  getAccount,
   getAssociatedTokenAddressSync,
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token-v2";
 import {
   COLLATERAL_MINT,
+  PYTH_EXPONENT,
   PYTH_FEED,
   REFRESH_TIME_INTERVAL,
   USDC_MINT,
   WHIRLPOOL_KEY,
 } from "../utils/constants";
 import {
-  AccountFetcher, buildWhirlpoolClient, ORCA_WHIRLPOOL_PROGRAM_ID, PriceMath, WhirlpoolContext,
+  AccountFetcher, buildWhirlpoolClient, ORCA_WHIRLPOOL_PROGRAM_ID, PDAUtil, PriceMath, WhirlpoolContext,
 } from "@orca-so/whirlpools-sdk";
 import {
-  parsePriceData,
+  parsePriceData, PriceData,
 } from "@pythnetwork/client";
 import { WalletOrca } from "../utils/web3-utils";
 
@@ -67,7 +69,8 @@ export function VMStateProvider({ children = undefined as any }) {
   const [loading, setLoading] = useState(true);
   const [toogleUpdateState, setToogleUpdateState] = useState(false);
   const orcaFetcher = new AccountFetcher(connection);
-  const [pythData, setPythData] = useState<any>(null);
+  const whirlpoolClient = buildWhirlpoolClient(WhirlpoolContext.from(connection, wallet as WalletOrca, ORCA_WHIRLPOOL_PROGRAM_ID));
+  const [pythData, setPythData] = useState<PriceData | null>(null);
 
   const subscribeTx = async (
     txHash: string,
@@ -105,9 +108,9 @@ export function VMStateProvider({ children = undefined as any }) {
       tokenProgram: TOKEN_PROGRAM_ID,
     };
 
-    const whirlpoolState = await orcaFetcher.getPool(WHIRLPOOL_KEY, true);
-    const whirlpoolClient = buildWhirlpoolClient(WhirlpoolContext.from(connection, wallet as WalletOrca, ORCA_WHIRLPOOL_PROGRAM_ID));
-    const whirlpool = await whirlpoolClient.getPool(WHIRLPOOL_KEY);
+    const whirlpool = await whirlpoolClient.getPool(WHIRLPOOL_KEY, true);
+    const whirlpoolState = whirlpool.getData();
+    const whirlpoolOraclePda = PDAUtil.getOracle(ORCA_WHIRLPOOL_PROGRAM_ID, WHIRLPOOL_KEY);
 
     const program = await getVayooProgramInstance(connection, wallet);
     const contractStateKey = getContractStatePDA().pda;
@@ -119,7 +122,7 @@ export function VMStateProvider({ children = undefined as any }) {
     );
 
     const poolPrice = PriceMath.sqrtPriceX64ToPrice(whirlpoolState?.sqrtPrice!, 6, 6);
-    const assetPrice = poolPrice.toNumber() + (contractState?.startingPrice.toNumber()! / 1e5) - (contractState?.limitingAmplitude.toNumber()! / 2)
+    const assetPrice = poolPrice.toNumber() + (contractState?.startingPrice.toNumber()! / PYTH_EXPONENT) - (contractState?.limitingAmplitude.toNumber()! / 2)
 
     if (wallet?.publicKey) {
       const userStateKey = getUserStatePDA(wallet.publicKey!).pda;
@@ -171,7 +174,12 @@ export function VMStateProvider({ children = undefined as any }) {
         mmLockedScontractAta: vaultLockedScontractAta,
         mmLcontractAta,
         vaultLcontractAta,
-        pythFeed: PYTH_FEED
+        pythFeed: PYTH_FEED,
+        whirlpoolProgram: ORCA_WHIRLPOOL_PROGRAM_ID,
+        whirlpool: WHIRLPOOL_KEY,
+        tokenVaultA: whirlpoolState.tokenVaultA,
+        tokenVaultB: whirlpoolState.tokenVaultB,
+        oracle: whirlpoolOraclePda,
       };
 
       setState((prev: vayooState) => ({
@@ -182,7 +190,7 @@ export function VMStateProvider({ children = undefined as any }) {
         vayooProgram: program,
         userState: userState,
         poolState: whirlpoolState,
-        pythData: pythData,
+        pythData: pythData!,
         assetPrice: assetPrice,
         whirlpool: whirlpool,
         orcaFetcher
@@ -198,7 +206,7 @@ export function VMStateProvider({ children = undefined as any }) {
       globalState: null,
       userState: null,
       poolState: whirlpoolState,
-      pythData: pythData,
+      pythData: pythData!,
       assetPrice: assetPrice,
       whirlpool: null,
       orcaFetcher
@@ -231,6 +239,14 @@ export function VMStateProvider({ children = undefined as any }) {
           }
         });
         // Pyth Feed
+        (async () => {
+          const pythAccount = (await connection.getAccountInfo(PYTH_FEED))?.data!;
+          const parsedPythData = parsePriceData(pythAccount);
+          setPythData(parsedPythData);
+          setRefresh((prev) => !prev);
+          console.log('setting inital pyth data')
+        })()
+        // Add listener on pyth account for refreshes
         connection.onAccountChange(PYTH_FEED, (account) => {
           const parsedData = parsePriceData(account.data);
           setPythData(parsedData);
