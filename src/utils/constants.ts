@@ -19,6 +19,8 @@ export const TRADE_SLIPPAGE = 100; //10% percentage
 // export const ASSET_LONG_NAME = "Equity.US.SPY/USD";
 // export const ASSET_SHORT_NAME = "SPY";
 // export const MARKET_NAME = "SPY/USD";
+// export const ASSET_LINK = "https://pyth.network/price-feeds/equity-us-spy-usd?cluster=mainnet-beta"
 export const ASSET_LONG_NAME = "Crypto.BTC/USD";
 export const ASSET_SHORT_NAME = "BTC";
 export const MARKET_NAME = "BTC/USD";
+export const ASSET_LINK = "https://pyth.network/price-feeds/crypto-btc-usd?cluster=mainnet-beta"

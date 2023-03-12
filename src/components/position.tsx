@@ -8,7 +8,7 @@ import {
 } from "../utils/vayoo-web3";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { PositionComponentParams, UserPosition } from "../utils/types";
-import { ASSET_LONG_NAME, ASSET_SHORT_NAME } from "../utils/constants";
+import { ASSET_LINK, ASSET_LONG_NAME, ASSET_SHORT_NAME } from "../utils/constants";
 
 const PositionComponent = ({ userPosition }: PositionComponentParams) => {
   const { state, loading } = useVMState();
@@ -54,7 +54,7 @@ const PositionComponent = ({ userPosition }: PositionComponentParams) => {
         <div className="flex justify-between items-center text-gray-400 ">
           Asset :
           <div className="underline underline-offset-4">
-            <a href="https://pyth.network/price-feeds/equity-us-spy-usd?cluster=mainnet-beta">
+            <a href={ASSET_LINK}>
               {ASSET_LONG_NAME}
             </a>
           </div>
