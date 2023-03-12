@@ -54,6 +54,7 @@ function App() {
     isSettling: false,
     userPosition: UserPosition.Neutral,
     isAmountInUsdc: true,
+    lastAmount: 0,
   });
 
   const toggleLocalRefresh = () => {
@@ -188,7 +189,7 @@ function App() {
   const onClickOpenLong = async () => {
     await openLong(
       state,
-      localState.seconderyUsdcAmount,
+      localState.lastAmount,
       localState.isAmountInUsdc,
       wallet
     )
@@ -212,9 +213,10 @@ function App() {
   };
 
   const onClickCloseLong = async () => {
+    console.log(localState.seconderyUsdcAmount)
     await closeLong(
       state,
-      localState.seconderyUsdcAmount,
+      localState.lastAmount,
       localState.isAmountInUsdc,
       wallet
     )
@@ -240,7 +242,7 @@ function App() {
   const onClickOpenShort = async () => {
     await openShort(
       state,
-      localState.seconderyUsdcAmount,
+      localState.lastAmount,
       localState.isAmountInUsdc,
       wallet
     )
@@ -266,7 +268,7 @@ function App() {
   const onClickCloseShort = async () => {
     await closeShort(
       state,
-      localState.seconderyUsdcAmount,
+      localState.lastAmount,
       localState.isAmountInUsdc,
       wallet
     )
@@ -412,6 +414,7 @@ function App() {
       seconderyUsdcAmount: amountInUsd,
       seconderyContractAmount: contractValue,
       isAmountInUsdc: true,
+      lastAmount: amountInUsd
     }));
   };
 
@@ -446,6 +449,7 @@ function App() {
       seconderyUsdcAmount: usdcValue,
       seconderyContractAmount: amountInContract,
       isAmountInUsdc: false,
+      lastAmount: amountInContract
     }));
   };
 
