@@ -21,6 +21,7 @@ export enum UserPosition {
   Long,
   Short,
   Neutral,
+  Mm
 }
 
 export type PositionComponentParams = {

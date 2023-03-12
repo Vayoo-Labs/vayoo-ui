@@ -2,7 +2,7 @@ import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { useEffect, useState } from "react";
 import { getAtaTokenBalanceByOwner, shortenAddress } from "./utils";
-import { ADMIN_KEYS, TRADE_SLIPPAGE, USDC_MINT } from "./utils/constants";
+import { ADMIN_KEYS, MARKET_NAME, TRADE_SLIPPAGE, USDC_MINT } from "./utils/constants";
 import { useSubscribeTx, useVMState } from "./contexts/StateProvider";
 import AdminComponent from "./components/admin";
 import toast, { Toaster } from "react-hot-toast";
@@ -104,6 +104,9 @@ function App() {
           userPosition = UserPosition.Short;
         } else {
           userPosition = UserPosition.Neutral;
+        }
+        if (state?.userState?.lcontractMintedAsMm.toNumber()! > 0) {
+          userPosition = UserPosition.Mm
         }
         const isSettling = state?.contractState?.isSettling!;
         setLocalState((prev) => ({
@@ -653,7 +656,7 @@ function App() {
                     </div>
                   </div>
                   <div className="mt-10 py-6 text-white flex flex-col gap-3 w-1/2 border-2 border-gray-300/10 max-w-5xl rounded-xl bg-black/50 z-10">
-                    <div className="px-6 text-2xl ">Trade SPY/USDC</div>
+                    <div className="px-6 text-2xl ">Trade {MARKET_NAME}</div>
 
                     <div className="flex flex-col py-3 justify-between items-center text-gray-200 bg-gray-50/10 border-t-2 border-b-2 border-gray-200/30">
                       <div className="flex justify-between gap-4">
