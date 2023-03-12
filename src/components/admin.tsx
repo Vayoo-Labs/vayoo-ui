@@ -3,8 +3,6 @@ import { useState } from "react";
 import { useSubscribeTx, useVMState } from "../contexts/StateProvider";
 import { adminSettle, initContract, triggerSettleMode } from "../utils/vayoo-web3";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { VayooContracts } from "../utils/vayoo_contracts";
-import { translateError } from "../utils/errors";
 
 const AdminComponent = () => {
   const { state, loading } = useVMState();
