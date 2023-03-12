@@ -110,7 +110,7 @@ export function VMStateProvider({ children = undefined as any }) {
 
     const whirlpool = await whirlpoolClient.getPool(WHIRLPOOL_KEY, true);
     const whirlpoolState = whirlpool.getData();
-    const whirlpoolOraclePda = PDAUtil.getOracle(ORCA_WHIRLPOOL_PROGRAM_ID, WHIRLPOOL_KEY);
+    const whirlpoolOraclePda = PDAUtil.getOracle(ORCA_WHIRLPOOL_PROGRAM_ID, WHIRLPOOL_KEY).publicKey;
 
     const program = await getVayooProgramInstance(connection, wallet);
     const contractStateKey = getContractStatePDA().pda;

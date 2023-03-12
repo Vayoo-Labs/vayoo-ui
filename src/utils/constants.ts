@@ -15,7 +15,7 @@ export const PYTH_EXPONENT = 1e8;
 
 export const ADMIN_KEYS = ['CkvRjxTtotXBuYjBXVkcyDfd3qoEgeLnQecxFfPg1ZcN','4gNFEk4qvgxE6iM8ukfDUDaCT8itAeWXxURbnqNZXZXp'];
 export const REFRESH_TIME_INTERVAL = 60_000;
-export const TRADE_SLIPPAGE = 10; //10% percentage
+export const TRADE_SLIPPAGE = 100; //10% percentage
 // export const ASSET_LONG_NAME = "Equity.US.SPY/USD";
 // export const ASSET_SHORT_NAME = "SPY";
 // export const MARKET_NAME = "SPY/USD";

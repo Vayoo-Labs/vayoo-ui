@@ -391,19 +391,18 @@ function App() {
       if (amountInUsd == 0.0) {
         contractValue = 0;
       } else {
-        // contractValue =
-        //   (
-        //     await swapQuoteByInputToken(
-        //       state?.whirlpool!,
-        //       USDC_MINT,
-        //       DecimalUtil.toU64(DecimalUtil.fromNumber(amountInUsd), 6),
-        //       Percentage.fromDecimal(DecimalUtil.fromNumber(TRADE_SLIPPAGE)),
-        //       ORCA_WHIRLPOOL_PROGRAM_ID,
-        //       state?.orcaFetcher!,
-        //       true
-        //     )
-        //   ).estimatedAmountOut.toNumber() / 1e6;
-        contractValue = 10;
+        contractValue =
+          (
+            await swapQuoteByInputToken(
+              state?.whirlpool!,
+              USDC_MINT,
+              DecimalUtil.toU64(DecimalUtil.fromNumber(amountInUsd), 6),
+              Percentage.fromDecimal(DecimalUtil.fromNumber(TRADE_SLIPPAGE)),
+              ORCA_WHIRLPOOL_PROGRAM_ID,
+              state?.orcaFetcher!,
+              true
+            )
+          ).estimatedAmountOut.toNumber() / 1e6;
       }
       setSeconderyContractInputValue(contractValue.toString());
     })();
@@ -426,20 +425,18 @@ function App() {
       if (amountInContract == 0.0) {
         usdcValue = 0;
       } else {
-        // usdcValue =
-        //   (
-        //     await swapQuoteByInputToken(
-        //       state?.whirlpool!,
-        //       state?.accounts.lcontractMint,
-        //       DecimalUtil.toU64(DecimalUtil.fromNumber(amountInContract), 6),
-        //       Percentage.fromDecimal(DecimalUtil.fromNumber(TRADE_SLIPPAGE)),
-        //       ORCA_WHIRLPOOL_PROGRAM_ID,
-        //       state?.orcaFetcher!,
-        //       true
-        //     )
-        //   ).estimatedAmountOut.toNumber() / 1e6;
-        usdcValue = 20;
-        console.log("here");
+        usdcValue =
+          (
+            await swapQuoteByInputToken(
+              state?.whirlpool!,
+              state?.accounts.lcontractMint,
+              DecimalUtil.toU64(DecimalUtil.fromNumber(amountInContract), 6),
+              Percentage.fromDecimal(DecimalUtil.fromNumber(TRADE_SLIPPAGE)),
+              ORCA_WHIRLPOOL_PROGRAM_ID,
+              state?.orcaFetcher!,
+              true
+            )
+          ).estimatedAmountOut.toNumber() / 1e6;
       }
       setSeconderyUsdcInputValue(usdcValue.toString());
     })();
