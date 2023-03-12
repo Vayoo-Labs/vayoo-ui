@@ -29,7 +29,7 @@ const PositionComponent = ({ userPosition }: PositionComponentParams) => {
           >
             {userPosition != UserPosition.Neutral &&
               (userPosition == UserPosition.Long ? "+" : "-")}
-            {(state?.userState?.contractPositionNet.toNumber()! / 1e6).toFixed(
+            {(Math.abs(state?.userState?.contractPositionNet.toNumber()! / 1e6)).toFixed(
               6
             )}{" "}
             {ASSET_SHORT_NAME}
