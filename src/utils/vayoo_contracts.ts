@@ -781,7 +781,7 @@ export type VayooContracts = {
           "isSigner": false
         },
         {
-          "name": "vaultFreeCollateralAta",
+          "name": "mmCollateralWalletAta",
           "isMut": true,
           "isSigner": false
         },
@@ -792,11 +792,6 @@ export type VayooContracts = {
         },
         {
           "name": "escrowVaultCollateral",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "userState",
           "isMut": true,
           "isSigner": false
         },
@@ -1177,7 +1172,7 @@ export type VayooContracts = {
             "type": {
               "array": [
                 "u64",
-                15
+                13
               ]
             }
           }
@@ -1300,7 +1295,7 @@ export type VayooContracts = {
             "type": {
               "array": [
                 "u64",
-                15
+                14
               ]
             }
           }
@@ -1393,6 +1388,21 @@ export type VayooContracts = {
       "code": 6016,
       "name": "ShortLeaveUnhealthy",
       "msg": "Leaves Vault Unhealthy short"
+    },
+    {
+      "code": 6017,
+      "name": "CloseShortBeforeLong",
+      "msg": "Need to close short before opening long"
+    },
+    {
+      "code": 6018,
+      "name": "CloseLongBeforeShort",
+      "msg": "Need to close short before opening long"
+    },
+    {
+      "code": 6019,
+      "name": "PlatformUnhealthy",
+      "msg": "Action leaves the platform unhealthy"
     }
   ]
 };
@@ -2180,7 +2190,7 @@ export const IDL: VayooContracts = {
           "isSigner": false
         },
         {
-          "name": "vaultFreeCollateralAta",
+          "name": "mmCollateralWalletAta",
           "isMut": true,
           "isSigner": false
         },
@@ -2191,11 +2201,6 @@ export const IDL: VayooContracts = {
         },
         {
           "name": "escrowVaultCollateral",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "userState",
           "isMut": true,
           "isSigner": false
         },
@@ -2576,7 +2581,7 @@ export const IDL: VayooContracts = {
             "type": {
               "array": [
                 "u64",
-                15
+                13
               ]
             }
           }
@@ -2699,7 +2704,7 @@ export const IDL: VayooContracts = {
             "type": {
               "array": [
                 "u64",
-                15
+                14
               ]
             }
           }
@@ -2792,6 +2797,21 @@ export const IDL: VayooContracts = {
       "code": 6016,
       "name": "ShortLeaveUnhealthy",
       "msg": "Leaves Vault Unhealthy short"
+    },
+    {
+      "code": 6017,
+      "name": "CloseShortBeforeLong",
+      "msg": "Need to close short before opening long"
+    },
+    {
+      "code": 6018,
+      "name": "CloseLongBeforeShort",
+      "msg": "Need to close short before opening long"
+    },
+    {
+      "code": 6019,
+      "name": "PlatformUnhealthy",
+      "msg": "Action leaves the platform unhealthy"
     }
   ]
 };
