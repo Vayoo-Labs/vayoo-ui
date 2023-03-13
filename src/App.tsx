@@ -695,7 +695,7 @@ function App() {
                             Available Balance :
                             <div>
                               {(
-                                state?.userState?.usdcDeposited.toNumber()! /
+                                state?.userState?.usdcFree.toNumber()! /
                                 1e6
                               ).toFixed(6)}{" "}
                               USDC
