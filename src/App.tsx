@@ -2,7 +2,13 @@ import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { useEffect, useState } from "react";
 import { getAtaTokenBalanceByOwner, shortenAddress } from "./utils";
-import { ADMIN_KEYS, MARKET_NAME, TRADE_SLIPPAGE, USDC_MINT } from "./utils/constants";
+import {
+  ADMIN_KEYS,
+  MARKET_NAME,
+  TRADE_SLIPPAGE,
+  USDC_MINT,
+  USER_TRADE_CAP_USD,
+} from "./utils/constants";
 import { useSubscribeTx, useVMState } from "./contexts/StateProvider";
 import AdminComponent from "./components/admin";
 import toast, { Toaster } from "react-hot-toast";
@@ -38,6 +44,8 @@ function App() {
   const { connection } = useConnection();
   const { state, toggleRefresh, loading } = useVMState();
   const [refresh, setRefresh] = useState(false);
+  const [errStr, setErrStr] = useState("");
+  const [tradeEnable, setTradeEnable] = useState(true);
   const [primaryInputValue, setPrimaryInputValue] = useState("0");
   const [seconderyUsdcInputValue, setSeconderyUsdcInputValue] = useState("0");
   const [seconderyContractInputValue, setSeconderyContractInputValue] =
@@ -93,7 +101,7 @@ function App() {
         const userExist = state?.userState ? true : false;
         const usdBalance =
           (await getAtaTokenBalanceByOwner(
-          connection,
+            connection,
             wallet.publicKey!,
             USDC_MINT
           )) / 1e6;
@@ -106,7 +114,7 @@ function App() {
           userPosition = UserPosition.Neutral;
         }
         if (state?.userState?.lcontractMintedAsMm.toNumber()! > 0) {
-          userPosition = UserPosition.Mm
+          userPosition = UserPosition.Mm;
         }
         const isSettling = state?.contractState?.isSettling!;
         setLocalState((prev) => ({
@@ -216,7 +224,6 @@ function App() {
   };
 
   const onClickCloseLong = async () => {
-    console.log(localState.seconderyUsdcAmount)
     await closeLong(
       state,
       localState.lastAmount,
@@ -392,22 +399,29 @@ function App() {
     let amountInUsd = Number.parseFloat(parsedValue);
     let contractValue: number;
     if (isNaN(amountInUsd)) amountInUsd = 0.0;
+    if (amountInUsd > USER_TRADE_CAP_USD) {
+      setErrStr(
+        "Amount too high compared to available liquidity, please reduce"
+      );
+      setTradeEnable(false);
+    } else {
+      setErrStr("");
+      setTradeEnable(true);
+    }
     (async () => {
       if (amountInUsd == 0.0) {
         contractValue = 0;
       } else {
         contractValue =
-          (
-            await swapQuoteByInputToken(
-              state?.whirlpool!,
-              USDC_MINT,
-              DecimalUtil.toU64(DecimalUtil.fromNumber(amountInUsd), 6),
-              Percentage.fromDecimal(DecimalUtil.fromNumber(TRADE_SLIPPAGE)),
-              ORCA_WHIRLPOOL_PROGRAM_ID,
-              state?.orcaFetcher!,
-              true
-            )
-          ).estimatedAmountOut.toNumber() / 1e6;
+          (await swapQuoteByInputToken(
+            state?.whirlpool!,
+            USDC_MINT,
+            DecimalUtil.toU64(DecimalUtil.fromNumber(amountInUsd), 6),
+            Percentage.fromDecimal(DecimalUtil.fromNumber(TRADE_SLIPPAGE)),
+            ORCA_WHIRLPOOL_PROGRAM_ID,
+            state?.orcaFetcher!,
+            true
+          ))!.estimatedAmountOut.toNumber() / 1e6;
       }
       setSeconderyContractInputValue(contractValue.toString());
     })();
@@ -417,7 +431,7 @@ function App() {
       seconderyUsdcAmount: amountInUsd,
       seconderyContractAmount: contractValue,
       isAmountInUsdc: true,
-      lastAmount: amountInUsd
+      lastAmount: amountInUsd,
     }));
   };
 
@@ -425,26 +439,39 @@ function App() {
     const parsedValue = value.replace(",", ".").replace(/[^0-9.]/g, "");
     let amountInContract = Number.parseFloat(parsedValue);
     let usdcValue: number;
-    console.log(value);
+
     if (isNaN(amountInContract)) amountInContract = 0.0;
     (async () => {
       if (amountInContract == 0.0) {
         usdcValue = 0;
+        setErrStr("");
+        setTradeEnable(true);
       } else {
-        usdcValue =
-          (
-            await swapQuoteByInputToken(
-              state?.whirlpool!,
-              state?.accounts.lcontractMint,
-              DecimalUtil.toU64(DecimalUtil.fromNumber(amountInContract), 6),
-              Percentage.fromDecimal(DecimalUtil.fromNumber(TRADE_SLIPPAGE)),
-              ORCA_WHIRLPOOL_PROGRAM_ID,
-              state?.orcaFetcher!,
-              true
-            )
-          ).estimatedAmountOut.toNumber() / 1e6;
+        
+        try {
+          usdcValue =
+            (
+              await swapQuoteByInputToken(
+                state?.whirlpool!,
+                state?.accounts.lcontractMint,
+                DecimalUtil.toU64(DecimalUtil.fromNumber(amountInContract), 6),
+                Percentage.fromDecimal(DecimalUtil.fromNumber(TRADE_SLIPPAGE)),
+                ORCA_WHIRLPOOL_PROGRAM_ID,
+                state?.orcaFetcher!,
+                true
+              )
+            ).estimatedAmountOut.toNumber() / 1e6;
+          setErrStr("");
+          setTradeEnable(true);
+          setSeconderyUsdcInputValue(usdcValue.toString());
+        } catch (e) {
+          console.log(e);
+          setErrStr(
+            "Amount too high compared to available liquidity, please reduce"
+          );
+          setTradeEnable(false);
+        }
       }
-      setSeconderyUsdcInputValue(usdcValue.toString());
     })();
     setSeconderyContractInputValue(parsedValue);
     setLocalState((prev) => ({
@@ -452,7 +479,7 @@ function App() {
       seconderyUsdcAmount: usdcValue,
       seconderyContractAmount: amountInContract,
       isAmountInUsdc: false,
-      lastAmount: amountInContract
+      lastAmount: amountInContract,
     }));
   };
 
@@ -695,8 +722,7 @@ function App() {
                             Available Balance :
                             <div>
                               {(
-                                state?.userState?.usdcFree.toNumber()! /
-                                1e6
+                                state?.userState?.usdcFree.toNumber()! / 1e6
                               ).toFixed(6)}{" "}
                               USDC
                             </div>
@@ -733,12 +759,15 @@ function App() {
                             />
                           </div>
                         </div>
-
+                        <p className="mt-4 ml-20 px-6 text-red-900 text-sm">
+                          {errStr}
+                        </p>
                         <div className="px-6 mt-5 mb-1 flex flex-row w-full justify-between gap-3">
                           <div className="w-full flex flex-col justify-between items-center py-1 rounded-xl gap-[0.5px]">
                             <button
                               disabled={
-                                localState.userPosition == UserPosition.Short
+                                localState.userPosition == UserPosition.Short ||
+                                !tradeEnable
                               }
                               onClick={onClickOpenLong}
                               className="w-full py-2 text-gray-100 bg-green-400/30 rounded-t-xl border-2 border-black hover:border-green-400/60 text-sm disabled:border disabled:border-gray-500/40 disabled:bg-black disabled:text-gray-400"
@@ -748,7 +777,9 @@ function App() {
                             <button
                               disabled={
                                 localState.userPosition == UserPosition.Short ||
-                                localState.userPosition == UserPosition.Neutral
+                                localState.userPosition ==
+                                  UserPosition.Neutral ||
+                                !tradeEnable
                               }
                               onClick={onClickCloseLong}
                               className="w-full py-2 text-gray-100 bg-green-400/10 rounded-b-xl border-2 border-black hover:border-green-400/40 text-sm disabled:border disabled:border-gray-500/40 disabled:bg-black disabled:text-gray-400"
@@ -759,7 +790,8 @@ function App() {
                           <div className="w-full flex flex-col justify-between items-center py-1 border-green-100/60 rounded-xl">
                             <button
                               disabled={
-                                localState.userPosition == UserPosition.Long
+                                localState.userPosition == UserPosition.Long ||
+                                !tradeEnable
                               }
                               onClick={onClickOpenShort}
                               className="w-full py-2 text-gray-100 bg-red-400/30 rounded-t-xl border-2 border-black hover:border-red-400/60 text-sm disabled:border disabled:border-gray-500/40 disabled:bg-black disabled:text-gray-400"
@@ -769,7 +801,9 @@ function App() {
                             <button
                               disabled={
                                 localState.userPosition == UserPosition.Long ||
-                                localState.userPosition == UserPosition.Neutral
+                                localState.userPosition ==
+                                  UserPosition.Neutral ||
+                                !tradeEnable
                               }
                               onClick={onClickCloseShort}
                               className="w-full py-2 text-gray-100 bg-red-400/10 rounded-b-xl border-2 border-black hover:border-red-400/40 text-sm disabled:border disabled:border-gray-500/40 disabled:bg-black disabled:text-gray-400"

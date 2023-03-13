@@ -24,3 +24,5 @@ export const ASSET_LONG_NAME = "Crypto.BTC/USD";
 export const ASSET_SHORT_NAME = "BTC";
 export const MARKET_NAME = "BTC/USD";
 export const ASSET_LINK = "https://pyth.network/price-feeds/crypto-btc-usd?cluster=mainnet-beta"
+
+export const USER_TRADE_CAP_USD = 200;

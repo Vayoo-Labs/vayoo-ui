@@ -94,8 +94,17 @@ export async function mmSettle(
 ) {
   const connection = vayooState!.vayooProgram.provider.connection;
   const transaction = new Transaction();
+  transaction.add(
+    createAssociatedTokenAccountInstruction(
+      wallet.publicKey!,
+      vayooState?.accounts.mmLcontractAta,
+      wallet.publicKey!,
+      vayooState?.accounts.lcontractMint
+    )
+  );
   transaction.add(await mmSettleIx(vayooState, amountToRedeem));
-  const txHash = await wallet.sendTransaction(transaction, connection);
+  
+  const txHash = await wallet.sendTransaction(transaction, connection, {skipPreflight: true});
 
   return txHash.toString();
 }
@@ -673,6 +682,9 @@ async function mmSettleIx(vayooState: vayooState, amountToRedeem: number) {
       ...vayooState?.accounts,
     })
     .instruction();
+  console.log(vayooState?.accounts.mmCollateralWalletAta.toString())
+  console.log(vayooState?.accounts.mmLcontractAta.toString())
   console.log("Mm Settling :", amountToRedeem);
+  console.log(vayooState?.accounts.lcontractMint.toString())
   return ix;
 }
