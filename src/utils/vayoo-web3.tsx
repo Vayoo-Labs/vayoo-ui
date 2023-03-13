@@ -475,7 +475,7 @@ async function longIx(
       .instruction();
 
     console.log(
-      "Opening Long : %d, in usdc amount ?: %s",
+      "Opening Long : %s, in usdc amount ?: %s",
       amount,
       isAmountInUsdc
     );
@@ -520,7 +520,7 @@ async function longIx(
       .instruction();
 
     console.log(
-      "Closing Long : %d, in usdc amount ?: %s",
+      "Closing Long : %s, in usdc amount ?: %s",
       amount,
       isAmountInUsdc
     );
@@ -579,7 +579,7 @@ async function shortIx(
       .instruction();
 
     console.log(
-      "Opening Short : %d, in usdc amount ?: %s",
+      "Opening Short : %s, in usdc amount ?: %s",
       amount,
       isAmountInUsdc
     );
@@ -624,7 +624,7 @@ async function shortIx(
       .instruction();
 
     console.log(
-      "Closing Short : %d, in usdc amount ?: %s",
+      "Closing Short : %s, in usdc amount ?: %s",
       amount,
       isAmountInUsdc
     );
