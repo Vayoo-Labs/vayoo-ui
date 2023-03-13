@@ -173,6 +173,7 @@ export function VMStateProvider({ children = undefined as any }) {
         userCollateralAta,
         mmLockedScontractAta: vaultLockedScontractAta,
         mmLcontractAta,
+        mmCollateralWalletAta: userCollateralAta,
         vaultLcontractAta,
         pythFeed: PYTH_FEED,
         whirlpoolProgram: ORCA_WHIRLPOOL_PROGRAM_ID,
