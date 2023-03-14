@@ -13,9 +13,10 @@ import {
   BackpackWalletAdapter,
 } from "@solana/wallet-adapter-wallets";
 import { FC, ReactNode, useCallback, useMemo } from "react";
+import { RPC } from "../utils/constants";
 
 const WalletContextProvider: FC<{ children: ReactNode }> = ({ children }) => {
-  const endpointUrl = "https://api.metaplex.solana.com/";
+  const endpointUrl = RPC;
 
   const { connection, config }: any = useMemo(() => {
     const url = new URL(endpointUrl);
