@@ -653,7 +653,7 @@ function App() {
                           Net Account Value :
                           <div>
                             {(
-                              state?.userState?.usdcDeposited.toNumber()! / 1e6
+                              state?.userState?.usdcFree.toNumber()! / 1e6
                             ).toFixed(6)}{" "}
                             USDC
                           </div>
@@ -719,6 +719,11 @@ function App() {
                       </div>
                     </div>
                     {state?.contractState?.isSettling ? (
+                      localState.userPosition != UserPosition.Long ?
+                      <div className="my-3 flex flex-col items-center text-gray-200">
+                        Contract has been settled.
+                      </div>
+                     : 
                       <div className="my-3 flex flex-col items-center text-gray-200">
                         Contract is in settling mode.
                         <button
