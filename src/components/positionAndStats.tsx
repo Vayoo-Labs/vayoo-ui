@@ -94,6 +94,9 @@ const PositionAndStatsComponent = ({ userPosition }: PositionAndStatsComponentPa
       ) : (
         <div className="mt-1 flex flex-col gap-3 text-sm">
           <div className="flex justify-between items-center text-gray-400">
+            Limiting Amplitude :<div>{state?.contractState?.limitingAmplitude.toNumber()}</div>
+          </div>
+          <div className="flex justify-between items-center text-gray-400">
             Time of Maturity :<div>{maturity.toUTCString()}</div>
           </div>
           {(state?.contractState?.isSettling) && (
