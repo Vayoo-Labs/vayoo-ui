@@ -613,222 +613,6 @@ export type VayooContracts = {
       ]
     },
     {
-      "name": "triggerSettleMode",
-      "docs": [
-        "* Trigger Settle Mode\n     *\n     * Can be called by anyone, checks whether current time > maturity time.\n     * If so, trigger settling mode on the contract state\n     *"
-      ],
-      "accounts": [
-        {
-          "name": "contractState",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "pythFeed",
-          "isMut": false,
-          "isSigner": false
-        }
-      ],
-      "args": []
-    },
-    {
-      "name": "adminSettle",
-      "docs": [
-        "* Admin settle shorts and mm\n     *\n     * Can be called by superuser only (for now)\n     *"
-      ],
-      "accounts": [
-        {
-          "name": "contractAuthority",
-          "isMut": true,
-          "isSigner": true
-        },
-        {
-          "name": "contractState",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "userState",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "vaultFreeCollateralAta",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "vaultLockedCollateralAta",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "vaultLockedScontractAta",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "escrowVaultCollateral",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "scontractMint",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "collateralMint",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "systemProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "tokenProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "rent",
-          "isMut": false,
-          "isSigner": false
-        }
-      ],
-      "args": []
-    },
-    {
-      "name": "userSettleLong",
-      "docs": [
-        "* User settle long\n     *\n     * Can be called by user only\n     *"
-      ],
-      "accounts": [
-        {
-          "name": "userAuthority",
-          "isMut": true,
-          "isSigner": true
-        },
-        {
-          "name": "contractState",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "userState",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "vaultFreeCollateralAta",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "vaultLcontractAta",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "escrowVaultCollateral",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "collateralMint",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "lcontractMint",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "systemProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "tokenProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "rent",
-          "isMut": false,
-          "isSigner": false
-        }
-      ],
-      "args": []
-    },
-    {
-      "name": "mmSettleLong",
-      "docs": [
-        "s\n     * MM settle long\n     *\n     * Can be called by MM only\n     *"
-      ],
-      "accounts": [
-        {
-          "name": "userAuthority",
-          "isMut": true,
-          "isSigner": true
-        },
-        {
-          "name": "contractState",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "mmCollateralWalletAta",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "mmLcontractAta",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "escrowVaultCollateral",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "lcontractMint",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "collateralMint",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "systemProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "tokenProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "rent",
-          "isMut": false,
-          "isSigner": false
-        }
-      ],
-      "args": [
-        {
-          "name": "amount",
-          "type": "u64"
-        }
-      ]
-    },
-    {
       "name": "shortUser",
       "docs": [
         "* Short Contract"
@@ -1065,6 +849,222 @@ export type VayooContracts = {
         {
           "name": "aToB",
           "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "triggerSettleMode",
+      "docs": [
+        "* Trigger Settle Mode\n     *\n     * Can be called by anyone, checks whether current time > maturity time.\n     * If so, trigger settling mode on the contract state\n     *"
+      ],
+      "accounts": [
+        {
+          "name": "contractState",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "pythFeed",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "adminSettle",
+      "docs": [
+        "* Admin settle shorts and mm\n     *\n     * Can be called by superuser only (for now)\n     *"
+      ],
+      "accounts": [
+        {
+          "name": "contractAuthority",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "contractState",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userState",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vaultFreeCollateralAta",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vaultLockedCollateralAta",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vaultLockedScontractAta",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "escrowVaultCollateral",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "scontractMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "collateralMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "userSettleLong",
+      "docs": [
+        "* User settle long\n     *\n     * Can be called by user only\n     *"
+      ],
+      "accounts": [
+        {
+          "name": "userAuthority",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "contractState",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userState",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vaultFreeCollateralAta",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vaultLcontractAta",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "escrowVaultCollateral",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "collateralMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "lcontractMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "mmSettleLong",
+      "docs": [
+        "s\n     * MM settle long\n     *\n     * Can be called by MM only\n     *"
+      ],
+      "accounts": [
+        {
+          "name": "userAuthority",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "contractState",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "mmCollateralWalletAta",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "mmLcontractAta",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "escrowVaultCollateral",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "lcontractMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "collateralMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
         }
       ]
     }
@@ -1381,8 +1381,8 @@ export type VayooContracts = {
     },
     {
       "code": 6015,
-      "name": "AlreadySettled",
-      "msg": "Already Settled"
+      "name": "AlreadySettling",
+      "msg": "Already In Settle Mode"
     },
     {
       "code": 6016,
@@ -1403,6 +1403,16 @@ export type VayooContracts = {
       "code": 6019,
       "name": "PlatformUnhealthy",
       "msg": "Action leaves the platform unhealthy"
+    },
+    {
+      "code": 6020,
+      "name": "NotSettling",
+      "msg": "Contract not in settling mode"
+    },
+    {
+      "code": 6021,
+      "name": "ErrorAccounting",
+      "msg": "Error in internal accounting"
     }
   ]
 };
@@ -2022,222 +2032,6 @@ export const IDL: VayooContracts = {
       ]
     },
     {
-      "name": "triggerSettleMode",
-      "docs": [
-        "* Trigger Settle Mode\n     *\n     * Can be called by anyone, checks whether current time > maturity time.\n     * If so, trigger settling mode on the contract state\n     *"
-      ],
-      "accounts": [
-        {
-          "name": "contractState",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "pythFeed",
-          "isMut": false,
-          "isSigner": false
-        }
-      ],
-      "args": []
-    },
-    {
-      "name": "adminSettle",
-      "docs": [
-        "* Admin settle shorts and mm\n     *\n     * Can be called by superuser only (for now)\n     *"
-      ],
-      "accounts": [
-        {
-          "name": "contractAuthority",
-          "isMut": true,
-          "isSigner": true
-        },
-        {
-          "name": "contractState",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "userState",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "vaultFreeCollateralAta",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "vaultLockedCollateralAta",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "vaultLockedScontractAta",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "escrowVaultCollateral",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "scontractMint",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "collateralMint",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "systemProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "tokenProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "rent",
-          "isMut": false,
-          "isSigner": false
-        }
-      ],
-      "args": []
-    },
-    {
-      "name": "userSettleLong",
-      "docs": [
-        "* User settle long\n     *\n     * Can be called by user only\n     *"
-      ],
-      "accounts": [
-        {
-          "name": "userAuthority",
-          "isMut": true,
-          "isSigner": true
-        },
-        {
-          "name": "contractState",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "userState",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "vaultFreeCollateralAta",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "vaultLcontractAta",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "escrowVaultCollateral",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "collateralMint",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "lcontractMint",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "systemProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "tokenProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "rent",
-          "isMut": false,
-          "isSigner": false
-        }
-      ],
-      "args": []
-    },
-    {
-      "name": "mmSettleLong",
-      "docs": [
-        "s\n     * MM settle long\n     *\n     * Can be called by MM only\n     *"
-      ],
-      "accounts": [
-        {
-          "name": "userAuthority",
-          "isMut": true,
-          "isSigner": true
-        },
-        {
-          "name": "contractState",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "mmCollateralWalletAta",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "mmLcontractAta",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "escrowVaultCollateral",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "lcontractMint",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "collateralMint",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "systemProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "tokenProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "rent",
-          "isMut": false,
-          "isSigner": false
-        }
-      ],
-      "args": [
-        {
-          "name": "amount",
-          "type": "u64"
-        }
-      ]
-    },
-    {
       "name": "shortUser",
       "docs": [
         "* Short Contract"
@@ -2474,6 +2268,222 @@ export const IDL: VayooContracts = {
         {
           "name": "aToB",
           "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "triggerSettleMode",
+      "docs": [
+        "* Trigger Settle Mode\n     *\n     * Can be called by anyone, checks whether current time > maturity time.\n     * If so, trigger settling mode on the contract state\n     *"
+      ],
+      "accounts": [
+        {
+          "name": "contractState",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "pythFeed",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "adminSettle",
+      "docs": [
+        "* Admin settle shorts and mm\n     *\n     * Can be called by superuser only (for now)\n     *"
+      ],
+      "accounts": [
+        {
+          "name": "contractAuthority",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "contractState",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userState",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vaultFreeCollateralAta",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vaultLockedCollateralAta",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vaultLockedScontractAta",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "escrowVaultCollateral",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "scontractMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "collateralMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "userSettleLong",
+      "docs": [
+        "* User settle long\n     *\n     * Can be called by user only\n     *"
+      ],
+      "accounts": [
+        {
+          "name": "userAuthority",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "contractState",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userState",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vaultFreeCollateralAta",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vaultLcontractAta",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "escrowVaultCollateral",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "collateralMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "lcontractMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "mmSettleLong",
+      "docs": [
+        "s\n     * MM settle long\n     *\n     * Can be called by MM only\n     *"
+      ],
+      "accounts": [
+        {
+          "name": "userAuthority",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "contractState",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "mmCollateralWalletAta",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "mmLcontractAta",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "escrowVaultCollateral",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "lcontractMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "collateralMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
         }
       ]
     }
@@ -2790,8 +2800,8 @@ export const IDL: VayooContracts = {
     },
     {
       "code": 6015,
-      "name": "AlreadySettled",
-      "msg": "Already Settled"
+      "name": "AlreadySettling",
+      "msg": "Already In Settle Mode"
     },
     {
       "code": 6016,
@@ -2812,6 +2822,16 @@ export const IDL: VayooContracts = {
       "code": 6019,
       "name": "PlatformUnhealthy",
       "msg": "Action leaves the platform unhealthy"
+    },
+    {
+      "code": 6020,
+      "name": "NotSettling",
+      "msg": "Contract not in settling mode"
+    },
+    {
+      "code": 6021,
+      "name": "ErrorAccounting",
+      "msg": "Error in internal accounting"
     }
   ]
 };
