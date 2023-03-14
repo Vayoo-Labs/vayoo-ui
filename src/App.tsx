@@ -8,6 +8,7 @@ import {
   TRADE_SLIPPAGE,
   USDC_MINT,
   USER_TRADE_CAP_USD,
+  WHITELIST_USER_KEYS,
 } from "./utils/constants";
 import { useSubscribeTx, useVMState } from "./contexts/StateProvider";
 import AdminComponent from "./components/admin";
@@ -67,6 +68,7 @@ function App() {
     lastAmount: 0,
     netAccountValueUsd: 0,
     pnl: 0,
+    whitelisted: false,
   });
 
   const toggleLocalRefresh = () => {
@@ -77,6 +79,17 @@ function App() {
   useEffect(() => {
     (async () => {
       if (wallet?.publicKey) {
+        if (WHITELIST_USER_KEYS.includes(wallet.publicKey.toString())) {
+          setLocalState((prev) => ({
+            ...prev,
+            whitelisted: true
+          }))
+        } else {
+          setLocalState((prev) => ({
+            ...prev,
+            whitelisted: false
+          }))
+        }
         const netAccountValueUsd = state?.userState?.usdcFree.toNumber();
         if (ADMIN_KEYS.includes(wallet.publicKey.toString()!)) {
           setLocalState((prev) => ({
@@ -568,7 +581,7 @@ function App() {
           <div className="w-full max-w-5xl px-6 lg:px-0">
             {localState.adminMode && localState.isAdmin ? (
               <AdminComponent />
-            ) : localState.userExist ? (
+            ) : localState.whitelisted ? (localState.userExist ? (
               localState.mmMode ? (
                 <div className="w-full flex items-center gap-7">
                   <div className="mt-10 px-6 py-6 text-white flex flex-col gap-3 w-1/2 border-2 border-gray-300/10 max-w-5xl rounded-xl bg-black/50 z-10">
@@ -856,7 +869,16 @@ function App() {
                   </div>
                 </div>
               </div>
-            )}
+            )) : (
+              <div className="w-full mt-56 flex flex-col items-center">
+                <div className="px-12 py-10 text-white border-2 border-gray-400 bg-black/50 z-10 rounded-2xl">
+                  <div className="flex flex-col gap-5 justify-between items-center">
+                    You are not whitelisted for alpha access. Please contact on telegram
+                  </div>
+                </div>
+              </div>
+            )
+          }
           </div>
         </div>
         <div className="absolute w-full h-[50px] bottom-4 right-2 py-3 px-6 flex flex-col items-end">

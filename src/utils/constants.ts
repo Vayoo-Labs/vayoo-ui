@@ -26,3 +26,9 @@ export const MARKET_NAME = "BTC/USD";
 export const ASSET_LINK = "https://pyth.network/price-feeds/crypto-btc-usd?cluster=mainnet-beta"
 
 export const USER_TRADE_CAP_USD = 200;
+
+export const WHITELIST_USER_KEYS = [
+    "4gNFEk4qvgxE6iM8ukfDUDaCT8itAeWXxURbnqNZXZXp",
+    "BGQDmkQDrxZjNiUHCsSZYuKP4XJMfoJ6AXtmJh7CaxLH",
+    "CkvRjxTtotXBuYjBXVkcyDfd3qoEgeLnQecxFfPg1ZcN",
+]
