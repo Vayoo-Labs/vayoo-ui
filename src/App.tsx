@@ -495,6 +495,21 @@ function App() {
     }));
   };
 
+  const setMaxUsd = () => {
+    const maxAmount = state?.userState?.usdcFree.toNumber()! / 1e6;
+    onChangeSeconderyUsdValue(maxAmount.toString())
+  }
+
+  const setMaxContract = () => {
+    let maxAmount = 0;
+    if (localState.userPosition == UserPosition.Long) {
+      maxAmount = state?.userState?.lcontractBoughtAsUser.toNumber()! / 1e6;
+    } else if (localState.userPosition == UserPosition.Short) {
+      maxAmount = state?.userState?.scontractSoldAsUser.toNumber()! / 1e6;
+    }
+    onChangeSeconderyContractValue(maxAmount.toString())
+  }
+
   return (
     <div className="App">
       <div className="flex flex-col w-screen h-screen items-center bg-black relative overflow-hidden">
@@ -741,26 +756,33 @@ function App() {
                             </div>
                           </div>
                           <div className="mt-8 w-full flex flex-col gap-4">
+                            <div className="flex flex-1 items-center">
+                              
                             <input
                               value={seconderyUsdcInputValue}
                               onChange={(e) =>
                                 onChangeSeconderyUsdValue(e.target.value)
                               }
-                              className="w-full py-3 text-sm px-3 text-gray-100 rounded-lg border-2 bg-white-900 rouneded-xl border-gray-100/10 bg-gray-100/10 focus:outline-none"
-                            />
+                              className="w-full py-3 text-sm px-3 text-gray-100 rounded-l-lg border-2 border-gray-100/10 border-r-0 bg-gray-100/10 focus:outline-none"
+                              />
+                              <div onClick={setMaxUsd} className="flex flex-col py-3 items-center w-32 text-sm text-gray-400 border-2 border-gray-100/30 rounded-r-lg hover:border-gray-200/60 hover:text-white cursor-pointer">Max</div>
+                            </div>
+                            <div className="flex flex-1 items-center">
                             <input
                               value={seconderyContractInputValue}
                               onChange={(e) =>
                                 onChangeSeconderyContractValue(e.target.value)
                               }
-                              className="w-full py-3 text-sm px-3 text-gray-100 rounded-lg border-2 bg-white-900 rouneded-xl border-gray-100/10 bg-gray-100/10 focus:outline-none"
-                            />
+                              className="w-full py-3 text-sm px-3 text-gray-100 rounded-l-lg border-2 border-gray-100/10 border-r-0 bg-gray-100/10 focus:outline-none"
+                              />
+                              <div onClick={setMaxContract} className="flex flex-col py-3 items-center w-32 text-sm text-gray-400 border-2 border-gray-100/30 rounded-r-lg hover:border-gray-200/60 hover:text-white cursor-pointer">Max</div>
+                            </div>
                           </div>
                         </div>
                         <p className="mt-4 ml-20 px-6 text-red-900 text-sm">
                           {errStr}
                         </p>
-                        <div className="px-6 mt-5 mb-1 flex flex-row w-full justify-between gap-3">
+                        <div className="px-6 mt-6 mb-1 flex flex-row w-full justify-between gap-3">
                           <div className="w-full flex flex-col justify-between items-center py-1 rounded-xl gap-[0.5px]">
                             <button
                               disabled={
