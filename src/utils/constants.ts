@@ -1,8 +1,8 @@
 import { PublicKey } from "@solana/web3.js";
 
 
-export const CONTRACT_NAME = "v1_14/03/23_GVXRS";
-export const WHIRLPOOL_KEY = new PublicKey("6ASLzoT1aQHANPcRHRJ1jq4xsWNWidSMd4SqBm8eoDLr"); 
+export const CONTRACT_NAME = "v2_14/03_GVXRS";
+export const WHIRLPOOL_KEY = new PublicKey("HV4S2Hsin5yU9DLxXiygrdxczuq2ZoUQTaV5pDX9hkaU"); 
 
 export const VAYOO_CONTRACT_ID = new PublicKey('6ccnZSaDcMwKe1xwHbubs4q2GdPEr7hSK59A3GddJpte');
 export const USDC_MINT = new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v');
