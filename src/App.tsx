@@ -31,7 +31,10 @@ import {
 } from "@orca-so/whirlpools-sdk";
 import { DecimalUtil, Percentage } from "@orca-so/common-sdk";
 import { UserPosition } from "./utils/types";
-import PositionComponent from "./components/position";
+import PositionAndStatsComponent from "./components/positionAndStats";
+import { BN } from "@project-serum/anchor";
+import twitterLogo from "./assets/twitter-logo.svg";
+import telegramLogo from "./assets/telegram-logo.svg";
 
 // Some Naming Conventions to remember
 // Primary Amount = The input field used for depositing/withdrawing
@@ -59,10 +62,11 @@ function App() {
     primaryAmount: 0,
     seconderyUsdcAmount: 0,
     seconderyContractAmount: 0,
-    isSettling: false,
     userPosition: UserPosition.Neutral,
     isAmountInUsdc: true,
     lastAmount: 0,
+    netAccountValueUsd: 0,
+    pnl: 0,
   });
 
   const toggleLocalRefresh = () => {
@@ -70,23 +74,10 @@ function App() {
     setRefresh((refresh) => !refresh);
   };
 
-  // useEffect(() => {
-  //   async () => {
-  //     if (wallet.publicKey) {
-  //       const cSubId = connection.onAccountChange(wallet.publicKey!, (acc) => {
-  //         if (acc) {
-  //           console.log("--Wallet balance changed--");
-  //           setRefresh((prev) => !prev);
-  //         }
-  //       });
-  //       return await connection.removeAccountChangeListener(cSubId);
-  //     }
-  //   };
-  // }, [wallet.connected, wallet.publicKey]);
-
   useEffect(() => {
     (async () => {
       if (wallet?.publicKey) {
+        const netAccountValueUsd = state?.userState?.usdcFree.toNumber();
         if (ADMIN_KEYS.includes(wallet.publicKey.toString()!)) {
           setLocalState((prev) => ({
             ...prev,
@@ -110,18 +101,26 @@ function App() {
           userPosition = UserPosition.Long;
         } else if (state?.userState?.contractPositionNet.toNumber()! < 0) {
           userPosition = UserPosition.Short;
+          const pnl = state?.userState?.usdcFree
+            .add(state.userState.usdcCollateralLockedAsUser)
+            .sub(
+              new BN(state.assetPrice).mul(state.userState.scontractSoldAsUser)
+            )
+            .toNumber()!;
+          setLocalState((prev) => ({
+            ...prev,
+            pnl,
+          }));
         } else {
           userPosition = UserPosition.Neutral;
         }
         if (state?.userState?.lcontractMintedAsMm.toNumber()! > 0) {
           userPosition = UserPosition.Mm;
         }
-        const isSettling = state?.contractState?.isSettling!;
         setLocalState((prev) => ({
           ...prev,
           usdBalance,
           userExist,
-          isSettling,
           userPosition,
         }));
         console.log(localState);
@@ -447,7 +446,6 @@ function App() {
         setErrStr("");
         setTradeEnable(true);
       } else {
-        
         try {
           usdcValue =
             (
@@ -600,7 +598,7 @@ function App() {
                         className="w-full py-3 text-sm text-center text-gray-100 rounded-lg border-2 bg-white-900 rouneded-xl border-gray-100/10 bg-gray-100/10 focus:outline-none"
                       />
                     </div>
-                    {localState.isSettling ? (
+                    {state?.contractState?.isSettling ? (
                       <div className="my-3 flex flex-col items-center">
                         Contract is in settling mode.
                         <button
@@ -632,7 +630,7 @@ function App() {
                 <div className="w-full flex items-start gap-10">
                   <div className="w-1/2 flex flex-col">
                     <div className="w-full mt-10 px-6 py-6 text-white flex flex-col gap-3 border-2 border-gray-300/10 max-w-5xl rounded-xl bg-black/50 z-10">
-                      <div className="text-2xl text-lime-200/80">
+                      <div className="text-2xl text-lime-200/90">
                         Your Account
                       </div>
                       <div className="mt-1 flex flex-col gap-3 text-md">
@@ -677,13 +675,13 @@ function App() {
                       </div>
                     </div>
                     <div className="mt-7 z-10">
-                      <PositionComponent
+                      <PositionAndStatsComponent
                         userPosition={localState.userPosition}
                       />
                     </div>
                   </div>
                   <div className="mt-10 py-6 text-white flex flex-col gap-3 w-1/2 border-2 border-gray-300/10 max-w-5xl rounded-xl bg-black/50 z-10">
-                    <div className="px-6 text-2xl ">Trade {MARKET_NAME}</div>
+                    <div className="px-6 text-2xl text-gray-200">Trade {MARKET_NAME}</div>
 
                     <div className="flex flex-col py-3 justify-between items-center text-gray-200 bg-gray-50/10 border-t-2 border-b-2 border-gray-200/30">
                       <div className="flex justify-between gap-4">
@@ -701,16 +699,16 @@ function App() {
                         </div>
                         |
                         <div className="text-lime-200 text-4xl">
-                          {state?.assetPrice.toFixed(2) ?? "382"}
+                          {state?.assetPrice.toFixed(2)}
                         </div>
                       </div>
                     </div>
-                    {localState.isSettling ? (
-                      <div className="my-3 flex flex-col items-center">
+                    {state?.contractState?.isSettling ? (
+                      <div className="my-3 flex flex-col items-center text-gray-200">
                         Contract is in settling mode.
                         <button
                           onClick={onClickUserSettle}
-                          className="mt-4 px-16 py-2 border-2 border-gray-100/40 rounded-xl hover:bg-blue-200/20 hover:border-blue-100/80"
+                          className="mt-4 px-16 py-2 border-2 text-gray-200 border-gray-100/40 rounded-xl hover:bg-blue-200/20 hover:border-blue-100/80"
                         >
                           Settle Long Position
                         </button>
@@ -834,7 +832,37 @@ function App() {
             )}
           </div>
         </div>
-
+        <div className="absolute w-full h-[50px] bottom-4 right-2 py-3 px-6 flex flex-col items-end">
+          <div className="flex gap-4 items-center">
+            <div className="text-sm text-gray-300 hover:underline-offset-4 hover:underline">
+              <a href="https://vayoo-markets.gitbook.io/vayoo-labs-docs/">
+                Read the Docs
+              </a>
+            </div>
+            <div className="flex gap-2 -mt-1">
+              <a
+                className="hover:opacity-70 transition duration-200 ease-in-out"
+                href="https://twitter.com/VayooMarkets"
+              >
+                <img
+                  className="h-6"
+                  src={twitterLogo}
+                  alt="Twitter of Vayoo Markets"
+                />
+              </a>
+              <a
+                className="hover:opacity-70 transition duration-200 ease-in-out"
+                href="https://t.me/+UrUNxjJxU1w1NTg1"
+              >
+                <img
+                  className="h-6"
+                  src={telegramLogo}
+                  alt="Telegram Channel of Vayoo Markets"
+                />
+              </a>
+            </div>
+          </div>
+        </div>
         <div className="absolute z-[0] w-[55%] h-[50%] -left-[10%] top-60 gray__gradient"></div>
         {/* <div className="absolute z-[0] w-[25%] h-[30%] left-[10%] top-40 white__gradient"></div> */}
         <div className="absolute z-[0] w-[50%] h-[70%] -right-[45%] bottom-20 gray__gradient"></div>

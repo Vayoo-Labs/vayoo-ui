@@ -24,6 +24,6 @@ export enum UserPosition {
   Mm
 }
 
-export type PositionComponentParams = {
+export type PositionAndStatsComponentParams = {
   userPosition: UserPosition
 };
