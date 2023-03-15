@@ -39,4 +39,5 @@ export const WHITELIST_USER_KEYS = [
     "CfGQPM14E842FRzXtpiAeWuK9A4EbGTnbxmxFjWJPhJe", // rolllr
     "4dHx2N6SphSgJzJTDFi5NsyHr18tmgx7kohNYWQJsdVi", // goodtradez
     "9cxZRERzNtVyqrnz7mjGu19vRip2jX4shQtHMb1B69FQ", // pseudo
+    "HKwoEwxAGd3KynUSi4UZzSHxYJd6sewYRV95ccsdjNwm", // abdulla
 ]
