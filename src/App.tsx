@@ -580,7 +580,7 @@ function App() {
           </div>
         </div>
         {/* Body */}
-        <ContractSelectorComponent />
+        {localState.whitelisted && <ContractSelectorComponent />}
         <div className="w-full h-full flex flex-col items-center">
           <div className="w-full max-w-5xl px-6 lg:px-0">
             {localState.adminMode && localState.isAdmin ? (
