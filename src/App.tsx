@@ -667,7 +667,7 @@ function App() {
                           Your Account
                         </div>
                         <div className="mt-1 flex flex-col gap-3 text-md">
-                          <div className="flex justify-between items-center text-gray-200">
+                          <div className="flex justify-between items-center text-gray-300">
                             Net Account Value :
                             <div>
                               {(
@@ -677,8 +677,8 @@ function App() {
                             </div>
                           </div>
                         </div>
-                        <div className="mt-5 flex gap-5 text-xl items-start text-gray-200">
-                          <div className="flex flex-col items-end text-xl">
+                        <div className="mt-4 flex gap-5 text-xl items-start text-gray-300/90">
+                          <div className="flex flex-col items-end text-lg">
                             Amount
                             <div className="text-gray-500 text-xs underline-offset-4">
                               (USDC)
@@ -689,25 +689,25 @@ function App() {
                             onChange={(e) =>
                               onChangePrimaryAmountValue(e.target.value)
                             }
-                            className="w-full py-3 px-3 text-sm text-gray-100 rounded-lg border-2 bg-white-900 rouneded-xl border-gray-100/10 bg-gray-100/10 focus:outline-none"
+                            className="w-full py-2 px-3 text-sm text-gray-100 rounded-lg border-2 bg-white-900 rouneded-xl border-gray-100/10 bg-gray-100/10 focus:outline-none"
                           />
                         </div>
                         <div className="mt-4 mb-1 flex flex-row w-full justify-between gap-5">
                           <button
                             onClick={onClickDeposit}
-                            className="w-full px-4 py-4 border-2 border-gray-100/40 rounded-xl hover:bg-blue-200/20 hover:border-blue-100/80"
+                            className="w-full px-4 py-3 border-2 text-gray-300 border-gray-100/20 rounded-xl hover:border hover:border-white/80"
                           >
                             Deposit
                           </button>
                           <button
                             onClick={onClickWithdraw}
-                            className="w-full px-4 py-4 border-2 border-gray-100/40 rounded-xl hover:bg-blue-200/20 hover:border-blue-100/80"
+                            className="w-full px-4 py-3 border-2 text-gray-300 border-gray-100/20 rounded-xl hover:border hover:border-white/80"
                           >
                             Withdraw
                           </button>
                         </div>
                       </div>
-                      <div className="mt-7 z-10">
+                      <div className="mt-6 z-10">
                         <PositionAndStatsComponent
                           userPosition={localState.userPosition}
                         />

@@ -12,7 +12,7 @@ const ContractSelectorComponent = () => {
         <div className="flex">
         {CONTRACT_LIST.map((item) => 
           <div 
-          className={`py-2 px-4 cursor-pointer border ${selectedContract?.name == item.name ? 'border-gray-400' : 'border-gray-800'}`}
+          className={`rounded-sm py-2 px-4 cursor-pointer border hover:border-gray-600 ${selectedContract?.name == item.name ? 'border-gray-400 hover:border-gray-400' : 'border-gray-800'} `}
           onClick={() => {
             changeSelectedContract(item.name, item.whirlpoolKey, item.pythFeed, item.pythExponent)
           }}>

@@ -32,15 +32,15 @@ const PositionAndStatsComponent = ({ userPosition }: PositionAndStatsComponentPa
       <div className="flex gap-3">
         <div
           className={`cursor-pointer text-2xl ${
-            isStats ? "text-gray-600" : "text-gray-200"
+            isStats ? "text-gray-600" : "text-gray-300"
           }`}
           onClick={onClickPosition}
         >
-          Your Position
+          Your Positions
         </div>
         <div
           className={`cursor-pointer text-2xl ${
-            !isStats ? "text-gray-600" : "text-gray-200"
+            !isStats ? "text-gray-600" : "text-gray-300"
           }`}
           onClick={onClickStats}
         >
@@ -49,10 +49,10 @@ const PositionAndStatsComponent = ({ userPosition }: PositionAndStatsComponentPa
       </div>
       {!isStats ? (
         <div className="mt-1 flex flex-col gap-3 text-sm">
-          <div className="flex justify-between items-center text-gray-300">
+          <div className="flex justify-between items-center text-gray-400">
             Net Position:
             <div
-              className={`font-bold text-2xl ${
+              className={`font-bold text-2xl text-gray-400 ${
                 userPosition != UserPosition.Neutral &&
                 (userPosition == UserPosition.Long
                   ? "text-green-600"
