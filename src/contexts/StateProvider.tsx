@@ -1,4 +1,5 @@
 import {
+  PublicKey,
   SignatureResult,
   SystemProgram,
   SYSVAR_RENT_PUBKEY,
@@ -19,19 +20,19 @@ import {
   getScontractMintPDA,
   getUserStatePDA,
 } from "../utils/vayoo-pda";
-import { vayooState } from "../utils/types";
+import { selectedContractData, vayooState } from "../utils/types";
 import {
-  getAccount,
   getAssociatedTokenAddressSync,
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token-v2";
 import {
   COLLATERAL_MINT,
-  PYTH_EXPONENT,
-  PYTH_FEED,
+  DEFAULT_CONTRACT_NAME,
+  DEFAULT_PYTH_EXPONENT,
+  DEFAULT_PYTH_FEED,
   REFRESH_TIME_INTERVAL,
   USDC_MINT,
-  WHIRLPOOL_KEY,
+  DEFAULT_WHIRLPOOL_KEY,
 } from "../utils/constants";
 import {
   AccountFetcher, buildWhirlpoolClient, ORCA_WHIRLPOOL_PROGRAM_ID, PDAUtil, PriceMath, WhirlpoolContext,
@@ -51,6 +52,13 @@ interface VMStateConfig {
   ) => void;
   toggleRefresh: () => void;
   loading: boolean;
+  selectedContract: selectedContractData;
+  changeSelectedContract: (
+    name: string,
+    whirlpoolKey: PublicKey,
+    pythFeed: PublicKey,
+    pythExponent: number
+  ) => void;
 }
 
 const VMStateContext = React.createContext<VMStateConfig>({
@@ -58,12 +66,20 @@ const VMStateContext = React.createContext<VMStateConfig>({
   subscribeTx: () => {},
   toggleRefresh: () => {},
   loading: false,
+  selectedContract: null,
+  changeSelectedContract: () => {},
 });
 
 export function VMStateProvider({ children = undefined as any }) {
   const { connection } = useConnection();
   const wallet = useWallet();
 
+  const [selectedContract, setSelectedContract] = useState<selectedContractData>({
+    name: DEFAULT_CONTRACT_NAME,
+    whirlpoolKey: DEFAULT_WHIRLPOOL_KEY,
+    pythFeed: DEFAULT_PYTH_FEED,
+    pythExponent: DEFAULT_PYTH_EXPONENT
+  });
   const [state, setState] = useState<vayooState>(null);
   const [refresh, setRefresh] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -71,6 +87,16 @@ export function VMStateProvider({ children = undefined as any }) {
   const orcaFetcher = new AccountFetcher(connection);
   const whirlpoolClient = buildWhirlpoolClient(WhirlpoolContext.from(connection, wallet as WalletOrca, ORCA_WHIRLPOOL_PROGRAM_ID));
   const [pythData, setPythData] = useState<PriceData | null>(null);
+
+  const changeContract = (name: string, whirlpoolKey: PublicKey, pythFeed: PublicKey, pythExponent: number) => {
+    setSelectedContract({
+      name,
+      whirlpoolKey,
+      pythFeed,
+      pythExponent
+    })
+    return;
+  }
 
   const subscribeTx = async (
     txHash: string,
@@ -108,34 +134,38 @@ export function VMStateProvider({ children = undefined as any }) {
       tokenProgram: TOKEN_PROGRAM_ID,
     };
 
-    const whirlpool = await whirlpoolClient.getPool(WHIRLPOOL_KEY, true);
+    const whirlpool = await whirlpoolClient.getPool(selectedContract?.whirlpoolKey!, true);
     const whirlpoolState = whirlpool.getData();
-    const whirlpoolOraclePda = PDAUtil.getOracle(ORCA_WHIRLPOOL_PROGRAM_ID, WHIRLPOOL_KEY).publicKey;
+    const whirlpoolOraclePda = PDAUtil.getOracle(ORCA_WHIRLPOOL_PROGRAM_ID, selectedContract?.whirlpoolKey!).publicKey;
 
     const program = await getVayooProgramInstance(connection, wallet);
-    const contractStateKey = getContractStatePDA().pda;
-    const lcontractMint = getLcontractMintPDA().pda;
-    const scontractMint = getScontractMintPDA().pda;
-    const escrowVaultCollateral = getEscrowVaultCollateralPDA().pda;
+    const contractStateKey = getContractStatePDA(selectedContract?.name!).pda;
+    const lcontractMint = getLcontractMintPDA(selectedContract?.name!).pda;
+    const scontractMint = getScontractMintPDA(selectedContract?.name!).pda;
+    const escrowVaultCollateral = getEscrowVaultCollateralPDA(selectedContract?.name!).pda;
     const contractState = await program.account.contractState.fetchNullable(
       contractStateKey
     );
 
     const poolPrice = PriceMath.sqrtPriceX64ToPrice(whirlpoolState?.sqrtPrice!, 6, 6);
-    const assetPrice = poolPrice.toNumber() + (contractState?.startingPrice.toNumber()! / PYTH_EXPONENT) - (contractState?.limitingAmplitude.toNumber()! / 2)
+    const assetPrice = poolPrice.toNumber() + (contractState?.startingPrice.toNumber()! / selectedContract?.pythExponent!) - (contractState?.limitingAmplitude.toNumber()! / 2)
 
     if (wallet?.publicKey) {
-      const userStateKey = getUserStatePDA(wallet.publicKey!).pda;
+      const userStateKey = getUserStatePDA(selectedContract?.name!, wallet.publicKey!).pda;
       const vaultFreeCollateralAta = getFreeVaultCollateralPDA(
+        selectedContract?.name!,
         wallet.publicKey!
       ).pda;
       const vaultLockedCollateralAta = getLockedVaultCollateralPDA(
+        selectedContract?.name!,
         wallet.publicKey!
       ).pda;
       const vaultFreeScontractAta = getFreeVaultScontractPDA(
+        selectedContract?.name!,
         wallet.publicKey!
       ).pda;
       const vaultLockedScontractAta = getLockedVaultScontractPDA(
+        selectedContract?.name!,
         wallet.publicKey!
       ).pda;
       const userCollateralAta = getAssociatedTokenAddressSync(
@@ -175,9 +205,9 @@ export function VMStateProvider({ children = undefined as any }) {
         mmLcontractAta,
         mmCollateralWalletAta: userCollateralAta,
         vaultLcontractAta,
-        pythFeed: PYTH_FEED,
+        pythFeed: selectedContract?.pythFeed,
         whirlpoolProgram: ORCA_WHIRLPOOL_PROGRAM_ID,
-        whirlpool: WHIRLPOOL_KEY,
+        whirlpool: selectedContract?.whirlpoolKey!,
         tokenVaultA: whirlpoolState.tokenVaultA,
         tokenVaultB: whirlpoolState.tokenVaultB,
         oracle: whirlpoolOraclePda,
@@ -222,7 +252,7 @@ export function VMStateProvider({ children = undefined as any }) {
       console.log("--updated state--");
       setLoading(false);
     })();
-  }, [connection, wallet, refresh, toogleUpdateState]);
+  }, [connection, wallet, refresh, toogleUpdateState, selectedContract]);
 
   useEffect(() => {
     if (connection) {
@@ -241,14 +271,14 @@ export function VMStateProvider({ children = undefined as any }) {
         });
         // Pyth Feed
         (async () => {
-          const pythAccount = (await connection.getAccountInfo(PYTH_FEED))?.data!;
+          const pythAccount = (await connection.getAccountInfo(selectedContract?.pythFeed!))?.data!;
           const parsedPythData = parsePriceData(pythAccount);
           setPythData(parsedPythData);
           setRefresh((prev) => !prev);
           console.log('setting inital pyth data')
         })()
         // Add listener on pyth account for refreshes
-        connection.onAccountChange(PYTH_FEED, (account) => {
+        connection.onAccountChange(selectedContract?.pythFeed!, (account) => {
           const parsedData = parsePriceData(account.data);
           setPythData(parsedData);
           setRefresh((prev) => !prev)
@@ -271,6 +301,8 @@ export function VMStateProvider({ children = undefined as any }) {
         subscribeTx,
         toggleRefresh: () => setRefresh((refresh) => !refresh),
         loading,
+        changeSelectedContract: changeContract,
+        selectedContract
       }}
     >
       {children}
@@ -292,4 +324,13 @@ export function useSubscribeTx() {
   const context = React.useContext(VMStateContext);
 
   return context.subscribeTx;
+}
+
+export function useSelectedContract() {
+  const context = React.useContext(VMStateContext);
+
+  return {
+    selectedContract: context.selectedContract,
+    changeSelectedContract: context.changeSelectedContract
+  }
 }

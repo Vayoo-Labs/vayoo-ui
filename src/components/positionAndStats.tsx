@@ -1,23 +1,16 @@
-import toast, { Toaster } from "react-hot-toast";
 import { useState } from "react";
-import { useSubscribeTx, useVMState } from "../contexts/StateProvider";
-import {
-  adminSettle,
-  initContract,
-  triggerSettleMode,
-} from "../utils/vayoo-web3";
-import { useWallet } from "@solana/wallet-adapter-react";
+import { useSelectedContract, useVMState } from "../contexts/StateProvider";
 import { PositionAndStatsComponentParams, UserPosition } from "../utils/types";
 import {
   ASSET_LINK,
   ASSET_LONG_NAME,
   ASSET_SHORT_NAME,
-  PYTH_EXPONENT,
 } from "../utils/constants";
 
 const PositionAndStatsComponent = ({ userPosition }: PositionAndStatsComponentParams) => {
   const { state, loading } = useVMState();
   const [isStats, setisStats] = useState(false);
+  const { selectedContract } = useSelectedContract();
 
   const maturity = new Date(
     state?.contractState?.endingTime.toNumber()! * 1000
@@ -104,7 +97,7 @@ const PositionAndStatsComponent = ({ userPosition }: PositionAndStatsComponentPa
               Price at Maturity :
               <div>
                 {(
-                  state?.contractState?.endingPrice.toNumber()! / PYTH_EXPONENT
+                  state?.contractState?.endingPrice.toNumber()! / selectedContract?.pythExponent!
                 ).toFixed(2)}{" "}
                 USD
               </div>
@@ -118,7 +111,7 @@ const PositionAndStatsComponent = ({ userPosition }: PositionAndStatsComponentPa
             Starting Price :
             <div>
               {(
-                state?.contractState?.startingPrice.toNumber()! / PYTH_EXPONENT
+                state?.contractState?.startingPrice.toNumber()! / selectedContract?.pythExponent!
               ).toFixed(2)}{" "}
               USD
             </div>

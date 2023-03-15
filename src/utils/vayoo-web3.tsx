@@ -6,7 +6,7 @@ import {
   TRADE_SLIPPAGE,
   USDC_MINT,
   VAYOO_CONTRACT_ID as PID,
-  WHIRLPOOL_KEY,
+  DEFAULT_WHIRLPOOL_KEY,
 } from "./constants";
 import { WalletContextState } from "@solana/wallet-adapter-react";
 import { addZeros } from "./index";
@@ -18,13 +18,13 @@ import { BN } from "@project-serum/anchor";
 import { createAssociatedTokenAccountInstruction } from "@solana/spl-token-v2";
 import {
   ORCA_WHIRLPOOL_PROGRAM_ID,
-  PDAUtil,
   PriceMath,
   SwapQuote,
   swapQuoteByInputToken,
   swapQuoteByOutputToken,
 } from "@orca-so/whirlpools-sdk";
 import { DecimalUtil, Percentage } from "@orca-so/common-sdk";
+import { useSelectedContract } from "../contexts/StateProvider";
 
 export async function initContract(
   vayooState: vayooState,
@@ -364,7 +364,8 @@ async function initContractIx(
 }
 
 async function initUserStateIx(vayooState: vayooState, user: PublicKey) {
-  const bump = getUserStatePDA(user).bump;
+  const { selectedContract } = useSelectedContract();
+  const bump = getUserStatePDA(selectedContract?.name!, user).bump;
 
   const ix = await vayooState!.vayooProgram.methods
     .initializeUser(bump)

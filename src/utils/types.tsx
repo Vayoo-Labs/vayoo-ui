@@ -2,6 +2,7 @@ import { AccountFetcher, Whirlpool, WhirlpoolData } from '@orca-so/whirlpools-sd
 import * as anchor from '@project-serum/anchor';
 import { IdlAccounts } from '@project-serum/anchor';
 import { PriceData } from '@pythnetwork/client';
+import { PublicKey } from '@solana/web3.js';
 import { VayooContracts } from './vayoo_contracts';
 
 export type vayooState = {
@@ -27,3 +28,10 @@ export enum UserPosition {
 export type PositionAndStatsComponentParams = {
   userPosition: UserPosition
 };
+
+export type selectedContractData = {
+  name: string,
+  whirlpoolKey: PublicKey,
+  pythFeed: PublicKey,
+  pythExponent: number
+} | null;
