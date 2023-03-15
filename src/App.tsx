@@ -11,7 +11,7 @@ import {
   USER_TRADE_CAP_USD,
   WHITELIST_USER_KEYS,
 } from "./utils/constants";
-import { useSubscribeTx, useVMState } from "./contexts/StateProvider";
+import { useSelectedContract, useSubscribeTx, useVMState } from "./contexts/StateProvider";
 import AdminComponent from "./components/admin";
 import toast, { Toaster } from "react-hot-toast";
 import {
@@ -49,6 +49,7 @@ function App() {
   const { connected } = useWallet();
   const { connection } = useConnection();
   const { state, toggleRefresh, loading } = useVMState();
+  const { selectedContract } = useSelectedContract();
   const [refresh, setRefresh] = useState(false);
   const [errStr, setErrStr] = useState("");
   const [tradeEnable, setTradeEnable] = useState(true);
@@ -151,7 +152,7 @@ function App() {
   ]);
 
   const onClickInitUserState = async () => {
-    await initUserState(state, wallet)
+    await initUserState(state, selectedContract?.name!, wallet)
       .then((txHash: string) => {
         subscribeTx(
           txHash,
