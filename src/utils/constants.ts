@@ -37,4 +37,5 @@ export const WHITELIST_USER_KEYS = [
     "2bmaKmnsgVxCxNJioY9qer3L7aQZYFdZgmYPnxXVo4xJ", // King Smart
     "9Tftu1iJHwmth2QSp22QER4isFewT8RFK56tk79iJ3Ek", // Cyprian igbokwe
     "CfGQPM14E842FRzXtpiAeWuK9A4EbGTnbxmxFjWJPhJe", // rolllr
+    "4dHx2N6SphSgJzJTDFi5NsyHr18tmgx7kohNYWQJsdVi", // goodtradez
 ]
