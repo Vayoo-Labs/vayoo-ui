@@ -38,4 +38,5 @@ export const WHITELIST_USER_KEYS = [
     "9Tftu1iJHwmth2QSp22QER4isFewT8RFK56tk79iJ3Ek", // Cyprian igbokwe
     "CfGQPM14E842FRzXtpiAeWuK9A4EbGTnbxmxFjWJPhJe", // rolllr
     "4dHx2N6SphSgJzJTDFi5NsyHr18tmgx7kohNYWQJsdVi", // goodtradez
+    "9cxZRERzNtVyqrnz7mjGu19vRip2jX4shQtHMb1B69FQ", // pseudo
 ]
