@@ -459,7 +459,7 @@ async function longIx(
     }
     const ix = await vayooState!.vayooProgram.methods
       .longUser(
-        swapQuote.estimatedAmountIn,
+        swapQuote.estimatedAmountOut,
         swapQuote.otherAmountThreshold,
         swapQuote.sqrtPriceLimit,
       )
@@ -602,7 +602,7 @@ async function shortIx(
     }
     const ix = await vayooState!.vayooProgram.methods
       .closeShortUser(
-        swapQuote.estimatedAmountIn,
+        swapQuote.estimatedAmountOut,
         swapQuote.otherAmountThreshold,
         swapQuote.sqrtPriceLimit,
       )
