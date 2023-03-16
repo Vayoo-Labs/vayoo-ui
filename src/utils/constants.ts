@@ -33,6 +33,7 @@ export const WHITELIST_USER_KEYS = [
     "4dHx2N6SphSgJzJTDFi5NsyHr18tmgx7kohNYWQJsdVi", // goodtradez
     "9cxZRERzNtVyqrnz7mjGu19vRip2jX4shQtHMb1B69FQ", // pseudo
     "HKwoEwxAGd3KynUSi4UZzSHxYJd6sewYRV95ccsdjNwm", // abdulla
+    "Bj7VYcA4TGpNpGxwoXLiixBEZSDmKUk5QrwYwddCx8Au", // HMS
 ]
 
 export const CONTRACT_LIST = [
