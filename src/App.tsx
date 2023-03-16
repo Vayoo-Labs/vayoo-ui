@@ -70,7 +70,7 @@ function App() {
     isAmountInUsdc: true,
     lastAmount: 0,
     netAccountValueUsd: 0,
-    pnl: 0,
+    positionSizeUsd: 0,
     whitelisted: false,
   });
 
@@ -82,6 +82,7 @@ function App() {
   useEffect(() => {
     (async () => {
       if (wallet?.publicKey) {
+        let positionSizeUsd = 0;
         if (WHITELIST_USER_KEYS.includes(wallet.publicKey.toString())) {
           setLocalState((prev) => ({
             ...prev,
@@ -93,7 +94,6 @@ function App() {
             whitelisted: false,
           }));
         }
-        const netAccountValueUsd = state?.userState?.usdcFree.toNumber();
         if (ADMIN_KEYS.includes(wallet.publicKey.toString()!)) {
           setLocalState((prev) => ({
             ...prev,
@@ -115,18 +115,10 @@ function App() {
         let userPosition: UserPosition;
         if (state?.userState?.contractPositionNet.toNumber()! > 0) {
           userPosition = UserPosition.Long;
+          positionSizeUsd = state?.userState?.lcontractBoughtAsUser.mul(new BN(state.assetPrice)).toNumber()!
         } else if (state?.userState?.contractPositionNet.toNumber()! < 0) {
           userPosition = UserPosition.Short;
-          const pnl = state?.userState?.usdcFree
-            .add(state.userState.usdcCollateralLockedAsUser)
-            .sub(
-              new BN(state.assetPrice).mul(state.userState.scontractSoldAsUser)
-            )
-            .toNumber()!;
-          setLocalState((prev) => ({
-            ...prev,
-            pnl,
-          }));
+          positionSizeUsd = state?.userState?.scontractSoldAsUser.mul(new BN(state.assetPrice)).toNumber()!
         } else {
           userPosition = UserPosition.Neutral;
         }
@@ -138,6 +130,7 @@ function App() {
           usdBalance,
           userExist,
           userPosition,
+          positionSizeUsd
         }));
         console.log(localState);
       }
