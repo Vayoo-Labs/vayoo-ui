@@ -441,7 +441,7 @@ async function longIx(
         vayooState?.whirlpool!,
         vayooState?.accounts.collateralMint,
         DecimalUtil.toU64(DecimalUtil.fromNumber(amount), 6),
-        Percentage.fromDecimal(DecimalUtil.fromNumber(10)),
+        Percentage.fromDecimal(DecimalUtil.fromNumber(TRADE_SLIPPAGE)),
         ORCA_WHIRLPOOL_PROGRAM_ID,
         vayooState?.orcaFetcher!,
         true
@@ -451,7 +451,7 @@ async function longIx(
         vayooState?.whirlpool!,
         vayooState?.accounts.lcontractMint,
         DecimalUtil.toU64(DecimalUtil.fromNumber(amount), 6),
-        Percentage.fromDecimal(DecimalUtil.fromNumber(10)),
+        Percentage.fromDecimal(DecimalUtil.fromNumber(TRADE_SLIPPAGE)),
         ORCA_WHIRLPOOL_PROGRAM_ID,
         vayooState?.orcaFetcher!,
         true
