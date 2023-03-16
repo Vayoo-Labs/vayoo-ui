@@ -2,13 +2,6 @@ import { PublicKey } from "@solana/web3.js";
 
 export const RPC = "https://api.metaplex.solana.com/";
 
-export const DEFAULT_CONTRACT_NAME = "v04_20/03_2k1qZ";
-export const DEFAULT_WHIRLPOOL_KEY = new PublicKey("6Sh1RDJaApNxc1DiLc5sgcrnBMzqgusg9htmWnhg5UHS"); 
-export const DEFAULT_PYTH_FEED = new PublicKey("2k1qZ9ZMNUNmpGghq6ZQRj7z2d2ATNnzzYugVhiTDCPn"); //SPY Pyth Feed
-export const DEFAULT_PYTH_EXPONENT = 1e5;
-// export const DEFAULT_PYTH_FEED = new PublicKey("GVXRSBjFk6e6J3NbVPXohDJetcTjaeeuykUpbQF8UoMU"); //BTC Pyth Feed
-// export const DEFAULT_PYTH_EXPONENT = 1e8;
-
 export const VAYOO_CONTRACT_ID = new PublicKey('6ccnZSaDcMwKe1xwHbubs4q2GdPEr7hSK59A3GddJpte');
 export const USDC_MINT = new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v');
 export const SUPER_USER_KEY = new PublicKey("4gNFEk4qvgxE6iM8ukfDUDaCT8itAeWXxURbnqNZXZXp");
@@ -45,11 +38,18 @@ export const WHITELIST_USER_KEYS = [
 export const CONTRACT_LIST = [
     {
         uiName: "SPX Monday 20th",
-        name: "v04_20/03_2k1qZ",
-        whirlpoolKey: new PublicKey("6Sh1RDJaApNxc1DiLc5sgcrnBMzqgusg9htmWnhg5UHS"),
+        name: "v06_20/03_2k1qZ",
+        whirlpoolKey: new PublicKey("59CAhVhDpUUznP1pLhuNiRznW1TKyg1GCy3YkeWqHEnq"),
         pythFeed: new PublicKey("2k1qZ9ZMNUNmpGghq6ZQRj7z2d2ATNnzzYugVhiTDCPn"),
         pythExponent: 1e5
     },
+    // {
+    //     uiName: "SPX Monday 20th",
+    //     name: "v04_20/03_2k1qZ",
+    //     whirlpoolKey: new PublicKey("6Sh1RDJaApNxc1DiLc5sgcrnBMzqgusg9htmWnhg5UHS"),
+    //     pythFeed: new PublicKey("2k1qZ9ZMNUNmpGghq6ZQRj7z2d2ATNnzzYugVhiTDCPn"),
+    //     pythExponent: 1e5
+    // },
     {
         uiName: "SPX Friday 17th",
         name: "v4_17/03_2k1qZ",

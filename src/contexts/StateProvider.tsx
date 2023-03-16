@@ -27,12 +27,9 @@ import {
 } from "@solana/spl-token-v2";
 import {
   COLLATERAL_MINT,
-  DEFAULT_CONTRACT_NAME,
-  DEFAULT_PYTH_EXPONENT,
-  DEFAULT_PYTH_FEED,
   REFRESH_TIME_INTERVAL,
   USDC_MINT,
-  DEFAULT_WHIRLPOOL_KEY,
+  CONTRACT_LIST,
 } from "../utils/constants";
 import {
   AccountFetcher, buildWhirlpoolClient, ORCA_WHIRLPOOL_PROGRAM_ID, PDAUtil, PriceMath, WhirlpoolContext,
@@ -75,10 +72,10 @@ export function VMStateProvider({ children = undefined as any }) {
   const wallet = useWallet();
 
   const [selectedContract, setSelectedContract] = useState<selectedContractData>({
-    name: DEFAULT_CONTRACT_NAME,
-    whirlpoolKey: DEFAULT_WHIRLPOOL_KEY,
-    pythFeed: DEFAULT_PYTH_FEED,
-    pythExponent: DEFAULT_PYTH_EXPONENT
+    name: CONTRACT_LIST[0].name,
+    whirlpoolKey: CONTRACT_LIST[0].whirlpoolKey,
+    pythFeed: CONTRACT_LIST[0].pythFeed,
+    pythExponent: CONTRACT_LIST[0].pythExponent
   });
   const [state, setState] = useState<vayooState>(null);
   const [refresh, setRefresh] = useState(false);
@@ -275,7 +272,6 @@ export function VMStateProvider({ children = undefined as any }) {
           const parsedPythData = parsePriceData(pythAccount);
           setPythData(parsedPythData);
           setRefresh((prev) => !prev);
-          console.log('setting inital pyth data')
         })()
         // Add listener on pyth account for refreshes
         connection.onAccountChange(selectedContract?.pythFeed!, (account) => {

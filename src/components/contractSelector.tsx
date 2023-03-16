@@ -15,7 +15,8 @@ const ContractSelectorComponent = () => {
           className={`rounded-sm py-2 px-4 cursor-pointer border hover:border-gray-600 ${selectedContract?.name == item.name ? 'border-gray-400 hover:border-gray-400' : 'border-gray-800'} `}
           onClick={() => {
             changeSelectedContract(item.name, item.whirlpoolKey, item.pythFeed, item.pythExponent)
-          }}>
+          }}
+          key={item.whirlpoolKey.toString()}>
             <div>
             {item.uiName}</div>
             </div>

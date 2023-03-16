@@ -501,14 +501,6 @@ export type VayooContracts = {
         {
           "name": "sqrtPriceLimit",
           "type": "u128"
-        },
-        {
-          "name": "amountSpecifiedIsInput",
-          "type": "bool"
-        },
-        {
-          "name": "aToB",
-          "type": "bool"
         }
       ]
     },
@@ -601,14 +593,6 @@ export type VayooContracts = {
         {
           "name": "sqrtPriceLimit",
           "type": "u128"
-        },
-        {
-          "name": "amountSpecifiedIsInput",
-          "type": "bool"
-        },
-        {
-          "name": "aToB",
-          "type": "bool"
         }
       ]
     },
@@ -721,14 +705,6 @@ export type VayooContracts = {
         {
           "name": "sqrtPriceLimit",
           "type": "u128"
-        },
-        {
-          "name": "amountSpecifiedIsInput",
-          "type": "bool"
-        },
-        {
-          "name": "aToB",
-          "type": "bool"
         }
       ]
     },
@@ -841,14 +817,6 @@ export type VayooContracts = {
         {
           "name": "sqrtPriceLimit",
           "type": "u128"
-        },
-        {
-          "name": "amountSpecifiedIsInput",
-          "type": "bool"
-        },
-        {
-          "name": "aToB",
-          "type": "bool"
         }
       ]
     },
@@ -1920,14 +1888,6 @@ export const IDL: VayooContracts = {
         {
           "name": "sqrtPriceLimit",
           "type": "u128"
-        },
-        {
-          "name": "amountSpecifiedIsInput",
-          "type": "bool"
-        },
-        {
-          "name": "aToB",
-          "type": "bool"
         }
       ]
     },
@@ -2020,14 +1980,6 @@ export const IDL: VayooContracts = {
         {
           "name": "sqrtPriceLimit",
           "type": "u128"
-        },
-        {
-          "name": "amountSpecifiedIsInput",
-          "type": "bool"
-        },
-        {
-          "name": "aToB",
-          "type": "bool"
         }
       ]
     },
@@ -2140,14 +2092,6 @@ export const IDL: VayooContracts = {
         {
           "name": "sqrtPriceLimit",
           "type": "u128"
-        },
-        {
-          "name": "amountSpecifiedIsInput",
-          "type": "bool"
-        },
-        {
-          "name": "aToB",
-          "type": "bool"
         }
       ]
     },
@@ -2260,14 +2204,6 @@ export const IDL: VayooContracts = {
         {
           "name": "sqrtPriceLimit",
           "type": "u128"
-        },
-        {
-          "name": "amountSpecifiedIsInput",
-          "type": "bool"
-        },
-        {
-          "name": "aToB",
-          "type": "bool"
         }
       ]
     },

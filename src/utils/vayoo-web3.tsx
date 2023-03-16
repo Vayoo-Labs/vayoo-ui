@@ -93,7 +93,7 @@ export async function mmSettle(
   const connection = vayooState!.vayooProgram.provider.connection;
   const transaction = new Transaction();
   transaction.add(await mmSettleIx(vayooState, amountToRedeem));
-  const txHash = await wallet.sendTransaction(transaction, connection, {skipPreflight: true});
+  const txHash = await wallet.sendTransaction(transaction, connection);
 
   return txHash.toString();
 }
@@ -459,11 +459,9 @@ async function longIx(
     }
     const ix = await vayooState!.vayooProgram.methods
       .longUser(
-        swapQuote.amount,
+        swapQuote.estimatedAmountIn,
         swapQuote.otherAmountThreshold,
         swapQuote.sqrtPriceLimit,
-        swapQuote.amountSpecifiedIsInput,
-        swapQuote.aToB
       )
       .accounts({
         ...vayooState?.accounts,
@@ -504,11 +502,9 @@ async function longIx(
     }
     const ix = await vayooState!.vayooProgram.methods
       .closeLongUser(
-        swapQuote.amount,
+        swapQuote.estimatedAmountIn,
         swapQuote.otherAmountThreshold,
         swapQuote.sqrtPriceLimit,
-        swapQuote.amountSpecifiedIsInput,
-        swapQuote.aToB
       )
       .accounts({
         ...vayooState?.accounts,
@@ -563,11 +559,9 @@ async function shortIx(
     }
     const ix = await vayooState!.vayooProgram.methods
       .shortUser(
-        swapQuote.amount,
+        swapQuote.estimatedAmountIn,
         swapQuote.otherAmountThreshold,
         swapQuote.sqrtPriceLimit,
-        swapQuote.amountSpecifiedIsInput,
-        swapQuote.aToB
       )
       .accounts({
         ...vayooState?.accounts,
@@ -608,11 +602,9 @@ async function shortIx(
     }
     const ix = await vayooState!.vayooProgram.methods
       .closeShortUser(
-        swapQuote.amount,
+        swapQuote.estimatedAmountIn,
         swapQuote.otherAmountThreshold,
         swapQuote.sqrtPriceLimit,
-        swapQuote.amountSpecifiedIsInput,
-        swapQuote.aToB
       )
       .accounts({
         ...vayooState?.accounts,
