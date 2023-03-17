@@ -40,8 +40,8 @@ export const WHITELIST_USER_KEYS = [
 export const CONTRACT_LIST = [
     {
         uiName: "SPX Monday 20th",
-        name: "v6_20/03_2k1qZ",
-        whirlpoolKey: new PublicKey("CDxD95oB53um4eZxTwL1cg8xDZpPGwHic22w4PNNRkwJ"),
+        name: "vv1_20/03_2k1qZ",
+        whirlpoolKey: new PublicKey("8pBnB6BafUh3w69DD7YUC8ckvQ2MPB23dGy6r8HQWUks"),
         pythFeed: new PublicKey("2k1qZ9ZMNUNmpGghq6ZQRj7z2d2ATNnzzYugVhiTDCPn"),
         pythExponent: 1e5
     },
