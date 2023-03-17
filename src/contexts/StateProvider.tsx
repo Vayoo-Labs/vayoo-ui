@@ -144,7 +144,7 @@ export function VMStateProvider({ children = undefined as any }) {
       contractStateKey
     );
 
-    const poolPrice = PriceMath.invertPrice(PriceMath.sqrtPriceX64ToPrice(whirlpoolState?.sqrtPrice!, 6, 6), 6, 6);
+    const poolPrice = PriceMath.sqrtPriceX64ToPrice(whirlpoolState?.sqrtPrice!, 6, 6);
     const assetPrice = poolPrice.toNumber() + (contractState?.startingPrice.toNumber()! / selectedContract?.pythExponent!) - (contractState?.limitingAmplitude.toNumber()! / 2)
 
     if (wallet?.publicKey) {
