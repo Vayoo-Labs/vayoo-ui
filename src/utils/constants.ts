@@ -35,6 +35,7 @@ export const WHITELIST_USER_KEYS = [
     "HKwoEwxAGd3KynUSi4UZzSHxYJd6sewYRV95ccsdjNwm", // abdulla
     "Bj7VYcA4TGpNpGxwoXLiixBEZSDmKUk5QrwYwddCx8Au", // HMS
     "2JXP6KUwPSmCrXT2uQRqSoCwH8RLYWwmqYsj3zXtv9xF", // ywy
+    "8gYKYqBnS1f1Trvpir7m6Qy5SCePRXTyAX8gVqsQn5Zx", // Deleuze
 ]
 
 export const CONTRACT_LIST = [
