@@ -847,7 +847,7 @@ function App() {
                                 onClick={onClickOpenShort}
                                 className="w-full py-2 text-gray-100 bg-red-400/30 rounded-t-xl border-2 border-black hover:border-red-400/60 text-sm disabled:border disabled:border-gray-500/40 disabled:bg-black disabled:text-gray-400"
                               >
-                                Open Shorts
+                                Open Short
                               </button>
                               <button
                                 disabled={
