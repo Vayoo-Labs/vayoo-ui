@@ -36,6 +36,7 @@ export const WHITELIST_USER_KEYS = [
     "Bj7VYcA4TGpNpGxwoXLiixBEZSDmKUk5QrwYwddCx8Au", // HMS
     "2JXP6KUwPSmCrXT2uQRqSoCwH8RLYWwmqYsj3zXtv9xF", // ywy
     "8gYKYqBnS1f1Trvpir7m6Qy5SCePRXTyAX8gVqsQn5Zx", // Deleuze
+    "Hzk1TLKzszo2dPtFDKcJ9wgw9NgBykYTxxjAgPB2Cp29", // Kristin
 ]
 
 export const CONTRACT_LIST = [
