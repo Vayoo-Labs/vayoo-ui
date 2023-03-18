@@ -21,6 +21,7 @@ import {
   SwapQuote,
   swapQuoteByInputToken,
   swapQuoteByOutputToken,
+  SwapUtils,
 } from "@orca-so/whirlpools-sdk";
 import { DecimalUtil, Percentage } from "@orca-so/common-sdk";
 
@@ -436,6 +437,7 @@ async function longIx(
 
   if (open) {
     let swapQuote: SwapQuote;
+    const sqrtPriceLimit = SwapUtils.getDefaultSqrtPriceLimit(false);
     if (isAmountInUsdc) {
       swapQuote = await swapQuoteByInputToken(
         vayooState?.whirlpool!,
@@ -446,6 +448,7 @@ async function longIx(
         vayooState?.orcaFetcher!,
         true
       );
+      swapQuote.otherAmountThreshold = swapQuote.amount
     } else {
       swapQuote = await swapQuoteByOutputToken(
         vayooState?.whirlpool!,
@@ -461,7 +464,7 @@ async function longIx(
       .longUser(
         swapQuote.estimatedAmountOut,
         swapQuote.otherAmountThreshold,
-        swapQuote.sqrtPriceLimit,
+        sqrtPriceLimit,
       )
       .accounts({
         ...vayooState?.accounts,
@@ -579,6 +582,7 @@ async function shortIx(
     return ix;
   } else {
     let swapQuote: SwapQuote;
+    const sqrtPriceLimit = SwapUtils.getDefaultSqrtPriceLimit(false);
     if (isAmountInUsdc) {
       swapQuote = await swapQuoteByInputToken(
         vayooState?.whirlpool!,
@@ -589,6 +593,7 @@ async function shortIx(
         vayooState?.orcaFetcher!,
         true
       );
+      swapQuote.otherAmountThreshold = swapQuote.amount
     } else {
       swapQuote = await swapQuoteByOutputToken(
         vayooState?.whirlpool!,
@@ -604,7 +609,7 @@ async function shortIx(
       .closeShortUser(
         swapQuote.estimatedAmountOut,
         swapQuote.otherAmountThreshold,
-        swapQuote.sqrtPriceLimit,
+        sqrtPriceLimit,
       )
       .accounts({
         ...vayooState?.accounts,
