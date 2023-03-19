@@ -226,7 +226,8 @@ function App() {
       })
       .finally(() => {
         setSeconderyUsdcInputValue("0");
-        setLocalState((prev) => ({ ...prev, seconderyUsdcAmount: 0 }));
+        setSeconderyContractInputValue("0");
+        setLocalState((prev) => ({ ...prev, seconderyUsdcAmount: 0, seconderyContractAmount: 0 }));
         toggleLocalRefresh();
       });
   };
@@ -252,7 +253,8 @@ function App() {
       })
       .finally(() => {
         setSeconderyUsdcInputValue("0");
-        setLocalState((prev) => ({ ...prev, seconderyUsdcAmount: 0 }));
+        setSeconderyContractInputValue("0");
+        setLocalState((prev) => ({ ...prev, seconderyUsdcAmount: 0, seconderyContractAmount: 0 }));
         toggleLocalRefresh();
       });
   };
@@ -278,7 +280,8 @@ function App() {
       })
       .finally(() => {
         setSeconderyUsdcInputValue("0");
-        setLocalState((prev) => ({ ...prev, seconderyUsdcAmount: 0 }));
+        setSeconderyContractInputValue("0");
+        setLocalState((prev) => ({ ...prev, seconderyUsdcAmount: 0, seconderyContractAmount: 0 }));
         toggleLocalRefresh();
       });
   };
@@ -304,7 +307,8 @@ function App() {
       })
       .finally(() => {
         setSeconderyUsdcInputValue("0");
-        setLocalState((prev) => ({ ...prev, seconderyUsdcAmount: 0 }));
+        setSeconderyContractInputValue("0");
+        setLocalState((prev) => ({ ...prev, seconderyUsdcAmount: 0, seconderyContractAmount: 0 }));
         toggleLocalRefresh();
       });
   };
@@ -490,7 +494,7 @@ function App() {
     }));
   };
 
-  const toggleMode = () => {
+  const toggleMmMode = () => {
     setLocalState((prev) => ({
       ...prev,
       mmMode: !prev.mmMode,
@@ -515,6 +519,8 @@ function App() {
       maxAmount = state?.userState?.lcontractBoughtAsUser.toNumber()! / 1e6;
     } else if (localState.userPosition == UserPosition.Short) {
       maxAmount = state?.userState?.scontractSoldAsUser.toNumber()! / 1e6;
+    } else if (state?.userState?.lcontractMintedAsMm.toNumber()! > 0) {
+      maxAmount = (BN.max(state?.userState?.lcontractBoughtAsUser!, state?.userState?.scontractSoldAsUser!).toNumber()) / 1e6;
     }
     onChangeSeconderyContractValue(maxAmount.toString());
   };
@@ -548,7 +554,7 @@ function App() {
                   {localState.userExist && (
                     <div
                       className="border-2 border-gray-400/40 rounded-2xl px-4 py-1 hover:border-gray-400/70 cursor-pointer"
-                      onClick={toggleMode}
+                      onClick={toggleMmMode}
                     >
                       <div className="py-1 text-sm text-slate-300">
                         {localState.mmMode

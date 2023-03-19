@@ -266,7 +266,7 @@ export function VMStateProvider({ children = undefined as any }) {
             setRefresh((prev) => !prev);
           }
         });
-        // Pyth Feed
+        // Pyth Feed Initial Fetching
         (async () => {
           const pythAccount = (await connection.getAccountInfo(selectedContract?.pythFeed!))?.data!;
           const parsedPythData = parsePriceData(pythAccount);
