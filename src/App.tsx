@@ -531,11 +531,13 @@ function App() {
         {/* Header */}
         <div className="w-full flex flex-col items-center">
           <div className="w-full flex justify-between p-3 max-w-9xl items-center">
+            <a href="https://vayoo.markets">
             <div className="ml-2 flex gap-0 items-center">
               <p className="text-lime-200 text-2xl italic">Vayoo</p>
               <p className="text-slate-300 text-2xl italic">Markets</p>
               <p className="text-lime-200 text-2xl italic">.</p>
             </div>
+            </a>
             <div className="flex justify-around gap-2 items-center">
               {connected && (
                 <div className="flex gap-3">
