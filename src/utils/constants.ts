@@ -1,6 +1,8 @@
 import { PublicKey } from "@solana/web3.js";
 
-export const RPC = "https://api.metaplex.solana.com/";
+// export const RPC = "https://api.metaplex.solana.com/"
+// export const RPC = "https://rpc.helius.xyz/?api-key=7df1283e-42ff-42dd-8a74-2ca2883178dd";
+export const RPC = "https://polished-tame-market.solana-mainnet.discover.quiknode.pro/5a05dcbb634a417d3276611d035ad7ac5fd178e6/";
 
 export const VAYOO_CONTRACT_ID = new PublicKey('6ccnZSaDcMwKe1xwHbubs4q2GdPEr7hSK59A3GddJpte');
 export const USDC_MINT = new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v');
