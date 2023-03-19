@@ -26,6 +26,7 @@ export const USER_TRADE_CAP_USD = 200;
 export const WHITELIST_USER_KEYS = [
     "4gNFEk4qvgxE6iM8ukfDUDaCT8itAeWXxURbnqNZXZXp", // adil admin
     "BGQDmkQDrxZjNiUHCsSZYuKP4XJMfoJ6AXtmJh7CaxLH", // adil user
+    "FTgy1WK7zyrSMfjC8e81aGrStMs2J1yHFjCfLwc7j8BV", // adil user 2
     "CkvRjxTtotXBuYjBXVkcyDfd3qoEgeLnQecxFfPg1ZcN", // nico
     "6f3WCCWureFHhVqz8CqPYCoon6w41W6jbuy1vHrxwHL9", // abdu
     "Gc1sfSZZSJAWbS548jhqgLcxnZBbYqQygUdfQnGeP91r", // dr_obiocha
