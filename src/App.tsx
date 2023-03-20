@@ -740,21 +740,21 @@ function App() {
                         </div>
                       </div>
                       {state?.contractState?.isSettling ? (
-                        // localState.userPosition != UserPosition.Long ? (
+                        localState.userPosition != UserPosition.Long ? (
                           <div className="my-3 flex flex-col items-center text-gray-200">
                             Contract has been settled.
                           </div>
-                        // ) : (
-                        //   <div className="my-3 flex flex-col items-center text-gray-200">
-                        //     Contract is in settling mode.
-                        //     <button
-                        //       onClick={onClickUserSettle}
-                        //       className="mt-4 px-16 py-2 border-2 text-gray-200 border-gray-100/40 rounded-xl hover:bg-blue-200/20 hover:border-blue-100/80"
-                        //     >
-                        //       Settle Long Position
-                        //     </button>
-                        //   </div>
-                        // )
+                        ) : (
+                          <div className="my-3 flex flex-col items-center text-gray-200">
+                            Contract is in settling mode.
+                            <button
+                              onClick={onClickUserSettle}
+                              className="mt-4 px-16 py-2 border-2 text-gray-200 border-gray-100/40 rounded-xl hover:bg-blue-200/20 hover:border-blue-100/80"
+                            >
+                              Settle Long Position
+                            </button>
+                          </div>
+                        )
                       ) : (
                         <div>
                           <div className="px-6 mt-1 flex flex-col gap-3 text-sm">
