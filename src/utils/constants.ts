@@ -44,7 +44,7 @@ export const WHITELIST_USER_KEYS = [
 
 export const CONTRACT_LIST = [
     {
-        uiName: "GOLD Tueday 28th",
+        uiName: "GOLD Tuesday 28th",
         name: "v6_28-03_8y3WW",
         whirlpoolKey: new PublicKey("F3bkKqvyLfW1px4ZhjPURGn4uc18NhYBUFzfwrRJdx5U"),
         pythFeed: new PublicKey("8y3WWjvmSmVGWVKH1rCA7VTRmuU7QbJ9axafSsBX5FcD"),
