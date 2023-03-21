@@ -252,6 +252,7 @@ export function VMStateProvider({ children = undefined as any }) {
   }, [connection, wallet, refresh, toogleUpdateState, selectedContract]);
 
   useEffect(() => {
+    let controller: number;
     if (connection) {
       if (
         wallet &&
@@ -274,15 +275,17 @@ export function VMStateProvider({ children = undefined as any }) {
           setRefresh((prev) => !prev);
         })()
         // Add listener on pyth account for refreshes
-        connection.onAccountChange(selectedContract?.pythFeed!, (account) => {
+        controller = connection.onAccountChange(selectedContract?.pythFeed!, (account) => {
           const parsedData = parsePriceData(account.data);
           setPythData(parsedData);
           setRefresh((prev) => !prev)
         });
       }
     }
-    return () => {};
-  }, [connection, wallet, toogleUpdateState]);
+    return () => {
+      connection.removeAccountChangeListener(controller as number)
+    };
+  }, [connection, wallet, toogleUpdateState, selectedContract]);
 
   useEffect(() => {
     setInterval(() => {
