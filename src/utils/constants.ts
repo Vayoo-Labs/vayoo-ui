@@ -48,7 +48,7 @@ export const CONTRACT_LIST = [
         name: "v6_28-03_8y3WW",
         whirlpoolKey: new PublicKey("F3bkKqvyLfW1px4ZhjPURGn4uc18NhYBUFzfwrRJdx5U"),
         pythFeed: new PublicKey("8y3WWjvmSmVGWVKH1rCA7VTRmuU7QbJ9axafSsBX5FcD"),
-        pythExponent: 1e5
+        pythExponent: 1e3
     },
     {
         uiName: "SPX Monday 27th",
