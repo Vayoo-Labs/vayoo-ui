@@ -14,6 +14,9 @@
 * {
   scroll-behavior: smooth;
 }
+body {
+  background-color: black;
+}
 
 .text-gradient {
   background: radial-gradient(
@@ -28,7 +31,6 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  text-fill-color: transparent;
 }
 
 .bg-blue-gradient {

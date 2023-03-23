@@ -1,11 +1,6 @@
 import { useState } from "react";
 import { useSelectedContract, useVMState } from "../contexts/StateProvider";
 import { PositionAndStatsComponentParams, UserPosition } from "../utils/types";
-import {
-  ASSET_LINK,
-  ASSET_LONG_NAME,
-  ASSET_SHORT_NAME,
-} from "../utils/constants";
 
 const PositionAndStatsComponent = ({ userPosition }: PositionAndStatsComponentParams) => {
   const { state, loading } = useVMState();
@@ -64,7 +59,7 @@ const PositionAndStatsComponent = ({ userPosition }: PositionAndStatsComponentPa
               {Math.abs(
                 state?.userState?.contractPositionNet.toNumber()! / 1e6
               ).toFixed(6)}{" "}
-              {ASSET_SHORT_NAME}
+              {selectedContract?.extraInfo.short_name}
             </div>
           </div>
           <div className="flex justify-between items-center text-gray-400">
@@ -125,7 +120,7 @@ const PositionAndStatsComponent = ({ userPosition }: PositionAndStatsComponentPa
           <div className="flex justify-between items-center text-gray-400 ">
             Pyth Feed :
             <div className="underline underline-offset-4">
-              <a href={ASSET_LINK}>{ASSET_LONG_NAME}</a>
+              <a href={selectedContract?.extraInfo.pyth_link}>{selectedContract?.extraInfo.long_name}</a>
             </div>
           </div>
         </div>

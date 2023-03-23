@@ -1,4 +1,5 @@
 import { Connection, Keypair, PublicKey, Transaction, TransactionSignature } from "@solana/web3.js";
+import axios from "axios";
 
 async function covertToProgramWalletTransaction(
     connection: Connection,
@@ -61,3 +62,17 @@ export interface WalletOrca {
   signAllTransactions(txs: Transaction[]): Promise<Transaction[]>;
   publicKey: PublicKey;
 }
+
+export const fetchAxiosWithRetry = async (url: string, maxRetry = 3) => {
+  let count = 0;
+  let error = undefined;
+  while (count < maxRetry) {
+    try {
+      return await axios.get(url);
+    } catch (e) {
+      error = e;
+      count++;
+    }
+  }
+  throw error;
+};

@@ -33,5 +33,6 @@ export type selectedContractData = {
   name: string,
   whirlpoolKey: PublicKey,
   pythFeed: PublicKey,
-  pythExponent: number
+  pythExponent: number,
+  extraInfo: any
 } | null;
