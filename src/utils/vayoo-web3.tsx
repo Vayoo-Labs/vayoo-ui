@@ -560,6 +560,8 @@ async function shortIx(
         true
       );
     }
+    console.log(amount)
+    console.log(swapQuote.estimatedAmountIn.toNumber());
     const ix = await vayooState!.vayooProgram.methods
       .shortUser(
         swapQuote.estimatedAmountIn,

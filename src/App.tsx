@@ -41,12 +41,7 @@ import { BN } from "@project-serum/anchor";
 import twitterLogo from "./assets/twitter-logo.svg";
 import telegramLogo from "./assets/telegram-logo.svg";
 import ContractSelectorComponent from "./components/contractSelector";
-import {
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  YAxis,
-} from "recharts";
+import { Line, LineChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
 import { fetchAxiosWithRetry } from "./utils/web3-utils";
 
 // Some Naming Conventions to remember
@@ -86,17 +81,7 @@ function App() {
   const [priceData, setPriceData] = useState<any>([]);
   const [yAxisMin, setYAxisMin] = useState(0);
   const [yAxisMax, setYAxisMax] = useState(0);
-
-  useEffect(() => {
-    let max = 0;
-    let min = 0;
-    priceData.map((pricePoint: any) => {
-      max = Math.max(pricePoint.assetPrice, pricePoint.pythPrice, max)
-      min = Math.min(pricePoint.assetPrice, pricePoint.pythPrice)
-    })
-    setYAxisMax(max + 0.005*max)
-    setYAxisMin(min - 0.005*max)
-  }, [priceData])
+  const [chartStartTime, setChartStartTime] = useState(0);
 
   const toggleLocalRefresh = () => {
     toggleRefresh();
@@ -185,18 +170,24 @@ function App() {
             )
           ).data;
           let localPriceFeedData = priceFeedData.map((pricePoint: any) => {
-            const timestamp = pricePoint.timestamp;
-            const dateTimeInSeconds = new Date(
-              timestamp * 1000
-            ).getUTCSeconds();
             return {
               assetPrice: pricePoint.assetPrice,
-              timestamp: dateTimeInSeconds,
+              timestamp: pricePoint.timestamp,
               pythPrice: pricePoint.pythPrice,
             };
           });
           // console.log(localPriceFeedData);
           setPriceData(localPriceFeedData);
+
+          let priceMax = 0;
+          let priceMin = 0;
+          localPriceFeedData.map((pricePoint: any) => {
+            priceMax = Math.max(pricePoint.assetPrice, pricePoint.pythPrice, priceMax);
+            priceMin = Math.min(pricePoint.assetPrice, pricePoint.pythPrice);
+          });
+          setChartStartTime(localPriceFeedData.at(-1)?.timestamp - 900) // last 15 mins
+          setYAxisMax(priceMax + 0.005 * priceMax);
+          setYAxisMin(priceMin - 0.005 * priceMax);
         })(),
       1000
     );
@@ -819,6 +810,18 @@ function App() {
                                     type="monotone"
                                     dataKey="pythPrice"
                                     stroke="gray"
+                                  />
+                                  <XAxis
+                                    dataKey={(v) => parseFloat(v.timestamp)}
+                                    type="number"
+                                    orientation="bottom"
+                                    scale="linear"
+                                    allowDataOverflow={true}
+                                    axisLine={false}
+                                    domain={[chartStartTime, "auto"]}
+                                    tickLine={false}
+                                    tick={false}
+                                    hide={false}
                                   />
                                   <YAxis
                                     dataKey={(v) => parseFloat(v.pythPrice)}
