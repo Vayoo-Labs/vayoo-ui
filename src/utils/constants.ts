@@ -1,6 +1,6 @@
 import { PublicKey } from "@solana/web3.js";
 
-export const VAYOO_BACKEND_ENDPOINT = import.meta.env.VITE_VAYOO_BACKEND_API || 'http://localhost:3001';
+export const VAYOO_BACKEND_ENDPOINT = import.meta.env.VITE_VAYOO_BACKEND_API || 'https://backend.vayoo.markets';
 export const RPC = "https://api.metaplex.solana.com/"
 
 export const VAYOO_CONTRACT_ID = new PublicKey('6ccnZSaDcMwKe1xwHbubs4q2GdPEr7hSK59A3GddJpte');
