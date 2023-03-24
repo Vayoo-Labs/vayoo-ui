@@ -40,9 +40,9 @@ import PositionAndStatsComponent from "./components/positionAndStats";
 import { BN } from "@project-serum/anchor";
 import twitterLogo from "./assets/twitter-logo.svg";
 import telegramLogo from "./assets/telegram-logo.svg";
-import ContractSelectorComponent from "./components/contractSelector";
 import { Line, LineChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
 import { fetchAxiosWithRetry } from "./utils/web3-utils";
+import Dropdown from "./components/contractDropdownSelector";
 
 // Some Naming Conventions to remember
 // Primary Amount = The input field used for depositing/withdrawing
@@ -612,7 +612,7 @@ function App() {
             </a>
             <div className="flex justify-around gap-2 items-center">
               {connected && (
-                <div className="flex gap-3">
+                <div className="flex gap-3 items-center">
                   {localState.isAdmin && (
                     <div
                       className="border-2 border-gray-400/40 rounded-2xl px-4 py-1 hover:border-gray-400/70 cursor-pointer"
@@ -623,6 +623,11 @@ function App() {
                           ? "Switch to User"
                           : "Switch to Admin"}
                       </div>
+                    </div>
+                  )}
+                  {!loading && localState.whitelisted && (
+                    <div className="z-50">
+                      <Dropdown />
                     </div>
                   )}
                   {localState.userExist && (
@@ -660,7 +665,6 @@ function App() {
             </div>
           ) : (
             <div className="w-full max-w-6xl px-6 lg:px-0">
-              localState.whitelisted && <ContractSelectorComponent />
               <div className="w-full h-full flex flex-col items-center">
                 <div className="w-full px-6 lg:px-0">
                   {localState.adminMode && localState.isAdmin ? (
@@ -668,8 +672,8 @@ function App() {
                   ) : localState.whitelisted ? (
                     localState.userExist ? (
                       localState.mmMode ? (
-                        <div className="w-full flex items-center gap-7">
-                          <div className="mt-8 px-6 py-6 text-white flex flex-col gap-3 w-1/2 border-2 border-gray-300/10 rounded-xl bg-black/50 z-10">
+                        <div className="w-full flex items-center gap-7 mt-4">
+                          <div className="px-6 py-6 text-white flex flex-col gap-3 w-1/2 border-2 border-gray-300/10 rounded-xl bg-black/50 z-10">
                             <div className="text-2xl text-lime-200/80">
                               Your MM Account
                             </div>
@@ -741,7 +745,7 @@ function App() {
                         </div>
                       ) : (
                         <div className="flex flex-col mt-4">
-                          <div className="w-full flex items-start gap-10 mt-4">
+                          <div className="w-full flex items-start gap-10">
                             <div className="w-full flex flex-col">
                               <div className="w-full px-6 py-6 text-white flex flex-col gap-3 border-2 border-gray-300/10 rounded-xl bg-black/50 z-10">
                                 <div className="text-2xl text-lime-200/90">
