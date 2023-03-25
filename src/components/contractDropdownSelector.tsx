@@ -69,12 +69,12 @@ const Dropdown = () => {
       </div>
 
         {isOpen && (
-        <div className={`fixed inset-0 mt-24 bg-black bg-opacity-10 z-40 backdrop-blur-sm transition-all duration-1000`}>
+        <div className={`fixed inset-0 mt-20 bg-black bg-opacity-10 z-40 backdrop-blur-sm`}>
             </div>
         )}
       {isOpen && (
         <div
-          className="origin-top-right py-2 absolute mt-3 right-0 w-48 rounded-xl shadow-lg bg-black border-2 border-gray-400/70 z-50 overflow-hidden"
+          className="origin-top-right py-2 absolute mt-3 right-0 w-48 rounded-xl bg-black border-2 border-gray-400/70 z-50 overflow-hidden"
           role="menu"
           aria-orientation="vertical"
           aria-labelledby="menu-button"
