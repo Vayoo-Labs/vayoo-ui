@@ -32,7 +32,9 @@ import {
 } from "./utils/vayoo-web3";
 import {
   ORCA_WHIRLPOOL_PROGRAM_ID,
+  PriceMath,
   swapQuoteByInputToken,
+  swapQuoteByOutputToken,
 } from "@orca-so/whirlpools-sdk";
 import { DecimalUtil, Percentage } from "@orca-so/common-sdk";
 import { UserPosition } from "./utils/types";
@@ -62,6 +64,7 @@ function App() {
   const [seconderyUsdcInputValue, setSeconderyUsdcInputValue] = useState("0");
   const [seconderyContractInputValue, setSeconderyContractInputValue] =
     useState("0");
+  const [slippageValue, setSlippageValue] = useState("5");
   const [localState, setLocalState] = useState({
     usdBalance: 0,
     userExist: false,
@@ -161,6 +164,8 @@ function App() {
     const interval = setInterval(
       () =>
         (async () => {
+          let priceMax = 0;
+          let priceMin = 0;
           let priceFeedData: any[] = (
             await fetchAxiosWithRetry(
               `${VAYOO_BACKEND_ENDPOINT}/priceFeed/${selectedContract?.name.replace(
@@ -170,22 +175,16 @@ function App() {
             )
           ).data;
           let localPriceFeedData = priceFeedData.map((pricePoint: any) => {
-            return {
-              assetPrice: pricePoint.assetPrice,
-              timestamp: pricePoint.timestamp,
-              pythPrice: pricePoint.pythPrice,
-            };
-          });
-          // console.log(localPriceFeedData);
-          setPriceData(localPriceFeedData);
-
-          let priceMax = 0;
-          let priceMin = 0;
-          localPriceFeedData.map((pricePoint: any) => {
-            priceMax = Math.max(pricePoint.assetPrice, pricePoint.pythPrice, priceMax);
+            priceMax = Math.max(
+              pricePoint.assetPrice,
+              pricePoint.pythPrice,
+              priceMax
+            );
             priceMin = Math.min(pricePoint.assetPrice, pricePoint.pythPrice);
+            return pricePoint;
           });
-          setChartStartTime(localPriceFeedData.at(-1)?.timestamp - 900) // last 15 mins
+          setPriceData(localPriceFeedData);
+          setChartStartTime(localPriceFeedData.at(-1)?.timestamp - 900); // last 15 mins
           setYAxisMax(priceMax + 0.005 * priceMax);
           setYAxisMin(priceMin - 0.005 * priceMax);
         })(),
@@ -262,6 +261,7 @@ function App() {
       state,
       localState.lastAmount,
       localState.isAmountInUsdc,
+      Number(slippageValue),
       wallet
     )
       .then((txHash: string) => {
@@ -293,6 +293,7 @@ function App() {
       state,
       localState.lastAmount,
       localState.isAmountInUsdc,
+      Number(slippageValue),
       wallet
     )
       .then((txHash: string) => {
@@ -324,6 +325,7 @@ function App() {
       state,
       localState.lastAmount,
       localState.isAmountInUsdc,
+      Number(slippageValue),
       wallet
     )
       .then((txHash: string) => {
@@ -355,6 +357,7 @@ function App() {
       state,
       localState.lastAmount,
       localState.isAmountInUsdc,
+      Number(slippageValue),
       wallet
     )
       .then((txHash: string) => {
@@ -487,24 +490,51 @@ function App() {
     } else {
       setErrStr("");
       setTradeEnable(true);
+      (async () => {
+        if (amountInUsd == 0.0) {
+          contractValue = 0;
+        } else {
+          try {
+            const swapQuote = await swapQuoteByOutputToken(
+              state?.whirlpool!,
+              USDC_MINT,
+              DecimalUtil.toU64(DecimalUtil.fromNumber(amountInUsd), 6),
+              Percentage.fromFraction(Number(slippageValue), 100),
+              ORCA_WHIRLPOOL_PROGRAM_ID,
+              state?.orcaFetcher!,
+              true
+            );
+            contractValue = swapQuote.estimatedAmountIn.toNumber() / 1e6;
+
+            // Slippage Mechanism
+            const initalPoolPrice = PriceMath.sqrtPriceX64ToPrice(
+              state?.poolState?.sqrtPrice!,
+              6,
+              6
+            ).toNumber();
+            const finalPoolPrice =
+              swapQuote.estimatedAmountOut.toNumber() /
+              swapQuote.estimatedAmountIn.toNumber();
+            const slippagePercentage =
+              (Math.abs(finalPoolPrice - initalPoolPrice) * 100) /
+              initalPoolPrice;
+            console.log("Slippage %:", slippagePercentage.toFixed(2));
+            if (slippagePercentage > Number(slippageValue)) {
+              setErrStr("Slippage Exceeded, try increasing tolerance");
+              setTradeEnable(false);
+              contractValue = 0;
+            }
+          } catch (e) {
+            console.log(e);
+            setErrStr("Amount too high compared to available liquidity, please reduce");
+            setTradeEnable(false);
+            contractValue = 0;
+          }
+        }
+        setSeconderyContractInputValue(contractValue.toString());
+      })();
     }
-    (async () => {
-      if (amountInUsd == 0.0) {
-        contractValue = 0;
-      } else {
-        contractValue =
-          (await swapQuoteByInputToken(
-            state?.whirlpool!,
-            USDC_MINT,
-            DecimalUtil.toU64(DecimalUtil.fromNumber(amountInUsd), 6),
-            Percentage.fromDecimal(DecimalUtil.fromNumber(TRADE_SLIPPAGE)),
-            ORCA_WHIRLPOOL_PROGRAM_ID,
-            state?.orcaFetcher!,
-            true
-          ))!.estimatedAmountOut.toNumber() / 1e6;
-      }
-      setSeconderyContractInputValue(contractValue.toString());
-    })();
+
     setSeconderyUsdcInputValue(parsedValue);
     setLocalState((prev) => ({
       ...prev,
@@ -521,33 +551,48 @@ function App() {
     let usdcValue: number;
 
     if (isNaN(amountInContract)) amountInContract = 0.0;
+    setErrStr("");
+    setTradeEnable(true);
     (async () => {
       if (amountInContract == 0.0) {
         usdcValue = 0;
-        setErrStr("");
-        setTradeEnable(true);
       } else {
         try {
-          usdcValue =
-            (
-              await swapQuoteByInputToken(
-                state?.whirlpool!,
-                state?.accounts.lcontractMint,
-                DecimalUtil.toU64(DecimalUtil.fromNumber(amountInContract), 6),
-                Percentage.fromDecimal(DecimalUtil.fromNumber(TRADE_SLIPPAGE)),
-                ORCA_WHIRLPOOL_PROGRAM_ID,
-                state?.orcaFetcher!,
-                true
-              )
-            ).estimatedAmountOut.toNumber() / 1e6;
-          setErrStr("");
-          setTradeEnable(true);
+          const swapQuote = await swapQuoteByInputToken(
+            state?.whirlpool!,
+            state?.accounts.lcontractMint,
+            DecimalUtil.toU64(DecimalUtil.fromNumber(amountInContract), 6),
+            Percentage.fromDecimal(
+              DecimalUtil.fromNumber(Number(slippageValue))
+            ),
+            ORCA_WHIRLPOOL_PROGRAM_ID,
+            state?.orcaFetcher!,
+            true
+          );
+          usdcValue = swapQuote.estimatedAmountOut.toNumber() / 1e6;
+
+          // Slippage Mechanism
+          const initalPoolPrice = PriceMath.sqrtPriceX64ToPrice(
+            state?.poolState?.sqrtPrice!,
+            6,
+            6
+          ).toNumber();
+          const finalPoolPrice =
+            swapQuote.estimatedAmountOut.toNumber() /
+            swapQuote.estimatedAmountIn.toNumber();
+          const slippagePercentage =
+            (Math.abs(finalPoolPrice - initalPoolPrice) * 100) /
+            initalPoolPrice;
+          console.log("Slippage %:", slippagePercentage.toFixed(2));
+          if (slippagePercentage > Number(slippageValue)) {
+            setErrStr("Slippage Exceeded, try increasing tolerance");
+            setTradeEnable(false);
+            usdcValue = 0;
+          }
           setSeconderyUsdcInputValue(usdcValue.toString());
         } catch (e) {
           console.log(e);
-          setErrStr(
-            "Amount too high compared to available liquidity, please reduce"
-          );
+          setErrStr("Amount too high compared to available liquidity, please reduce");
           setTradeEnable(false);
         }
       }
@@ -560,6 +605,13 @@ function App() {
       isAmountInUsdc: false,
       lastAmount: amountInContract,
     }));
+  };
+
+  const onChangeSlippageValue = (value: any) => {
+    let slippageValue = value.replace(",", ".").replace(/[^0-9.]/g, "");
+    if (slippageValue < 50) {
+      setSlippageValue(Math.max(0, slippageValue).toString());
+    }
   };
 
   const toggleMmMode = () => {
@@ -942,10 +994,26 @@ function App() {
                                       </div>
                                     </div>
                                   </div>
-                                  <p className="mt-4 ml-20 px-6 text-red-900 text-sm">
+                                  <p className="my-4 ml-20 px-6 text-red-900 text-sm">
                                     {errStr}
                                   </p>
-                                  <div className="px-6 mt-6 mb-1 flex flex-row w-full justify-between gap-3">
+                                  <div className="px-8 flex items-center justify-between mt-2">
+                                    <p className="text-sm text-gray-500 font-regular font-poppins dark:text-white-900">
+                                      Slippage Tolerance
+                                    </p>
+                                    <div className="flex items-center border-2 border-gray-500/40 bg-black rounded-lg overflow-hidden">
+                                      <input
+                                        value={slippageValue}
+                                        onChange={(e) =>
+                                          onChangeSlippageValue(e.target.value)
+                                        }
+                                        className="w-8 py-1 text-sm font-medium text-center text-gray-200 bg-black focus:outline-none border-r border-gray-500/40"
+                                      />
+                                      <p className="px-2 text-sm">%</p>
+                                    </div>
+                                  </div>
+
+                                  <div className="mt-4 px-6 mb-1 flex flex-row w-full justify-between gap-3">
                                     <div className="w-full flex flex-col justify-between items-center py-1 rounded-xl gap-[0.5px]">
                                       <button
                                         disabled={

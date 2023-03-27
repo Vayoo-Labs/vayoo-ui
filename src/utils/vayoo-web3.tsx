@@ -180,6 +180,7 @@ export async function openLong(
   vayooState: vayooState,
   amountInCollateral: number,
   isAmountInUsdc: boolean = false,
+  slippage: number,
   wallet: WalletContextState
 ) {
   const connection = vayooState!.vayooProgram.provider.connection;
@@ -198,7 +199,7 @@ export async function openLong(
     );
   }
 
-  transaction.add(await longIx(vayooState, amountInCollateral, true, isAmountInUsdc));
+  transaction.add(await longIx(vayooState, amountInCollateral, true, isAmountInUsdc, slippage));
   const txHash = await wallet.sendTransaction(transaction, connection);
 
   return txHash.toString();
@@ -208,6 +209,7 @@ export async function closeLong(
   vayooState: vayooState,
   amountInCollateral: number,
   isAmountInUsdc: boolean = false,
+  slippage: number,
   wallet: WalletContextState
 ) {
   const connection = vayooState!.vayooProgram.provider.connection;
@@ -225,7 +227,7 @@ export async function closeLong(
     );
   }
 
-  transaction.add(await longIx(vayooState, amountInCollateral, false, isAmountInUsdc));
+  transaction.add(await longIx(vayooState, amountInCollateral, false, isAmountInUsdc, slippage));
   const txHash = await wallet.sendTransaction(transaction, connection);
 
   return txHash.toString();
@@ -235,6 +237,7 @@ export async function openShort(
   vayooState: vayooState,
   amountInCollateral: number,
   isAmountInUsdc: boolean = false,
+  slippage: number,
   wallet: WalletContextState
 ) {
   const connection = vayooState!.vayooProgram.provider.connection;
@@ -252,7 +255,7 @@ export async function openShort(
     );
   }
 
-  transaction.add(await shortIx(vayooState, amountInCollateral, true, isAmountInUsdc));
+  transaction.add(await shortIx(vayooState, amountInCollateral, true, isAmountInUsdc, slippage));
   const txHash = await wallet.sendTransaction(transaction, connection);
 
   return txHash.toString();
@@ -262,6 +265,7 @@ export async function closeShort(
   vayooState: vayooState,
   amountInCollateral: number,
   isAmountInUsdc: boolean = false,
+  slippage: number,
   wallet: WalletContextState
 ) {
   const connection = vayooState!.vayooProgram.provider.connection;
@@ -279,7 +283,7 @@ export async function closeShort(
     );
   }
 
-  transaction.add(await shortIx(vayooState, amountInCollateral, false, isAmountInUsdc));
+  transaction.add(await shortIx(vayooState, amountInCollateral, false, isAmountInUsdc, slippage));
   const txHash = await wallet.sendTransaction(transaction, connection);
 
   return txHash.toString();
@@ -428,7 +432,8 @@ async function longIx(
   vayooState: vayooState,
   amount: number,
   open: boolean,
-  isAmountInUsdc: boolean
+  isAmountInUsdc: boolean,
+  slippage: number
 ) {
   const poolData = vayooState?.poolState!;
   const poolPrice = PriceMath.sqrtPriceX64ToPrice(poolData.sqrtPrice, 6, 6);
@@ -443,7 +448,7 @@ async function longIx(
         vayooState?.whirlpool!,
         vayooState?.accounts.collateralMint,
         DecimalUtil.toU64(DecimalUtil.fromNumber(amount), 6),
-        Percentage.fromDecimal(DecimalUtil.fromNumber(TRADE_SLIPPAGE)),
+        Percentage.fromDecimal(DecimalUtil.fromNumber(slippage)),
         ORCA_WHIRLPOOL_PROGRAM_ID,
         vayooState?.orcaFetcher!,
         true
@@ -454,7 +459,7 @@ async function longIx(
         vayooState?.whirlpool!,
         vayooState?.accounts.lcontractMint,
         DecimalUtil.toU64(DecimalUtil.fromNumber(amount), 6),
-        Percentage.fromDecimal(DecimalUtil.fromNumber(TRADE_SLIPPAGE)),
+        Percentage.fromDecimal(DecimalUtil.fromNumber(slippage)),
         ORCA_WHIRLPOOL_PROGRAM_ID,
         vayooState?.orcaFetcher!,
         true
@@ -487,7 +492,7 @@ async function longIx(
         vayooState?.whirlpool!,
         vayooState?.accounts.collateralMint,
         DecimalUtil.toU64(DecimalUtil.fromNumber(amount), 6),
-        Percentage.fromDecimal(DecimalUtil.fromNumber(TRADE_SLIPPAGE)),
+        Percentage.fromDecimal(DecimalUtil.fromNumber(slippage)),
         ORCA_WHIRLPOOL_PROGRAM_ID,
         vayooState?.orcaFetcher!,
         true
@@ -497,7 +502,7 @@ async function longIx(
         vayooState?.whirlpool!,
         vayooState?.accounts.lcontractMint,
         DecimalUtil.toU64(DecimalUtil.fromNumber(amount), 6),
-        Percentage.fromDecimal(DecimalUtil.fromNumber(TRADE_SLIPPAGE)),
+        Percentage.fromDecimal(DecimalUtil.fromNumber(slippage)),
         ORCA_WHIRLPOOL_PROGRAM_ID,
         vayooState?.orcaFetcher!,
         true
@@ -530,7 +535,8 @@ async function shortIx(
   vayooState: vayooState,
   amount: number,
   open: boolean,
-  isAmountInUsdc: boolean
+  isAmountInUsdc: boolean,
+  slippage: number
 ) {
   const poolData = vayooState?.poolState!;
   const poolPrice = PriceMath.sqrtPriceX64ToPrice(poolData.sqrtPrice, 6, 6);
@@ -544,7 +550,7 @@ async function shortIx(
         vayooState?.whirlpool!,
         vayooState?.accounts.collateralMint,
         DecimalUtil.toU64(DecimalUtil.fromNumber(amount), 6),
-        Percentage.fromDecimal(DecimalUtil.fromNumber(TRADE_SLIPPAGE)),
+        Percentage.fromDecimal(DecimalUtil.fromNumber(slippage)),
         ORCA_WHIRLPOOL_PROGRAM_ID,
         vayooState?.orcaFetcher!,
         true
@@ -554,7 +560,7 @@ async function shortIx(
         vayooState?.whirlpool!,
         vayooState?.accounts.lcontractMint,
         DecimalUtil.toU64(DecimalUtil.fromNumber(amount), 6),
-        Percentage.fromDecimal(DecimalUtil.fromNumber(TRADE_SLIPPAGE)),
+        Percentage.fromDecimal(DecimalUtil.fromNumber(slippage)),
         ORCA_WHIRLPOOL_PROGRAM_ID,
         vayooState?.orcaFetcher!,
         true
@@ -590,7 +596,7 @@ async function shortIx(
         vayooState?.whirlpool!,
         vayooState?.accounts.collateralMint,
         DecimalUtil.toU64(DecimalUtil.fromNumber(amount), 6),
-        Percentage.fromDecimal(DecimalUtil.fromNumber(TRADE_SLIPPAGE)),
+        Percentage.fromDecimal(DecimalUtil.fromNumber(slippage)),
         ORCA_WHIRLPOOL_PROGRAM_ID,
         vayooState?.orcaFetcher!,
         true
@@ -601,7 +607,7 @@ async function shortIx(
         vayooState?.whirlpool!,
         vayooState?.accounts.lcontractMint,
         DecimalUtil.toU64(DecimalUtil.fromNumber(amount), 6),
-        Percentage.fromDecimal(DecimalUtil.fromNumber(TRADE_SLIPPAGE)),
+        Percentage.fromDecimal(DecimalUtil.fromNumber(slippage)),
         ORCA_WHIRLPOOL_PROGRAM_ID,
         vayooState?.orcaFetcher!,
         true
