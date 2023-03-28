@@ -88,7 +88,7 @@ const Dropdown = () => {
                 changeSelectedContract(item.name, new PublicKey(item.whirlpool_key), new PublicKey(item.pyth_feed_key), item.pyth_exponent, item)
                 toggleMenu()
               }}
-              >{item.market_name}</Item>
+              >{item.ui_name}</Item>
             ))}
           </div>
         </div>
