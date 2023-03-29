@@ -74,7 +74,7 @@ const ContractDropDownSelectorComponent = () => {
         )}
       {isOpen && (
         <div
-          className="origin-top-right py-2 absolute mt-3 right-0 w-48 rounded-xl bg-black border-2 border-gray-400/70 z-50 overflow-hidden"
+          className="origin-top-right py-2 absolute mt-3 right-0 w-64 rounded-xl bg-black border-2 border-gray-400/70 z-50 overflow-hidden"
           role="menu"
           aria-orientation="vertical"
           aria-labelledby="menu-button"
