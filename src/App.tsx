@@ -8,7 +8,6 @@ import {
   TRADE_SLIPPAGE,
   USDC_MINT,
   USER_TRADE_CAP_USD,
-  WHITELIST_USER_KEYS,
 } from "./utils/constants";
 import {
   useSelectedContract,
@@ -44,7 +43,7 @@ import twitterLogo from "./assets/twitter-logo.svg";
 import telegramLogo from "./assets/telegram-logo.svg";
 import { Line, LineChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
 import { fetchAxiosWithRetry } from "./utils/web3-utils";
-import Dropdown from "./components/contractDropdownSelector";
+import ContractDropDownSelectorComponent from "./components/contractDropdownSelector";
 
 // Some Naming Conventions to remember
 // Primary Amount = The input field used for depositing/withdrawing
@@ -79,7 +78,6 @@ function App() {
     lastAmount: 0,
     netAccountValueUsd: 0,
     positionSizeUsd: 0,
-    whitelisted: false,
   });
   const [priceData, setPriceData] = useState<any>([]);
   const [yAxisMin, setYAxisMin] = useState(0);
@@ -95,17 +93,6 @@ function App() {
     (async () => {
       if (wallet?.publicKey) {
         let positionSizeUsd = 0;
-        if (WHITELIST_USER_KEYS.includes(wallet.publicKey.toString())) {
-          setLocalState((prev) => ({
-            ...prev,
-            whitelisted: true,
-          }));
-        } else {
-          setLocalState((prev) => ({
-            ...prev,
-            whitelisted: false,
-          }));
-        }
         if (ADMIN_KEYS.includes(wallet.publicKey.toString()!)) {
           setLocalState((prev) => ({
             ...prev,
@@ -677,9 +664,9 @@ function App() {
                       </div>
                     </div>
                   )}
-                  {!loading && localState.whitelisted && (
+                  {!loading && (
                     <div className="z-50">
-                      <Dropdown />
+                      <ContractDropDownSelectorComponent />
                     </div>
                   )}
                   {localState.userExist && (
@@ -721,7 +708,7 @@ function App() {
                 <div className="w-full px-6 lg:px-0">
                   {localState.adminMode && localState.isAdmin ? (
                     <AdminComponent />
-                  ) : localState.whitelisted ? (
+                  ) : (
                     localState.userExist ? (
                       localState.mmMode ? (
                         <div className="w-full flex items-center gap-7 mt-4">
@@ -1087,15 +1074,6 @@ function App() {
                         </div>
                       </div>
                     )
-                  ) : (
-                    <div className="w-full mt-56 flex flex-col items-center">
-                      <div className="px-12 py-10 text-white border-2 border-gray-400 bg-black/50 z-10 rounded-2xl">
-                        <div className="flex flex-col gap-5 justify-between items-center">
-                          You are not whitelisted for alpha access. Please
-                          contact on telegram
-                        </div>
-                      </div>
-                    </div>
                   )}
                 </div>
               </div>

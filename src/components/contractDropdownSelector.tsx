@@ -6,7 +6,7 @@ import {
   useSelectedContract,
 } from "../contexts/StateProvider";
 
-const Dropdown = () => {
+const ContractDropDownSelectorComponent = () => {
   const { selectedContract, changeSelectedContract } = useSelectedContract();
   const allContractInfo = getAllContractInfos();
   const [isOpen, setIsOpen] = useState(false);
@@ -101,4 +101,4 @@ const Item = tw.div`
   px-4 py-2 text-sm text-slate-300 hover:text-lime-200 cursor-pointer
 `;
 
-export default Dropdown;
+export default ContractDropDownSelectorComponent;
