@@ -827,6 +827,11 @@ export type VayooContracts = {
       ],
       "accounts": [
         {
+          "name": "contractAuthority",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
           "name": "contractState",
           "isMut": true,
           "isSigner": false
@@ -1381,6 +1386,11 @@ export type VayooContracts = {
       "code": 6021,
       "name": "ErrorAccounting",
       "msg": "Error in internal accounting"
+    },
+    {
+      "code": 6022,
+      "name": "LeakInFAccount",
+      "msg": "LeakInFreeAccountUser"
     }
   ]
 };
@@ -2214,6 +2224,11 @@ export const IDL: VayooContracts = {
       ],
       "accounts": [
         {
+          "name": "contractAuthority",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
           "name": "contractState",
           "isMut": true,
           "isSigner": false
@@ -2768,6 +2783,11 @@ export const IDL: VayooContracts = {
       "code": 6021,
       "name": "ErrorAccounting",
       "msg": "Error in internal accounting"
+    },
+    {
+      "code": 6022,
+      "name": "LeakInFAccount",
+      "msg": "LeakInFreeAccountUser"
     }
   ]
 };
