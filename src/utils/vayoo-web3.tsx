@@ -3,9 +3,8 @@ import { vayooState } from "./types";
 import { PublicKey, Transaction } from "@solana/web3.js";
 import {
   COLLATERAL_MINT,
-  TRADE_SLIPPAGE,
   USDC_MINT,
-  VAYOO_CONTRACT_ID as PID,
+  VAYOO_CONTRACT_KEY as PID,
 } from "./constants";
 import { WalletContextState } from "@solana/wallet-adapter-react";
 import { addZeros } from "./index";

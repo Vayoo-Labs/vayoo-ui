@@ -5,7 +5,6 @@ import { getAtaTokenBalanceByOwner, shortenAddress } from "./utils";
 import {
   ADMIN_KEYS,
   VAYOO_BACKEND_ENDPOINT,
-  TRADE_SLIPPAGE,
   USDC_MINT,
   USER_TRADE_CAP_USD,
 } from "./utils/constants";

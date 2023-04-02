@@ -1,13 +1,13 @@
 import { AnchorProvider, Idl, Program } from "@project-serum/anchor";
 import { getAssociatedTokenAddressSync } from "@solana/spl-token-v2";
 import { Connection, PublicKey } from "@solana/web3.js";
-import { VAYOO_CONTRACT_ID } from "./constants";
+import { VAYOO_CONTRACT_KEY } from "./constants";
 import { IDL } from "../utils/vayoo_contracts"
 
 
 export async function getVayooProgramInstance(connection: Connection, wallet: any = {}) {
     const provider = new AnchorProvider(connection, wallet, { commitment: 'confirmed' })
-    const programId = VAYOO_CONTRACT_ID;
+    const programId = VAYOO_CONTRACT_KEY;
     const program = new Program(IDL, programId, provider);
 
     return program;
