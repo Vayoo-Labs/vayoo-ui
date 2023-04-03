@@ -142,7 +142,7 @@ function App() {
     wallet.publicKey,
     state,
     localState.mmMode,
-    state?.pythData,
+    state?.oracleData,
     selectedContract,
   ]);
 
@@ -163,10 +163,10 @@ function App() {
           let localPriceFeedData = priceFeedData.map((pricePoint: any) => {
             priceMax = Math.max(
               pricePoint.assetPrice,
-              pricePoint.pythPrice,
+              pricePoint.oraclePrice,
               priceMax
             );
-            priceMin = Math.min(pricePoint.assetPrice, pricePoint.pythPrice);
+            priceMin = Math.min(pricePoint.assetPrice, pricePoint.oraclePrice);
             return pricePoint;
           });
           setPriceData(localPriceFeedData);
@@ -850,7 +850,7 @@ function App() {
                                   />
                                   <Line
                                     type="monotone"
-                                    dataKey="pythPrice"
+                                    dataKey="oraclePrice"
                                     stroke="gray"
                                   />
                                   <XAxis
@@ -866,7 +866,7 @@ function App() {
                                     hide={false}
                                   />
                                   <YAxis
-                                    dataKey={(v) => parseFloat(v.pythPrice)}
+                                    dataKey={(v) => parseFloat(v.oraclePrice)}
                                     type="number"
                                     domain={[yAxisMin, yAxisMax]}
                                     orientation="right"
@@ -881,8 +881,8 @@ function App() {
                                 <div className="flex justify-between gap-4">
                                   <div className="flex flex-col items-center">
                                     <div className="text-gray-300 text-lg">
-                                      {state?.pythData?.price?.toFixed(2) ??
-                                        state?.pythData?.previousPrice.toFixed(
+                                      {state?.oracleData?.price?.toFixed(2) ??
+                                        state?.oracleData?.previousPrice.toFixed(
                                           2
                                         ) ??
                                         "NIL"}

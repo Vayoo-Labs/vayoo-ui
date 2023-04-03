@@ -85,7 +85,7 @@ const ContractDropDownSelectorComponent = () => {
             {allContractInfo.map((item: any) => (
               <Item key={item.name}
               onClick={() => {
-                changeSelectedContract(item.name, new PublicKey(item.whirlpool_key), new PublicKey(item.pyth_feed_key), item.pyth_exponent, item)
+                changeSelectedContract(item.name, new PublicKey(item.whirlpool_key), item.oracle_feed_type, new PublicKey(item.oracle_feed_key), item.oracle_exponent, item)
                 toggleMenu()
               }}
               >{item.ui_name}</Item>

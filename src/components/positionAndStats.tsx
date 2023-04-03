@@ -92,7 +92,7 @@ const PositionAndStatsComponent = ({ userPosition }: PositionAndStatsComponentPa
               Price at Maturity :
               <div>
                 {(
-                  state?.contractState?.endingPrice.toNumber()! / selectedContract?.pythExponent!
+                  state?.contractState?.endingPrice.toNumber()! / selectedContract?.oracleExponent!
                 ).toFixed(2)}{" "}
                 USD
               </div>
@@ -106,7 +106,7 @@ const PositionAndStatsComponent = ({ userPosition }: PositionAndStatsComponentPa
             Starting Price :
             <div>
               {(
-                state?.contractState?.startingPrice.toNumber()! / selectedContract?.pythExponent!
+                state?.contractState?.startingPrice.toNumber()! / selectedContract?.oracleExponent!
               ).toFixed(2)}{" "}
               USD
             </div>
@@ -120,7 +120,7 @@ const PositionAndStatsComponent = ({ userPosition }: PositionAndStatsComponentPa
           <div className="flex justify-between items-center text-gray-400 ">
             Pyth Feed :
             <div className="underline underline-offset-4">
-              <a href={selectedContract?.extraInfo.pyth_link}>{selectedContract?.extraInfo.long_name}</a>
+              <a href={selectedContract?.extraInfo.oracle_link}>{selectedContract?.extraInfo.long_name}</a>
             </div>
           </div>
         </div>

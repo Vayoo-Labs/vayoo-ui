@@ -1,11 +1,17 @@
 import toast, { Toaster } from "react-hot-toast";
 import { useState } from "react";
 import { useSubscribeTx, useVMState } from "../contexts/StateProvider";
-import { adminSettle, initContract, triggerSettleMode } from "../utils/vayoo-web3";
-import { useWallet } from "@solana/wallet-adapter-react";
+import {
+  adminSettle,
+  initContract,
+  triggerSettleMode,
+} from "../utils/vayoo-web3";
+import { useConnection, useWallet } from "@solana/wallet-adapter-react";
+import { OracleFeedType } from "../utils/types";
 
 const AdminComponent = () => {
   const { state, loading } = useVMState();
+  const { connection } = useConnection();
   const wallet = useWallet();
   const subscribeTx = useSubscribeTx();
 
@@ -13,7 +19,8 @@ const AdminComponent = () => {
     amplitude: 0,
     name: "",
     duration: 0,
-    pythFeed: "",
+    oracleFeedKey: "",
+    oracleFeedType: OracleFeedType.Pyth,
   });
 
   const onChangeName = (name: string) => {
@@ -23,12 +30,19 @@ const AdminComponent = () => {
     }));
   };
 
-  const onChangePythFeed = (id: string) => {
+  const onChangeFeedKey = (id: string) => {
     setFormData((formData) => ({
       ...formData,
-      pythFeed: id,
+      oracleFeedKey: id,
     }));
   };
+
+  const onFeedOptionChange = (event: any) => {
+    setFormData((formData) => ({
+      ...formData,
+      oracleFeedType: event.target.value
+    }))
+}
 
   const onChangeAmplitude = (value: string) => {
     let amplitude = Number.parseInt(value);
@@ -50,11 +64,13 @@ const AdminComponent = () => {
 
   const onClickInitContract = async () => {
     await initContract(
+      connection,
       state,
       formData.name,
       formData.amplitude,
       formData.duration,
-      formData.pythFeed,
+      formData.oracleFeedType,
+      formData.oracleFeedKey,
       wallet
     )
       .then((txHash: string) => {
@@ -73,10 +89,7 @@ const AdminComponent = () => {
   };
 
   const onClickTriggerSettleMode = async () => {
-    await triggerSettleMode(
-      state,
-      wallet
-    )
+    await triggerSettleMode(state, wallet)
       .then((txHash: string) => {
         subscribeTx(
           txHash,
@@ -93,10 +106,7 @@ const AdminComponent = () => {
   };
 
   const onClickAdminSettle = async () => {
-    await adminSettle(
-      state,
-      wallet
-    )
+    await adminSettle(state, wallet)
       .then((txHash: string) => {
         subscribeTx(
           txHash,
@@ -127,10 +137,17 @@ const AdminComponent = () => {
               />
             </div>
             <div className="flex gap-5">
-              Pyth Feed:{" "}
+            Feed Type:{" "}
+            <select onChange={onFeedOptionChange} className="px-2 bg-black border border-white focus:outline-none rounded-lg">
+                    <option key={OracleFeedType.Pyth} value={OracleFeedType.Pyth}>Pyth</option>
+                    <option key={OracleFeedType.Switchboard} value={OracleFeedType.Switchboard}>Switchboard</option>
+                </select>
+            </div>
+            <div className="flex gap-5">
+              Feed Key:{" "}
               <input
-                value={formData.pythFeed}
-                onChange={(e) => onChangePythFeed(e.target.value)}
+                value={formData.oracleFeedKey}
+                onChange={(e) => onChangeFeedKey(e.target.value)}
                 className="w-96 py-1 text-sm font-medium text-center text-gray-100 border-r rounded-tl-sm rounded-bl-sm bg-white-900 dark:bg-gray-800 dark:text-white-900 focus:outline-none rouneded-xl border-white-500 dark:border-gray-600 font-poppins"
               />
             </div>
