@@ -17,8 +17,8 @@ import { PermissionAccount } from './permissionAccount';
 import { QueueAccount } from './queueAccount';
 
 import * as anchor from '@coral-xyz/anchor';
-import * as spl from '@solana/spl-token';
-import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
+import * as spl from '@solana/spl-token-v2';
+import { TOKEN_PROGRAM_ID } from '@solana/spl-token-v2';
 import {
   AccountInfo,
   AccountMeta,

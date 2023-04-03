@@ -4,7 +4,7 @@ import { TransactionObject } from '../TransactionObject';
 import { Account } from './account';
 import { AggregatorAccount } from './aggregatorAccount';
 import { QueueAccount } from './queueAccount';
-import * as spl from '@solana/spl-token';
+import * as spl from '@solana/spl-token-v2';
 import { Keypair, LAMPORTS_PER_SOL, PublicKey, SystemProgram, } from '@solana/web3.js';
 import { BN } from '@switchboard-xyz/common';
 /**

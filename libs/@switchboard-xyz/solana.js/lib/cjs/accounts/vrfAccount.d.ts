@@ -6,7 +6,7 @@ import { Account, OnAccountChangeCallback } from './account';
 import { PermissionAccount } from './permissionAccount';
 import { QueueAccount } from './queueAccount';
 import * as anchor from '@coral-xyz/anchor';
-import * as spl from '@solana/spl-token';
+import * as spl from '@solana/spl-token-v2';
 import { Commitment, Keypair, ParsedTransactionWithMeta, PublicKey, TransactionSignature } from '@solana/web3.js';
 /**
  * Account holding a Verifiable Random Function result with a callback instruction for consuming on-chain pseudo-randomness.

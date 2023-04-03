@@ -7,8 +7,8 @@ import { OracleAccount } from './oracleAccount';
 import { PermissionAccount } from './permissionAccount';
 import { QueueAccount } from './queueAccount';
 import * as anchor from '@coral-xyz/anchor';
-import * as spl from '@solana/spl-token';
-import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
+import * as spl from '@solana/spl-token-v2';
+import { TOKEN_PROGRAM_ID } from '@solana/spl-token-v2';
 import { Keypair, PublicKey, SystemProgram, SYSVAR_INSTRUCTIONS_PUBKEY, SYSVAR_RECENT_BLOCKHASHES_PUBKEY, } from '@solana/web3.js';
 import { promiseWithTimeout } from '@switchboard-xyz/common';
 /**

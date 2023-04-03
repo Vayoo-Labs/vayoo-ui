@@ -5,7 +5,7 @@ import { Account } from './account';
 import { PermissionAccount } from './permissionAccount';
 import { QueueAccount } from './queueAccount';
 import * as anchor from '@coral-xyz/anchor';
-import * as spl from '@solana/spl-token';
+import * as spl from '@solana/spl-token-v2';
 import { Keypair, LAMPORTS_PER_SOL, PublicKey, SystemProgram, } from '@solana/web3.js';
 /**
  * Account type holding an oracle's configuration including the authority and the reward/slashing wallet along with a set of metrics tracking its reliability.

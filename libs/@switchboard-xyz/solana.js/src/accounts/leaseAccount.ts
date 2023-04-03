@@ -8,7 +8,7 @@ import { AggregatorAccount } from './aggregatorAccount';
 import { JobAccount } from './jobAccount';
 import { QueueAccount } from './queueAccount';
 
-import * as spl from '@solana/spl-token';
+import * as spl from '@solana/spl-token-v2';
 import {
   AccountInfo,
   AccountMeta,

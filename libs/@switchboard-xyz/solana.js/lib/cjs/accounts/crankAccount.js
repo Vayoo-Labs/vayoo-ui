@@ -32,7 +32,7 @@ const aggregatorAccount_1 = require("./aggregatorAccount");
 const crankDataBuffer_1 = require("./crankDataBuffer");
 const queueAccount_1 = require("./queueAccount");
 const anchor = __importStar(require("@coral-xyz/anchor"));
-const spl_token_1 = require("@solana/spl-token");
+const spl_token_1 = require("@solana/spl-token-v2");
 const web3_js_1 = require("@solana/web3.js");
 /**
  * Account holding a priority queue of aggregators and their next available update time. This is a scheduling mechanism to ensure {@linkcode AggregatorAccount}'s are updated as close as possible to their specified update interval.

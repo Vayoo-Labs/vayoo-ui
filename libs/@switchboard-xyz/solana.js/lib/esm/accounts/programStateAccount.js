@@ -3,7 +3,7 @@ import * as types from '../generated';
 import { Mint } from '../mint';
 import { TransactionObject } from '../TransactionObject';
 import { Account } from './account';
-import * as spl from '@solana/spl-token';
+import * as spl from '@solana/spl-token-v2';
 import { Keypair, LAMPORTS_PER_SOL, PublicKey, SystemProgram, } from '@solana/web3.js';
 /**
  * Account type representing Switchboard global program state.

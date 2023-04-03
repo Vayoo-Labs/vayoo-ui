@@ -6,7 +6,7 @@ import { Account } from './account';
 import { PermissionAccount } from './permissionAccount';
 import { QueueAccount } from './queueAccount';
 import { VrfLiteAccount } from './vrfLiteAccount';
-import { ASSOCIATED_TOKEN_PROGRAM_ID, createTransferInstruction, TOKEN_PROGRAM_ID, } from '@solana/spl-token';
+import { ASSOCIATED_TOKEN_PROGRAM_ID, createTransferInstruction, TOKEN_PROGRAM_ID, } from '@solana/spl-token-v2';
 import { Keypair, PublicKey, SystemProgram, SYSVAR_RECENT_BLOCKHASHES_PUBKEY, SYSVAR_RENT_PUBKEY, } from '@solana/web3.js';
 import { promiseWithTimeout } from '@switchboard-xyz/common';
 import _ from 'lodash';

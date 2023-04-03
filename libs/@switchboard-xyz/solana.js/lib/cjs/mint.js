@@ -27,7 +27,7 @@ exports.NativeMint = exports.Mint = void 0;
 const errors_1 = require("./errors");
 const generated_1 = require("./generated");
 const TransactionObject_1 = require("./TransactionObject");
-const spl = __importStar(require("@solana/spl-token"));
+const spl = __importStar(require("@solana/spl-token-v2"));
 const web3_js_1 = require("@solana/web3.js");
 const common_1 = require("@switchboard-xyz/common");
 class Mint {

@@ -13,13 +13,13 @@ import { OracleAccount } from './oracleAccount';
 import { PermissionAccount } from './permissionAccount';
 import { QueueAccount } from './queueAccount';
 
-import * as spl from '@solana/spl-token';
+import * as spl from '@solana/spl-token-v2';
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
   createTransferInstruction,
   getAccount,
-  TOKEN_PROGRAM_ID,
-} from '@solana/spl-token';
+  TOKEN_PROGRAM_ID
+} from '@solana/spl-token-v2';
 import {
   Commitment,
   Keypair,

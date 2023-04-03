@@ -3,7 +3,7 @@ import { SwitchboardDecimal } from './generated';
 import { TransactionObject } from './TransactionObject';
 
 import * as anchor from '@coral-xyz/anchor';
-import * as spl from '@solana/spl-token';
+import * as spl from '@solana/spl-token-v2';
 import {
   Keypair,
   PublicKey,

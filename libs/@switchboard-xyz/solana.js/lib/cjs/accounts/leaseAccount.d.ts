@@ -6,7 +6,7 @@ import { Account } from './account';
 import { AggregatorAccount } from './aggregatorAccount';
 import { JobAccount } from './jobAccount';
 import { QueueAccount } from './queueAccount';
-import * as spl from '@solana/spl-token';
+import * as spl from '@solana/spl-token-v2';
 import { AccountInfo, Keypair, PublicKey, TransactionSignature } from '@solana/web3.js';
 import { BN, OracleJob } from '@switchboard-xyz/common';
 /**

@@ -6,7 +6,7 @@ import { AggregatorAccount } from './aggregatorAccount';
 import { CrankDataBuffer } from './crankDataBuffer';
 import { QueueAccount } from './queueAccount';
 import * as anchor from '@coral-xyz/anchor';
-import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
+import { TOKEN_PROGRAM_ID } from '@solana/spl-token-v2';
 import { Keypair, PublicKey, SystemProgram, } from '@solana/web3.js';
 /**
  * Account holding a priority queue of aggregators and their next available update time. This is a scheduling mechanism to ensure {@linkcode AggregatorAccount}'s are updated as close as possible to their specified update interval.

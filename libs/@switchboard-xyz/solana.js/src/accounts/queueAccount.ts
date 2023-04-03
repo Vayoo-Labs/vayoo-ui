@@ -27,7 +27,7 @@ import { VrfAccount, VrfInitParams } from './vrfAccount';
 import { VrfLiteAccount, VrfLiteInitParams } from './vrfLiteAccount';
 
 import * as anchor from '@coral-xyz/anchor';
-import * as spl from '@solana/spl-token';
+import * as spl from '@solana/spl-token-v2';
 import {
   AccountInfo,
   Commitment,

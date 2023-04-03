@@ -7,7 +7,7 @@ import { TransactionObject } from '../TransactionObject';
 import { Account } from './account';
 
 import * as anchor from '@coral-xyz/anchor';
-import * as spl from '@solana/spl-token';
+import * as spl from '@solana/spl-token-v2';
 import {
   AccountInfo,
   Keypair,

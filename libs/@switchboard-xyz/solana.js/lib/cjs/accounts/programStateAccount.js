@@ -29,7 +29,7 @@ const types = __importStar(require("../generated"));
 const mint_1 = require("../mint");
 const TransactionObject_1 = require("../TransactionObject");
 const account_1 = require("./account");
-const spl = __importStar(require("@solana/spl-token"));
+const spl = __importStar(require("@solana/spl-token-v2"));
 const web3_js_1 = require("@solana/web3.js");
 /**
  * Account type representing Switchboard global program state.

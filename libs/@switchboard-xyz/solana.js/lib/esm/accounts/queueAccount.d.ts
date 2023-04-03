@@ -14,7 +14,7 @@ import { QueueDataBuffer } from './queueDataBuffer';
 import { VrfAccount, VrfInitParams } from './vrfAccount';
 import { VrfLiteAccount, VrfLiteInitParams } from './vrfLiteAccount';
 import * as anchor from '@coral-xyz/anchor';
-import * as spl from '@solana/spl-token';
+import * as spl from '@solana/spl-token-v2';
 import { AccountInfo, Commitment, Keypair, PublicKey, TransactionSignature } from '@solana/web3.js';
 /**
  * Account type representing an oracle queue's configuration along with a buffer account holding a list of oracles that are actively heartbeating.

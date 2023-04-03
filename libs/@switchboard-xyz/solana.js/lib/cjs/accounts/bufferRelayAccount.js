@@ -32,8 +32,8 @@ const account_1 = require("./account");
 const oracleAccount_1 = require("./oracleAccount");
 const permissionAccount_1 = require("./permissionAccount");
 const queueAccount_1 = require("./queueAccount");
-const spl = __importStar(require("@solana/spl-token"));
-const spl_token_1 = require("@solana/spl-token");
+const spl = __importStar(require("@solana/spl-token-v2"));
+const spl_token_1 = require("@solana/spl-token-v2");
 const web3_js_1 = require("@solana/web3.js");
 const common_1 = require("@switchboard-xyz/common");
 /**

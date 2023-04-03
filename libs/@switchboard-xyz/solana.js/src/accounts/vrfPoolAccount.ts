@@ -15,7 +15,7 @@ import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
   createTransferInstruction,
   TOKEN_PROGRAM_ID,
-} from '@solana/spl-token';
+} from '@solana/spl-token-v2';
 import {
   AccountMeta,
   Commitment,

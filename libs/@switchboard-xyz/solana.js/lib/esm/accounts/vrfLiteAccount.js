@@ -7,7 +7,7 @@ import { Account } from './account';
 import { OracleAccount } from './oracleAccount';
 import { PermissionAccount } from './permissionAccount';
 import { QueueAccount } from './queueAccount';
-import { ASSOCIATED_TOKEN_PROGRAM_ID, createTransferInstruction, TOKEN_PROGRAM_ID, } from '@solana/spl-token';
+import { ASSOCIATED_TOKEN_PROGRAM_ID, createTransferInstruction, TOKEN_PROGRAM_ID, } from '@solana/spl-token-v2';
 import { Keypair, SystemProgram, SYSVAR_INSTRUCTIONS_PUBKEY, SYSVAR_RENT_PUBKEY, } from '@solana/web3.js';
 import { BN, promiseWithTimeout } from '@switchboard-xyz/common';
 export class VrfLiteAccount extends Account {

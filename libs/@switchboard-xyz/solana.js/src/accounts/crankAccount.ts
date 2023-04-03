@@ -12,7 +12,7 @@ import { CrankDataBuffer } from './crankDataBuffer';
 import { QueueAccount } from './queueAccount';
 
 import * as anchor from '@coral-xyz/anchor';
-import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
+import { TOKEN_PROGRAM_ID } from '@solana/spl-token-v2';
 import {
   AccountMeta,
   Commitment,
