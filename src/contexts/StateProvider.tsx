@@ -55,6 +55,7 @@ import {
 
 interface VMStateConfig {
   state: vayooState;
+  oracleState: OracleData;
   subscribeTx: (
     txHash: string,
     onTxSent?: any,
@@ -77,6 +78,7 @@ interface VMStateConfig {
 
 const VMStateContext = React.createContext<VMStateConfig>({
   state: null,
+  oracleState: null,
   subscribeTx: () => {},
   toggleRefresh: () => {},
   loading: false,
@@ -106,7 +108,7 @@ export function VMStateProvider({ children = undefined as any }) {
   );
   const [switchboardProgram, setSwitchboardProgram] =
     useState<SwitchboardProgram | null>(null);
-  const [oracleData, setOracleData] = useState<OracleData>(null);
+  const [oracleState, setOracleState] = useState<OracleData>(null);
 
   const changeContract = (
     name: string,
@@ -282,7 +284,6 @@ export function VMStateProvider({ children = undefined as any }) {
         vayooProgram: program,
         userState: userState,
         poolState: whirlpoolState,
-        oracleData: oracleData!,
         assetPrice: assetPrice,
         whirlpool: whirlpool,
         orcaFetcher,
@@ -298,7 +299,6 @@ export function VMStateProvider({ children = undefined as any }) {
       globalState: null,
       userState: null,
       poolState: whirlpoolState,
-      oracleData: oracleData!,
       assetPrice: assetPrice,
       whirlpool: null,
       orcaFetcher,
@@ -339,7 +339,7 @@ export function VMStateProvider({ children = undefined as any }) {
                 await connection.getAccountInfo(selectedContract?.oracleFeed!)
               )?.data!;
               const parsedPythData = parsePriceData(pythAccount);
-              setOracleData({
+              setOracleState({
                 price: parsedPythData.price!,
                 previousPrice: parsedPythData.previousPrice,
               });
@@ -350,7 +350,7 @@ export function VMStateProvider({ children = undefined as any }) {
               selectedContract?.oracleFeed!,
               (account) => {
                 const parsedPythData = parsePriceData(account.data);
-                setOracleData({
+                setOracleState({
                   price: parsedPythData.price!,
                   previousPrice: parsedPythData.previousPrice,
                 });
@@ -369,11 +369,10 @@ export function VMStateProvider({ children = undefined as any }) {
               const result = (
                 await aggregatorAccount.fetchLatestValue()
               )?.toNumber()!;
-              setOracleData({
+              setOracleState({
                 price: result,
                 previousPrice: result,
               });
-              setRefresh((prev) => !prev);
               // Add listener on switchboard account for refreshes
               controller = connection.onAccountChange(
                 selectedContract?.oracleFeed!,
@@ -386,11 +385,10 @@ export function VMStateProvider({ children = undefined as any }) {
                     const result = (
                       await aggregatorAccount.fetchLatestValue()
                     )?.toNumber()!;
-                    setOracleData({
+                    setOracleState({
                       price: result,
                       previousPrice: result,
                     });
-                    setRefresh((prev) => !prev);
                   })();
                 }
               );
@@ -447,6 +445,7 @@ export function VMStateProvider({ children = undefined as any }) {
     <VMStateContext.Provider
       value={{
         state,
+        oracleState,
         subscribeTx,
         toggleRefresh: () => setRefresh((refresh) => !refresh),
         loading,
@@ -474,6 +473,12 @@ export function useSubscribeTx() {
   const context = React.useContext(VMStateContext);
 
   return context.subscribeTx;
+}
+
+export function useOracleState() {
+  const context = React.useContext(VMStateContext);
+
+  return context.oracleState;
 }
 
 export function useSelectedContract() {

@@ -9,6 +9,7 @@ import {
   USER_TRADE_CAP_USD,
 } from "./utils/constants";
 import {
+  useOracleState,
   useSelectedContract,
   useSubscribeTx,
   useVMState,
@@ -54,6 +55,7 @@ function App() {
   const { connected } = useWallet();
   const { connection } = useConnection();
   const { state, toggleRefresh, loading } = useVMState();
+  const oracleState = useOracleState();
   const { selectedContract } = useSelectedContract();
   const [refresh, setRefresh] = useState(false);
   const [errStr, setErrStr] = useState("");
@@ -142,7 +144,6 @@ function App() {
     wallet.publicKey,
     state,
     localState.mmMode,
-    state?.oracleData,
     selectedContract,
   ]);
 
@@ -881,8 +882,8 @@ function App() {
                                 <div className="flex justify-between gap-4">
                                   <div className="flex flex-col items-center">
                                     <div className="text-gray-300 text-lg">
-                                      {state?.oracleData?.price?.toFixed(2) ??
-                                        state?.oracleData?.previousPrice.toFixed(
+                                      {oracleState?.price?.toFixed(2) ??
+                                        oracleState?.previousPrice.toFixed(
                                           2
                                         ) ??
                                         "NIL"}

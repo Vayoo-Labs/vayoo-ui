@@ -13,7 +13,6 @@ export type vayooState = {
   poolState: WhirlpoolData | null;
   whirlpool: Whirlpool | null;
   orcaFetcher: AccountFetcher | null;
-  oracleData: OracleData ;
   assetPrice: number;
   accounts: any;
 } | null;
