@@ -24,6 +24,7 @@ import {
   OracleData,
   OracleFeedType,
   selectedContractData,
+  UserPosition,
   vayooState,
 } from "../utils/types";
 import {
@@ -252,6 +253,18 @@ export function VMStateProvider({ children = undefined as any }) {
         };
       }
 
+      let userPosition: UserPosition; 
+      if (userState?.lcontractBoughtAsUser.toNumber()! > 0) {
+        userPosition = UserPosition.Long;
+      } else if (userState?.scontractSoldAsUser.toNumber()! < 0) {
+        userPosition = UserPosition.Short;
+      } else {
+        userPosition = UserPosition.Neutral;
+      }
+      if (state?.userState?.lcontractMintedAsMm.toNumber()! > 0) {
+        userPosition = UserPosition.Mm;
+      }
+
       accounts = {
         ...accounts,
         lcontractMint,
@@ -283,6 +296,7 @@ export function VMStateProvider({ children = undefined as any }) {
         globalState: null,
         vayooProgram: program,
         userState: userState,
+        userPosition,
         poolState: whirlpoolState,
         assetPrice: assetPrice,
         whirlpool: whirlpool,
@@ -298,6 +312,7 @@ export function VMStateProvider({ children = undefined as any }) {
       contractState: contractState,
       globalState: null,
       userState: null,
+      userPosition: UserPosition.Neutral,
       poolState: whirlpoolState,
       assetPrice: assetPrice,
       whirlpool: null,
@@ -397,10 +412,16 @@ export function VMStateProvider({ children = undefined as any }) {
         }
       }
       return () => {
-        if (selectedContract?.oracleFeedType == OracleFeedType.Pyth) {
+        if (
+          selectedContract?.oracleFeedType == OracleFeedType.Pyth &&
+          controller
+        ) {
           connection.removeAccountChangeListener(controller);
-        } else if (selectedContract?.oracleFeedType == OracleFeedType.Switchboard) {
-          connection.removeAccountChangeListener(controller)
+        } else if (
+          selectedContract?.oracleFeedType == OracleFeedType.Switchboard &&
+          controller
+        ) {
+          connection.removeAccountChangeListener(controller);
         }
       };
     }

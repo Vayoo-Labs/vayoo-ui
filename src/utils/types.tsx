@@ -10,6 +10,7 @@ export type vayooState = {
   globalState: IdlAccounts<VayooContracts>['globalState'] | null;
   contractState: IdlAccounts<VayooContracts>['contractState'] | null;
   userState: IdlAccounts<VayooContracts>['userState'] | null;
+  userPosition: UserPosition;
   poolState: WhirlpoolData | null;
   whirlpool: Whirlpool | null;
   orcaFetcher: AccountFetcher | null;

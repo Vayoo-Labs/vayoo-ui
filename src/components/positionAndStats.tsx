@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSelectedContract, useVMState } from "../contexts/StateProvider";
-import { PositionAndStatsComponentParams, UserPosition } from "../utils/types";
+import { UserPosition } from "../utils/types";
 
-const PositionAndStatsComponent = ({ userPosition }: PositionAndStatsComponentParams) => {
+const PositionAndStatsComponent = () => {
   const { state, loading } = useVMState();
   const [isStats, setisStats] = useState(false);
   const { selectedContract } = useSelectedContract();
@@ -22,11 +22,17 @@ const PositionAndStatsComponent = ({ userPosition }: PositionAndStatsComponentPa
     setisStats(true);
   };
 
+  useEffect(() => {
+    console.log(state?.userPosition == UserPosition.Long)
+    console.log(UserPosition.Neutral)
+    console.log(state?.userPosition)
+  }, [])
+
   return (
-    <div className="w-full px-6 py-6 text-white flex flex-col gap-3 border-2 border-gray-300/10 max-w-5xl rounded-xl bg-black/50">
+    <div className="w-full max-w-xs px-6 py-6 text-white flex flex-col gap-3 border-2 border-gray-300/10 rounded-xl bg-black/50 z-10">
       <div className="flex gap-3">
         <div
-          className={`cursor-pointer text-2xl ${
+          className={`cursor-pointer text-lg ${
             isStats ? "text-gray-600" : "text-gray-300"
           }`}
           onClick={onClickPosition}
@@ -34,7 +40,7 @@ const PositionAndStatsComponent = ({ userPosition }: PositionAndStatsComponentPa
           Your Positions
         </div>
         <div
-          className={`cursor-pointer text-2xl ${
+          className={`cursor-pointer text-lg ${
             !isStats ? "text-gray-600" : "text-gray-300"
           }`}
           onClick={onClickStats}
@@ -47,15 +53,15 @@ const PositionAndStatsComponent = ({ userPosition }: PositionAndStatsComponentPa
           <div className="flex justify-between items-center text-gray-400">
             Net Position:
             <div
-              className={`font-bold text-2xl text-gray-400 ${
-                userPosition != UserPosition.Neutral &&
-                (userPosition == UserPosition.Long
+              className={`font-bold text-lg text-gray-400 ${
+                state?.userPosition != UserPosition.Neutral &&
+                (state?.userPosition == UserPosition.Long
                   ? "text-green-600"
                   : "text-red-600")
               }`}
             >
-              {userPosition != UserPosition.Neutral &&
-                (userPosition == UserPosition.Long ? "+" : "-")}
+              {state?.userPosition != UserPosition.Neutral &&
+                (state?.userPosition == UserPosition.Long ? "+" : "-")}
               {Math.abs(
                 state?.userState?.contractPositionNet.toNumber()! / 1e6
               ).toFixed(6)}{" "}
@@ -118,7 +124,7 @@ const PositionAndStatsComponent = ({ userPosition }: PositionAndStatsComponentPa
             Halted :<div>{state?.contractState?.isHalted.toString()}</div>
           </div>
           <div className="flex justify-between items-center text-gray-400 ">
-            Pyth Feed :
+            Oracle Feed :
             <div className="underline underline-offset-4">
               <a href={selectedContract?.extraInfo.oracle_link}>{selectedContract?.extraInfo.long_name}</a>
             </div>
