@@ -52,8 +52,6 @@ export const TVChartContainer = () => {
     studiesOverrides: {},
   };
 
-  const tvWidgetRef = React.useRef<IChartingLibraryWidget | null>(null);
-
   const chartProperties = JSON.parse(
     localStorage.getItem('chartproperties') || '{}',
   );
@@ -97,48 +95,10 @@ export const TVChartContainer = () => {
         'mainSeriesProperties.candleStyle.wickUpColor': '#41C77A',
         'mainSeriesProperties.candleStyle.wickDownColor': '#F23B69',
       },
-      // @ts-ignore
-      // save_load_adapter: saveLoadAdapter,
-      // settings_adapter: {
-      //   initialSettings: {
-      //     'trading.orderPanelSettingsBroker': JSON.stringify({
-      //       showRelativePriceControl: false,
-      //       showCurrencyRiskInQty: false,
-      //       showPercentRiskInQty: false,
-      //       showBracketsInCurrency: false,
-      //       showBracketsInPercent: false,
-      //     }),
-      //     // "proterty"
-      //     'trading.chart.proterty':
-      //       localStorage.getItem('trading.chart.proterty') ||
-      //       JSON.stringify({
-      //         hideFloatingPanel: 1,
-      //       }),
-      //     'chart.favoriteDrawings':
-      //       localStorage.getItem('chart.favoriteDrawings') ||
-      //       JSON.stringify([]),
-      //     'chart.favoriteDrawingsPosition':
-      //       localStorage.getItem('chart.favoriteDrawingsPosition') ||
-      //       JSON.stringify({}),
-      //   },
-      //   setValue: (key, value) => {
-      //     localStorage.setItem(key, value);
-      //   },
-      //   removeValue: (key) => {
-      //     localStorage.removeItem(key);
-      //   },
-      // },
     };
 
     const tvWidget = new widget(widgetOptions);
 
-    // tvWidget.onChartReady(() => {
-    //   tvWidgetRef.current = tvWidget;
-    //   tvWidget
-    //     // @ts-ignore
-    //     .subscribe('onAutoSaveNeeded', () => tvWidget.saveChartToServer());
-    // });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return <div id={defaultProps.containerId as string} className={'TVChartContainer relative z-10'} />;
