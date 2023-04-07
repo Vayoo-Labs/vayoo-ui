@@ -99,7 +99,7 @@ export const TVChartContainer = () => {
 
     const tvWidget = new widget(widgetOptions);
 
-  }, []);
+  }, [selectedContract]);
 
   return <div id={defaultProps.containerId as string} className={'TVChartContainer relative z-10'} />;
 };
