@@ -53,6 +53,7 @@ import {
   AggregatorAccount,
   SwitchboardProgram,
 } from "@switchboard-xyz/solana.js";
+import { sleep } from "../utils/whirlpoolUtils/utils";
 
 interface VMStateConfig {
   state: vayooState;
@@ -159,7 +160,7 @@ export function VMStateProvider({ children = undefined as any }) {
     );
   };
 
-  const updateState = async () => {
+  const updateFullState = async () => {
     let accounts: any = {
       collateralMint: USDC_MINT,
       systemProgram: SystemProgram.programId,
@@ -253,7 +254,7 @@ export function VMStateProvider({ children = undefined as any }) {
         };
       }
 
-      let userPosition: UserPosition; 
+      let userPosition: UserPosition;
       if (userState?.lcontractBoughtAsUser.toNumber()! > 0) {
         userPosition = UserPosition.Long;
       } else if (userState?.scontractSoldAsUser.toNumber()! < 0) {
@@ -320,12 +321,61 @@ export function VMStateProvider({ children = undefined as any }) {
     });
   };
 
+  // const updateMiniState = async () => {
+  //   console.log('Updating Mini State');
+  //   const whirlpool = await whirlpoolClient.getPool(
+  //     selectedContract?.whirlpoolKey!,
+  //     true
+  //   );
+  //   const whirlpoolState = whirlpool.getData();
+  //   const contractState = await state?.vayooProgram.account.contractState.fetchNullable(
+  //     state.accounts.contractState
+  //   )!;
+  //   const poolPrice = PriceMath.sqrtPriceX64ToPrice(
+  //     whirlpoolState?.sqrtPrice!,
+  //     6,
+  //     6
+  //   );
+  //   const assetPrice =
+  //     poolPrice.toNumber() +
+  //     contractState?.startingPrice.toNumber()! /
+  //       selectedContract?.oracleExponent! -
+  //     contractState?.limitingAmplitude.toNumber()! / 2;
+
+  //   let userPosition: UserPosition;
+  //   const userState = await state?.vayooProgram.account.userState.fetchNullable(
+  //     state.accounts.userState
+  //     )!;
+  //     if (userState?.lcontractBoughtAsUser.toNumber()! > 0) {
+  //       userPosition = UserPosition.Long;
+  //     } else if (userState?.scontractSoldAsUser.toNumber()! < 0) {
+  //       userPosition = UserPosition.Short;
+  //     } else {
+  //       userPosition = UserPosition.Neutral;
+  //     }
+  //     if (state?.userState?.lcontractMintedAsMm.toNumber()! > 0) {
+  //       userPosition = UserPosition.Mm;
+  //     }
+  //     setState((prev: vayooState) => ({
+  //       ...prev!,
+  //       contractState,
+  //       userState: userState,
+  //       userPosition,
+  //       poolState: whirlpoolState,
+  //       assetPrice: assetPrice,
+  //       whirlpool: whirlpool,
+  //     }));
+  // }
+
   useEffect(() => {
     if (!loading) {
       (async () => {
         console.log("--updating state--");
-        await updateState();
+        await updateFullState();
         console.log("--updated state--");
+        await sleep(500);
+        await updateFullState();
+        console.log("---updated state---");
       })();
     }
   }, [connection, wallet, refresh, toogleUpdateState, selectedContract]);
