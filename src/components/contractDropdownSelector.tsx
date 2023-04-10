@@ -49,7 +49,7 @@ const ContractDropDownSelectorComponent = () => {
             <div className="flex gap-1">
 
           Asset: <div className="text-lime-200">
-            {selectedContract?.extraInfo.market_name}
+            {selectedContract?.extraInfo.ui_name}
             </div>
             </div>
           <svg
@@ -69,7 +69,7 @@ const ContractDropDownSelectorComponent = () => {
       </div>
 
         {isOpen && (
-        <div className={`fixed inset-0 mt-20 bg-black bg-opacity-10 z-40 backdrop-blur-sm`}>
+        <div className={`fixed inset-0 mt-20 bg-black bg-opacity-30 z-40`}>
             </div>
         )}
       {isOpen && (
@@ -85,7 +85,7 @@ const ContractDropDownSelectorComponent = () => {
             {allContractInfo.map((item: any) => (
               <Item key={item.name}
               onClick={() => {
-                changeSelectedContract(item.name, new PublicKey(item.whirlpool_key), new PublicKey(item.pyth_feed_key), item.pyth_exponent, item)
+                changeSelectedContract(item.name, new PublicKey(item.whirlpool_key), item.oracle_feed_type, new PublicKey(item.oracle_feed_key), item.oracle_exponent, item)
                 toggleMenu()
               }}
               >{item.ui_name}</Item>

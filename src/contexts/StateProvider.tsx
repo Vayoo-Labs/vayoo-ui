@@ -4,9 +4,9 @@ import {
   SystemProgram,
   SYSVAR_RENT_PUBKEY,
 } from "@solana/web3.js";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 
-import { getVayooProgramInstance, sleep } from "../utils";
+import { getVayooProgramInstance } from "../utils";
 import { useWallet, useConnection } from "@solana/wallet-adapter-react";
 
 import {
@@ -20,13 +20,21 @@ import {
   getScontractMintPDA,
   getUserStatePDA,
 } from "../utils/vayoo-pda";
-import { selectedContractData, vayooState } from "../utils/types";
+import {
+  OracleData,
+  OracleFeedType,
+  selectedContractData,
+  UserPosition,
+  vayooState,
+} from "../utils/types";
 import {
   getAssociatedTokenAddressSync,
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token-v2";
 import {
   COLLATERAL_MINT,
+  DUMMY_PYTH_KEY,
+  DUMMY_SWITCHBOARD_KEY,
   REFRESH_TIME_INTERVAL,
   USDC_MINT,
   VAYOO_BACKEND_ENDPOINT,
@@ -41,9 +49,15 @@ import {
 } from "@orca-so/whirlpools-sdk";
 import { parsePriceData, PriceData } from "@pythnetwork/client";
 import { fetchAxiosWithRetry, WalletOrca } from "../utils/web3-utils";
+import {
+  AggregatorAccount,
+  SwitchboardProgram,
+} from "@switchboard-xyz/solana.js";
+import { sleep } from "../utils/whirlpoolUtils/utils";
 
 interface VMStateConfig {
   state: vayooState;
+  oracleState: OracleData;
   subscribeTx: (
     txHash: string,
     onTxSent?: any,
@@ -56,8 +70,9 @@ interface VMStateConfig {
   changeSelectedContract: (
     name: string,
     whirlpoolKey: PublicKey,
-    pythFeed: PublicKey,
-    pythExponent: number,
+    oracleFeedType: number,
+    oracleFeed: PublicKey,
+    oracleExponent: number,
     extraInfo: any
   ) => void;
   allContractInfo: any;
@@ -65,6 +80,7 @@ interface VMStateConfig {
 
 const VMStateContext = React.createContext<VMStateConfig>({
   state: null,
+  oracleState: null,
   subscribeTx: () => {},
   toggleRefresh: () => {},
   loading: false,
@@ -92,21 +108,25 @@ export function VMStateProvider({ children = undefined as any }) {
       ORCA_WHIRLPOOL_PROGRAM_ID
     )
   );
-  const [pythData, setPythData] = useState<PriceData | null>(null);
+  const [switchboardProgram, setSwitchboardProgram] =
+    useState<SwitchboardProgram | null>(null);
+  const [oracleState, setOracleState] = useState<OracleData>(null);
 
   const changeContract = (
     name: string,
     whirlpoolKey: PublicKey,
-    pythFeed: PublicKey,
-    pythExponent: number,
+    oracleFeedType: number,
+    oracleFeed: PublicKey,
+    oracleExponent: number,
     extraInfo: any
   ) => {
-    pythExponent = 1 / 10 ** pythExponent;
+    oracleExponent = 1 / 10 ** oracleExponent;
     setSelectedContract({
       name,
       whirlpoolKey,
-      pythFeed,
-      pythExponent,
+      oracleFeedType,
+      oracleFeed,
+      oracleExponent,
       extraInfo,
     });
     return;
@@ -140,12 +160,14 @@ export function VMStateProvider({ children = undefined as any }) {
     );
   };
 
-  const updateState = async () => {
+  const updateFullState = async () => {
     let accounts: any = {
       collateralMint: USDC_MINT,
       systemProgram: SystemProgram.programId,
       rent: SYSVAR_RENT_PUBKEY,
       tokenProgram: TOKEN_PROGRAM_ID,
+      pythFeed: DUMMY_PYTH_KEY,
+      switchboardFeed: DUMMY_SWITCHBOARD_KEY,
     };
 
     const whirlpool = await whirlpoolClient.getPool(
@@ -168,7 +190,6 @@ export function VMStateProvider({ children = undefined as any }) {
     const contractState = await program.account.contractState.fetchNullable(
       contractStateKey
     );
-
     const poolPrice = PriceMath.sqrtPriceX64ToPrice(
       whirlpoolState?.sqrtPrice!,
       6,
@@ -177,7 +198,7 @@ export function VMStateProvider({ children = undefined as any }) {
     const assetPrice =
       poolPrice.toNumber() +
       contractState?.startingPrice.toNumber()! /
-        selectedContract?.pythExponent! -
+        selectedContract?.oracleExponent! -
       contractState?.limitingAmplitude.toNumber()! / 2;
 
     if (wallet?.publicKey) {
@@ -221,6 +242,30 @@ export function VMStateProvider({ children = undefined as any }) {
         userStateKey
       );
 
+      if (contractState?.feedType == OracleFeedType.Pyth) {
+        accounts = {
+          ...accounts,
+          pythFeed: selectedContract?.oracleFeed,
+        };
+      } else if (contractState?.feedType == OracleFeedType.Switchboard) {
+        accounts = {
+          ...accounts,
+          switchboardFeed: selectedContract?.oracleFeed,
+        };
+      }
+
+      let userPosition: UserPosition;
+      if (userState?.lcontractBoughtAsUser.toNumber()! > 0) {
+        userPosition = UserPosition.Long;
+      } else if (userState?.scontractSoldAsUser.toNumber()! < 0) {
+        userPosition = UserPosition.Short;
+      } else {
+        userPosition = UserPosition.Neutral;
+      }
+      if (state?.userState?.lcontractMintedAsMm.toNumber()! > 0) {
+        userPosition = UserPosition.Mm;
+      }
+
       accounts = {
         ...accounts,
         lcontractMint,
@@ -238,7 +283,6 @@ export function VMStateProvider({ children = undefined as any }) {
         mmLcontractAta,
         mmCollateralWalletAta: userCollateralAta,
         vaultLcontractAta,
-        pythFeed: selectedContract?.pythFeed,
         whirlpoolProgram: ORCA_WHIRLPOOL_PROGRAM_ID,
         whirlpool: selectedContract?.whirlpoolKey!,
         tokenVaultA: whirlpoolState.tokenVaultA,
@@ -253,8 +297,8 @@ export function VMStateProvider({ children = undefined as any }) {
         globalState: null,
         vayooProgram: program,
         userState: userState,
+        userPosition,
         poolState: whirlpoolState,
-        pythData: pythData!,
         assetPrice: assetPrice,
         whirlpool: whirlpool,
         orcaFetcher,
@@ -269,20 +313,69 @@ export function VMStateProvider({ children = undefined as any }) {
       contractState: contractState,
       globalState: null,
       userState: null,
+      userPosition: UserPosition.Neutral,
       poolState: whirlpoolState,
-      pythData: pythData!,
       assetPrice: assetPrice,
       whirlpool: null,
       orcaFetcher,
     });
   };
 
+  // const updateMiniState = async () => {
+  //   console.log('Updating Mini State');
+  //   const whirlpool = await whirlpoolClient.getPool(
+  //     selectedContract?.whirlpoolKey!,
+  //     true
+  //   );
+  //   const whirlpoolState = whirlpool.getData();
+  //   const contractState = await state?.vayooProgram.account.contractState.fetchNullable(
+  //     state.accounts.contractState
+  //   )!;
+  //   const poolPrice = PriceMath.sqrtPriceX64ToPrice(
+  //     whirlpoolState?.sqrtPrice!,
+  //     6,
+  //     6
+  //   );
+  //   const assetPrice =
+  //     poolPrice.toNumber() +
+  //     contractState?.startingPrice.toNumber()! /
+  //       selectedContract?.oracleExponent! -
+  //     contractState?.limitingAmplitude.toNumber()! / 2;
+
+  //   let userPosition: UserPosition;
+  //   const userState = await state?.vayooProgram.account.userState.fetchNullable(
+  //     state.accounts.userState
+  //     )!;
+  //     if (userState?.lcontractBoughtAsUser.toNumber()! > 0) {
+  //       userPosition = UserPosition.Long;
+  //     } else if (userState?.scontractSoldAsUser.toNumber()! < 0) {
+  //       userPosition = UserPosition.Short;
+  //     } else {
+  //       userPosition = UserPosition.Neutral;
+  //     }
+  //     if (state?.userState?.lcontractMintedAsMm.toNumber()! > 0) {
+  //       userPosition = UserPosition.Mm;
+  //     }
+  //     setState((prev: vayooState) => ({
+  //       ...prev!,
+  //       contractState,
+  //       userState: userState,
+  //       userPosition,
+  //       poolState: whirlpoolState,
+  //       assetPrice: assetPrice,
+  //       whirlpool: whirlpool,
+  //     }));
+  // }
+
   useEffect(() => {
     if (!loading) {
       (async () => {
         console.log("--updating state--");
-        await updateState();
+        await updateFullState();
         console.log("--updated state--");
+        await sleep(500);
+        await updateFullState();
+        console.log("---updated state---");
       })();
     }
   }, [connection, wallet, refresh, toogleUpdateState, selectedContract]);
@@ -304,28 +397,82 @@ export function VMStateProvider({ children = undefined as any }) {
               setRefresh((prev) => !prev);
             }
           });
-          // Pyth Feed Initial Fetching
-          (async () => {
-            const pythAccount = (
-              await connection.getAccountInfo(selectedContract?.pythFeed!)
-            )?.data!;
-            const parsedPythData = parsePriceData(pythAccount);
-            setPythData(parsedPythData);
-            setRefresh((prev) => !prev);
-          })();
-          // Add listener on pyth account for refreshes
-          controller = connection.onAccountChange(
-            selectedContract?.pythFeed!,
-            (account) => {
-              const parsedData = parsePriceData(account.data);
-              setPythData(parsedData);
+          if (selectedContract?.oracleFeedType == OracleFeedType.Pyth) {
+            // Pyth Feed Initial Fetching
+            (async () => {
+              const pythAccount = (
+                await connection.getAccountInfo(selectedContract?.oracleFeed!)
+              )?.data!;
+              const parsedPythData = parsePriceData(pythAccount);
+              setOracleState({
+                price: parsedPythData.price!,
+                previousPrice: parsedPythData.previousPrice,
+              });
               setRefresh((prev) => !prev);
-            }
-          );
+            })();
+            // Add listener on pyth account for refreshes
+            controller = connection.onAccountChange(
+              selectedContract?.oracleFeed!,
+              (account) => {
+                const parsedPythData = parsePriceData(account.data);
+                setOracleState({
+                  price: parsedPythData.price!,
+                  previousPrice: parsedPythData.previousPrice,
+                });
+                setRefresh((prev) => !prev);
+              }
+            );
+          } else if (
+            selectedContract?.oracleFeedType == OracleFeedType.Switchboard
+          ) {
+            // Switchboard Feed Initial Fetching
+            (async () => {
+              const aggregatorAccount = new AggregatorAccount(
+                switchboardProgram!,
+                selectedContract?.oracleFeed
+              );
+              const result = (
+                await aggregatorAccount.fetchLatestValue()
+              )?.toNumber()!;
+              setOracleState({
+                price: result,
+                previousPrice: result,
+              });
+              // Add listener on switchboard account for refreshes
+              controller = connection.onAccountChange(
+                selectedContract?.oracleFeed!,
+                () => {
+                  (async (account) => {
+                    const aggregatorAccount = new AggregatorAccount(
+                      switchboardProgram!,
+                      selectedContract?.oracleFeed
+                    );
+                    const result = (
+                      await aggregatorAccount.fetchLatestValue()
+                    )?.toNumber()!;
+                    setOracleState({
+                      price: result,
+                      previousPrice: result,
+                    });
+                  })();
+                }
+              );
+            })();
+          }
         }
       }
       return () => {
-        connection.removeAccountChangeListener(controller as number);
+        if (
+          selectedContract?.oracleFeedType == OracleFeedType.Pyth &&
+          controller
+        ) {
+          connection.removeAccountChangeListener(controller);
+        } else if (
+          selectedContract?.oracleFeedType == OracleFeedType.Switchboard &&
+          controller
+        ) {
+          connection.removeAccountChangeListener(controller);
+        }
       };
     }
   }, [connection, wallet, toogleUpdateState, selectedContract]);
@@ -340,19 +487,27 @@ export function VMStateProvider({ children = undefined as any }) {
     if (!allContractInfo) {
       setLoading(true);
       (async () => {
+        const switchboardProgram = await SwitchboardProgram.load(
+          "mainnet-beta",
+          connection
+        );
+        setSwitchboardProgram(switchboardProgram);
         const _allContractInfo = (
           await fetchAxiosWithRetry(`${VAYOO_BACKEND_ENDPOINT}/contracts`)
         ).data;
         setAllContractInfo(_allContractInfo);
         const defaultContract = _allContractInfo[0];
-        changeContract(
-          defaultContract.name,
-          new PublicKey(defaultContract.whirlpool_key),
-          new PublicKey(defaultContract.pyth_feed_key),
-          defaultContract.pyth_exponent,
-          defaultContract
-        );
-        if (_allContractInfo) setLoading(false);
+        if (defaultContract) {
+          changeContract(
+            defaultContract.name,
+            new PublicKey(defaultContract.whirlpool_key),
+            defaultContract.oracle_feed_type,
+            new PublicKey(defaultContract.oracle_feed_key),
+            defaultContract.oracle_exponent,
+            defaultContract
+          );
+          if (_allContractInfo) setLoading(false);
+        }
       })();
     }
   }, [allContractInfo]);
@@ -361,6 +516,7 @@ export function VMStateProvider({ children = undefined as any }) {
     <VMStateContext.Provider
       value={{
         state,
+        oracleState,
         subscribeTx,
         toggleRefresh: () => setRefresh((refresh) => !refresh),
         loading,
@@ -388,6 +544,12 @@ export function useSubscribeTx() {
   const context = React.useContext(VMStateContext);
 
   return context.subscribeTx;
+}
+
+export function useOracleState() {
+  const context = React.useContext(VMStateContext);
+
+  return context.oracleState;
 }
 
 export function useSelectedContract() {

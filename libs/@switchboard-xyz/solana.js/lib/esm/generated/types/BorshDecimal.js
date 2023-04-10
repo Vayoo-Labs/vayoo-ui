@@ -1,0 +1,40 @@
+import { BN } from '@switchboard-xyz/common'; // eslint-disable-line @typescript-eslint/no-unused-vars
+import * as borsh from '@coral-xyz/borsh';
+export class BorshDecimal {
+    constructor(fields) {
+        this.mantissa = fields.mantissa;
+        this.scale = fields.scale;
+    }
+    static layout(property) {
+        return borsh.struct([borsh.i128('mantissa'), borsh.u32('scale')], property);
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    static fromDecoded(obj) {
+        return new BorshDecimal({
+            mantissa: obj.mantissa,
+            scale: obj.scale,
+        });
+    }
+    static toEncodable(fields) {
+        return {
+            mantissa: fields.mantissa,
+            scale: fields.scale,
+        };
+    }
+    toJSON() {
+        return {
+            mantissa: this.mantissa.toString(),
+            scale: this.scale,
+        };
+    }
+    static fromJSON(obj) {
+        return new BorshDecimal({
+            mantissa: new BN(obj.mantissa),
+            scale: obj.scale,
+        });
+    }
+    toEncodable() {
+        return BorshDecimal.toEncodable(this);
+    }
+}
+//# sourceMappingURL=BorshDecimal.js.map

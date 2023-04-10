@@ -73,6 +73,11 @@ export type VayooContracts = {
           "isSigner": false
         },
         {
+          "name": "switchboardFeed",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "pythFeed",
           "isMut": false,
           "isSigner": false
@@ -109,6 +114,10 @@ export type VayooContracts = {
         {
           "name": "limitingAmplitude",
           "type": "u64"
+        },
+        {
+          "name": "feedType",
+          "type": "u8"
         }
       ]
     },
@@ -837,6 +846,11 @@ export type VayooContracts = {
           "isSigner": false
         },
         {
+          "name": "switchboardFeed",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "pythFeed",
           "isMut": false,
           "isSigner": false
@@ -1093,11 +1107,15 @@ export type VayooContracts = {
             "type": "publicKey"
           },
           {
-            "name": "pythFeedId",
+            "name": "feedType",
+            "type": "u8"
+          },
+          {
+            "name": "oracleFeedKey",
             "type": "publicKey"
           },
           {
-            "name": "pythPriceMultiplier",
+            "name": "oraclePriceMultiplier",
             "type": "u64"
           },
           {
@@ -1276,6 +1294,25 @@ export type VayooContracts = {
       }
     }
   ],
+  "types": [
+    {
+      "name": "FeedType",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Pyth"
+          },
+          {
+            "name": "Switchboard"
+          },
+          {
+            "name": "Unknown"
+          }
+        ]
+      }
+    }
+  ],
   "errors": [
     {
       "code": 6000,
@@ -1391,6 +1428,31 @@ export type VayooContracts = {
       "code": 6022,
       "name": "LeakInFAccount",
       "msg": "LeakInFreeAccountUser"
+    },
+    {
+      "code": 6023,
+      "name": "InvalidFeedType",
+      "msg": "Invalid Feed Type"
+    },
+    {
+      "code": 6024,
+      "name": "InvalidSwitchboardAccount",
+      "msg": "Not a valid Switchboard account"
+    },
+    {
+      "code": 6025,
+      "name": "StaleFeed",
+      "msg": "Switchboard feed has not been updated in 5 minutes"
+    },
+    {
+      "code": 6026,
+      "name": "ConfidenceIntervalExceeded",
+      "msg": "Switchboard feed exceeded provided confidence interval"
+    },
+    {
+      "code": 6027,
+      "name": "InvalidOraclefeed",
+      "msg": "Invalid Feed"
     }
   ]
 };
@@ -1470,6 +1532,11 @@ export const IDL: VayooContracts = {
           "isSigner": false
         },
         {
+          "name": "switchboardFeed",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "pythFeed",
           "isMut": false,
           "isSigner": false
@@ -1506,6 +1573,10 @@ export const IDL: VayooContracts = {
         {
           "name": "limitingAmplitude",
           "type": "u64"
+        },
+        {
+          "name": "feedType",
+          "type": "u8"
         }
       ]
     },
@@ -2234,6 +2305,11 @@ export const IDL: VayooContracts = {
           "isSigner": false
         },
         {
+          "name": "switchboardFeed",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "pythFeed",
           "isMut": false,
           "isSigner": false
@@ -2490,11 +2566,15 @@ export const IDL: VayooContracts = {
             "type": "publicKey"
           },
           {
-            "name": "pythFeedId",
+            "name": "feedType",
+            "type": "u8"
+          },
+          {
+            "name": "oracleFeedKey",
             "type": "publicKey"
           },
           {
-            "name": "pythPriceMultiplier",
+            "name": "oraclePriceMultiplier",
             "type": "u64"
           },
           {
@@ -2673,6 +2753,25 @@ export const IDL: VayooContracts = {
       }
     }
   ],
+  "types": [
+    {
+      "name": "FeedType",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Pyth"
+          },
+          {
+            "name": "Switchboard"
+          },
+          {
+            "name": "Unknown"
+          }
+        ]
+      }
+    }
+  ],
   "errors": [
     {
       "code": 6000,
@@ -2788,6 +2887,31 @@ export const IDL: VayooContracts = {
       "code": 6022,
       "name": "LeakInFAccount",
       "msg": "LeakInFreeAccountUser"
+    },
+    {
+      "code": 6023,
+      "name": "InvalidFeedType",
+      "msg": "Invalid Feed Type"
+    },
+    {
+      "code": 6024,
+      "name": "InvalidSwitchboardAccount",
+      "msg": "Not a valid Switchboard account"
+    },
+    {
+      "code": 6025,
+      "name": "StaleFeed",
+      "msg": "Switchboard feed has not been updated in 5 minutes"
+    },
+    {
+      "code": 6026,
+      "name": "ConfidenceIntervalExceeded",
+      "msg": "Switchboard feed exceeded provided confidence interval"
+    },
+    {
+      "code": 6027,
+      "name": "InvalidOraclefeed",
+      "msg": "Invalid Feed"
     }
   ]
 };

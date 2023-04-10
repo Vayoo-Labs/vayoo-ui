@@ -1,13 +1,15 @@
 import * as anchor from "@project-serum/anchor";
-import { vayooState } from "./types";
-import { PublicKey, Transaction } from "@solana/web3.js";
+import { OracleFeedType, vayooState } from "./types";
+import { Connection, PublicKey, Transaction } from "@solana/web3.js";
 import {
   COLLATERAL_MINT,
   USDC_MINT,
   VAYOO_CONTRACT_KEY as PID,
+  DUMMY_PYTH_KEY,
+  DUMMY_SWITCHBOARD_KEY,
 } from "./constants";
-import { WalletContextState } from "@solana/wallet-adapter-react";
-import { addZeros } from "./index";
+import { WalletContextState, useConnection, useWallet } from "@solana/wallet-adapter-react";
+import { addZeros, getVayooProgramInstance } from "./index";
 import {
   getPda,
   getUserStatePDA,
@@ -25,22 +27,26 @@ import {
 import { DecimalUtil, Percentage } from "@orca-so/common-sdk";
 
 export async function initContract(
+  connection: Connection,
   vayooState: vayooState,
   contractName: string,
   amplitude: number,
   duration: number,
-  pythFeed: string,
+  feedType: number,
+  feedKey: string,
   wallet: WalletContextState
 ) {
-  const connection = vayooState!.vayooProgram.provider.connection;
   const transaction = new Transaction();
   transaction.add(
     await initContractIx(
+      connection,
+      wallet,
       vayooState,
       contractName,
       amplitude,
       duration,
-      pythFeed,
+      feedType,
+      feedKey,
       wallet.publicKey!
     )
   );
@@ -314,13 +320,18 @@ export async function withdrawCollateral(
 }
 
 async function initContractIx(
+  connection: Connection,
+  wallet: WalletContextState,
   vayooState: vayooState,
   contractName: string,
   amplitude: number,
   duration: number,
-  pythFeed: string,
+  feedType: number,
+  feedKey: string,
   admin: PublicKey
 ) {
+
+  const program = await getVayooProgramInstance(connection, wallet);
   const timeNow = Math.floor(Date.now() / 1000);
   const contractEndTime = new BN(timeNow + duration);
   const [scontractMint, scontractMintBump] = getPda(
@@ -340,23 +351,33 @@ async function initContractIx(
     [Buffer.from("escrow"), USDC_MINT.toBuffer(), contractStateKey.toBuffer()],
     PID
   );
-  const pyth = new PublicKey(pythFeed);
+  
+  let pythFeed: PublicKey = new PublicKey(DUMMY_PYTH_KEY);
+  let switchboardFeed: PublicKey = new PublicKey(DUMMY_SWITCHBOARD_KEY);
+  if (feedType == OracleFeedType.Pyth) {
+    pythFeed = new PublicKey(feedKey);
+    console.log('Pyth Feed detected');
+  } else if (feedType == OracleFeedType.Switchboard) {
+    console.log('Switchboard Feed detected');
+    switchboardFeed = new PublicKey(feedKey);
+  }
 
-  const ix = await vayooState!.vayooProgram.methods
+  const ix = await program.methods
     .initializeContract(
       contractName,
       contractStateKeyBump,
       new BN(contractEndTime),
-      new BN(amplitude)
+      new BN(amplitude),
+      feedType
     )
     .accounts({
-      ...vayooState!.accounts,
       contractAuthority: admin,
       contractState: contractStateKey,
       escrowVaultCollateral: escrowVaultCollateral,
       lcontractMint: lcontractMint,
       scontractMint: scontractMint,
-      pythFeed: pyth,
+      pythFeed,
+      switchboardFeed,
       collateralMint: USDC_MINT,
     })
     .instruction();

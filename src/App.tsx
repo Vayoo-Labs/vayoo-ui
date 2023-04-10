@@ -2,12 +2,7 @@ import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { useEffect, useState } from "react";
 import { getAtaTokenBalanceByOwner, shortenAddress } from "./utils";
-import {
-  ADMIN_KEYS,
-  VAYOO_BACKEND_ENDPOINT,
-  USDC_MINT,
-  USER_TRADE_CAP_USD,
-} from "./utils/constants";
+import { ADMIN_KEYS, USDC_MINT } from "./utils/constants";
 import {
   useSelectedContract,
   useSubscribeTx,
@@ -15,38 +10,15 @@ import {
 } from "./contexts/StateProvider";
 import AdminComponent from "./components/admin";
 import toast, { Toaster } from "react-hot-toast";
-import {
-  burnAsMm,
-  closeLong,
-  closeShort,
-  depositCollateral,
-  initUserState,
-  mintAsMm,
-  mmSettle,
-  openLong,
-  openShort,
-  userSettle,
-  withdrawCollateral,
-} from "./utils/vayoo-web3";
-import {
-  ORCA_WHIRLPOOL_PROGRAM_ID,
-  PriceMath,
-  swapQuoteByInputToken,
-  swapQuoteByOutputToken,
-} from "@orca-so/whirlpools-sdk";
-import { DecimalUtil, Percentage } from "@orca-so/common-sdk";
-import { UserPosition } from "./utils/types";
+import { initUserState } from "./utils/vayoo-web3";
 import PositionAndStatsComponent from "./components/positionAndStats";
-import { BN } from "@project-serum/anchor";
 import twitterLogo from "./assets/twitter-logo.svg";
 import telegramLogo from "./assets/telegram-logo.svg";
-import { Line, LineChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
-import { fetchAxiosWithRetry } from "./utils/web3-utils";
 import ContractDropDownSelectorComponent from "./components/contractDropdownSelector";
-
-// Some Naming Conventions to remember
-// Primary Amount = The input field used for depositing/withdrawing
-// Secondery Amount = The input field used for long/short tradnig
+import { TVChartContainer } from "./components/TradingView";
+import YourMmAccount from "./components/yourMmAccount";
+import Trade from "./components/trade";
+import DepositWithdrawModal from "./components/depositWithdrawModal";
 
 function App() {
   const wallet = useWallet();
@@ -56,32 +28,15 @@ function App() {
   const { state, toggleRefresh, loading } = useVMState();
   const { selectedContract } = useSelectedContract();
   const [refresh, setRefresh] = useState(false);
-  const [errStr, setErrStr] = useState("");
-  const [tradeEnable, setTradeEnable] = useState(true);
-  const [primaryInputValue, setPrimaryInputValue] = useState("0");
-  const [seconderyUsdcInputValue, setSeconderyUsdcInputValue] = useState("0");
-  const [seconderyContractInputValue, setSeconderyContractInputValue] =
-    useState("0");
-  const [slippageValue, setSlippageValue] = useState("5");
+
   const [localState, setLocalState] = useState({
     usdBalance: 0,
     userExist: false,
     isAdmin: false,
     adminMode: true,
     mmMode: false,
-    primaryAmount: 0,
-    seconderyUsdcAmount: 0,
-    seconderyContractAmount: 0,
-    userPosition: UserPosition.Neutral,
-    isAmountInUsdc: true,
-    lastAmount: 0,
     netAccountValueUsd: 0,
-    positionSizeUsd: 0,
   });
-  const [priceData, setPriceData] = useState<any>([]);
-  const [yAxisMin, setYAxisMin] = useState(0);
-  const [yAxisMax, setYAxisMax] = useState(0);
-  const [chartStartTime, setChartStartTime] = useState(0);
 
   const toggleLocalRefresh = () => {
     toggleRefresh();
@@ -91,7 +46,6 @@ function App() {
   useEffect(() => {
     (async () => {
       if (wallet?.publicKey) {
-        let positionSizeUsd = 0;
         if (ADMIN_KEYS.includes(wallet.publicKey.toString()!)) {
           setLocalState((prev) => ({
             ...prev,
@@ -110,29 +64,10 @@ function App() {
             wallet.publicKey!,
             USDC_MINT
           )) / 1e6;
-        let userPosition: UserPosition;
-        if (state?.userState?.contractPositionNet.toNumber()! > 0) {
-          userPosition = UserPosition.Long;
-          positionSizeUsd = state?.userState?.lcontractBoughtAsUser
-            .mul(new BN(state.assetPrice))
-            .toNumber()!;
-        } else if (state?.userState?.contractPositionNet.toNumber()! < 0) {
-          userPosition = UserPosition.Short;
-          positionSizeUsd = state?.userState?.scontractSoldAsUser
-            .mul(new BN(state.assetPrice))
-            .toNumber()!;
-        } else {
-          userPosition = UserPosition.Neutral;
-        }
-        if (state?.userState?.lcontractMintedAsMm.toNumber()! > 0) {
-          userPosition = UserPosition.Mm;
-        }
         setLocalState((prev) => ({
           ...prev,
           usdBalance,
           userExist,
-          userPosition,
-          positionSizeUsd,
         }));
       }
     })();
@@ -142,44 +77,8 @@ function App() {
     wallet.publicKey,
     state,
     localState.mmMode,
-    state?.pythData,
     selectedContract,
   ]);
-
-  useEffect(() => {
-    const interval = setInterval(
-      () =>
-        (async () => {
-          let priceMax = 0;
-          let priceMin = 0;
-          let priceFeedData: any[] = (
-            await fetchAxiosWithRetry(
-              `${VAYOO_BACKEND_ENDPOINT}/priceFeed/${selectedContract?.name.replace(
-                "/",
-                "-"
-              )}`
-            )
-          ).data;
-          let localPriceFeedData = priceFeedData.map((pricePoint: any) => {
-            priceMax = Math.max(
-              pricePoint.assetPrice,
-              pricePoint.pythPrice,
-              priceMax
-            );
-            priceMin = Math.min(pricePoint.assetPrice, pricePoint.pythPrice);
-            return pricePoint;
-          });
-          setPriceData(localPriceFeedData);
-          setChartStartTime(localPriceFeedData.at(-1)?.timestamp - 900); // last 15 mins
-          setYAxisMax(priceMax + 0.005 * priceMax);
-          setYAxisMin(priceMin - 0.005 * priceMax);
-        })(),
-      1000
-    );
-    return () => {
-      clearInterval(interval);
-    };
-  }, [selectedContract]);
 
   const onClickInitUserState = async () => {
     await initUserState(state, selectedContract?.name!, wallet)
@@ -200,406 +99,6 @@ function App() {
       });
   };
 
-  const onClickDeposit = async () => {
-    await depositCollateral(state, localState.primaryAmount, wallet)
-      .then((txHash: string) => {
-        subscribeTx(
-          txHash,
-          () => toast("Deposit Transaction Sent"),
-          () => toast.success("Deposit Confirmed."),
-          () => toast.error("Deposit Transaction Failed")
-        );
-      })
-      .catch((e) => {
-        console.log(e);
-        toast.error("Transaction Error!");
-      })
-      .finally(() => {
-        setPrimaryInputValue("0");
-        setLocalState((prev) => ({ ...prev, primaryAmount: 0 }));
-        toggleLocalRefresh();
-      });
-  };
-
-  const onClickWithdraw = async () => {
-    await withdrawCollateral(state, localState.primaryAmount, wallet)
-      .then((txHash: string) => {
-        subscribeTx(
-          txHash,
-          () => toast("Withdraw Transaction Sent"),
-          () => toast.success("Withdraw Confirmed."),
-          () => toast.error("Withdraw Transaction Failed")
-        );
-      })
-      .catch((e) => {
-        console.log(e);
-        toast.error("Transaction Error!");
-      })
-      .finally(() => {
-        setPrimaryInputValue("0");
-        setLocalState((prev) => ({ ...prev, primaryAmount: 0 }));
-        toggleLocalRefresh();
-      });
-  };
-
-  const onClickOpenLong = async () => {
-    await openLong(
-      state,
-      localState.lastAmount,
-      localState.isAmountInUsdc,
-      Number(slippageValue),
-      wallet
-    )
-      .then((txHash: string) => {
-        subscribeTx(
-          txHash,
-          () => toast("Open Long Transaction Sent"),
-          () => toast.success("Open Long Transaction Confirmed."),
-          () => toast.error("Open Long Transaction Failed")
-        );
-      })
-      .catch((e) => {
-        console.log(e);
-        toast.error("Transaction Error!");
-      })
-      .finally(() => {
-        setSeconderyUsdcInputValue("0");
-        setSeconderyContractInputValue("0");
-        setLocalState((prev) => ({
-          ...prev,
-          seconderyUsdcAmount: 0,
-          seconderyContractAmount: 0,
-        }));
-        toggleLocalRefresh();
-      });
-  };
-
-  const onClickCloseLong = async () => {
-    await closeLong(
-      state,
-      localState.lastAmount,
-      localState.isAmountInUsdc,
-      Number(slippageValue),
-      wallet
-    )
-      .then((txHash: string) => {
-        subscribeTx(
-          txHash,
-          () => toast("Close Long Transaction Sent"),
-          () => toast.success("Close Long Transaction Confirmed."),
-          () => toast.error("Close Long Transaction Failed")
-        );
-      })
-      .catch((e) => {
-        console.log(e);
-        toast.error("Transaction Error!");
-      })
-      .finally(() => {
-        setSeconderyUsdcInputValue("0");
-        setSeconderyContractInputValue("0");
-        setLocalState((prev) => ({
-          ...prev,
-          seconderyUsdcAmount: 0,
-          seconderyContractAmount: 0,
-        }));
-        toggleLocalRefresh();
-      });
-  };
-
-  const onClickOpenShort = async () => {
-    await openShort(
-      state,
-      localState.lastAmount,
-      localState.isAmountInUsdc,
-      Number(slippageValue),
-      wallet
-    )
-      .then((txHash: string) => {
-        subscribeTx(
-          txHash,
-          () => toast("Open Short Transaction Sent"),
-          () => toast.success("Open Short Transaction Confirmed."),
-          () => toast.error("Open Short Transaction Failed")
-        );
-      })
-      .catch((e) => {
-        console.log(e);
-        toast.error("Transaction Error!");
-      })
-      .finally(() => {
-        setSeconderyUsdcInputValue("0");
-        setSeconderyContractInputValue("0");
-        setLocalState((prev) => ({
-          ...prev,
-          seconderyUsdcAmount: 0,
-          seconderyContractAmount: 0,
-        }));
-        toggleLocalRefresh();
-      });
-  };
-
-  const onClickCloseShort = async () => {
-    await closeShort(
-      state,
-      localState.lastAmount,
-      localState.isAmountInUsdc,
-      Number(slippageValue),
-      wallet
-    )
-      .then((txHash: string) => {
-        subscribeTx(
-          txHash,
-          () => toast("Close Short Transaction Sent"),
-          () => toast.success("Close Short Transaction Confirmed."),
-          () => toast.error("Close Short Transaction Failed")
-        );
-      })
-      .catch((e) => {
-        console.log(e);
-        toast.error("Transaction Error!");
-      })
-      .finally(() => {
-        setSeconderyUsdcInputValue("0");
-        setSeconderyContractInputValue("0");
-        setLocalState((prev) => ({
-          ...prev,
-          seconderyUsdcAmount: 0,
-          seconderyContractAmount: 0,
-        }));
-        toggleLocalRefresh();
-      });
-  };
-
-  const onClickMintAsMm = async () => {
-    await mintAsMm(state, localState.primaryAmount, wallet)
-      .then((txHash: string) => {
-        subscribeTx(
-          txHash,
-          () => toast("Mint Transaction Sent"),
-          () => toast.success("Mint Transaction Confirmed."),
-          () => toast.error("Mint Transaction Failed")
-        );
-      })
-      .catch((e) => {
-        console.log(e);
-        toast.error("Transaction Error!");
-      })
-      .finally(() => {
-        setPrimaryInputValue("0");
-        setLocalState((prev) => ({ ...prev, primaryAmount: 0 }));
-        toggleLocalRefresh();
-      });
-  };
-
-  const onClickBurnAsMm = async () => {
-    await burnAsMm(state, localState.primaryAmount, wallet)
-      .then((txHash: string) => {
-        subscribeTx(
-          txHash,
-          () => toast("Burn Transaction Sent"),
-          () => toast.success("Burn Transaction Confirmed."),
-          () => toast.error("Burn Transaction Failed")
-        );
-      })
-      .catch((e) => {
-        console.log(e);
-        toast.error("Transaction Error!");
-      })
-      .finally(() => {
-        setPrimaryInputValue("0");
-        setLocalState((prev) => ({ ...prev, primaryAmount: 0 }));
-        toggleLocalRefresh();
-      });
-  };
-
-  const onClickMmSettle = async () => {
-    await mmSettle(state, localState.primaryAmount, wallet)
-      .then((txHash: string) => {
-        subscribeTx(
-          txHash,
-          () => toast("Mm Settle Transaction Sent"),
-          () => toast.success("Mm Settle Transaction Confirmed."),
-          () => toast.error("Mm Settle Transaction Failed")
-        );
-      })
-      .catch((e) => {
-        console.log(e);
-        toast.error("Transaction Error!");
-      })
-      .finally(() => {
-        setPrimaryInputValue("0");
-        setLocalState((prev) => ({ ...prev, primaryAmount: 0 }));
-        toggleLocalRefresh();
-      });
-  };
-
-  const onClickUserSettle = async () => {
-    await userSettle(state, wallet)
-      .then((txHash: string) => {
-        subscribeTx(
-          txHash,
-          () => toast("User Settle Transaction Sent"),
-          () => toast.success("User Settle Transaction Confirmed."),
-          () => toast.error("User Settle Transaction Failed")
-        );
-      })
-      .catch((e) => {
-        console.log(e);
-        toast.error("Transaction Error!");
-      })
-      .finally(() => {
-        toggleLocalRefresh();
-      });
-  };
-
-  const onChangePrimaryAmountValue = (value: string) => {
-    const parsedValue = value.replace(",", ".").replace(/[^0-9.]/g, "");
-    let amount = Number.parseFloat(parsedValue);
-    if (isNaN(amount)) amount = 0.0;
-    setPrimaryInputValue(parsedValue);
-    setLocalState((prev) => ({
-      ...prev,
-      primaryAmount: amount,
-    }));
-  };
-
-  const onChangeSeconderyUsdValue = (value: string) => {
-    const parsedValue = value.replace(",", ".").replace(/[^0-9.]/g, "");
-    let amountInUsd = Number.parseFloat(parsedValue);
-    let contractValue: number;
-    if (isNaN(amountInUsd)) amountInUsd = 0.0;
-    if (amountInUsd > USER_TRADE_CAP_USD) {
-      setErrStr(
-        "Amount too high compared to available liquidity, please reduce"
-      );
-      setTradeEnable(false);
-    } else {
-      setErrStr("");
-      setTradeEnable(true);
-      (async () => {
-        if (amountInUsd == 0.0) {
-          contractValue = 0;
-        } else {
-          try {
-            const swapQuote = await swapQuoteByOutputToken(
-              state?.whirlpool!,
-              USDC_MINT,
-              DecimalUtil.toU64(DecimalUtil.fromNumber(amountInUsd), 6),
-              Percentage.fromFraction(Number(slippageValue), 100),
-              ORCA_WHIRLPOOL_PROGRAM_ID,
-              state?.orcaFetcher!,
-              true
-            );
-            contractValue = swapQuote.estimatedAmountIn.toNumber() / 1e6;
-
-            // Slippage Mechanism
-            const initalPoolPrice = PriceMath.sqrtPriceX64ToPrice(
-              state?.poolState?.sqrtPrice!,
-              6,
-              6
-            ).toNumber();
-            const finalPoolPrice =
-              swapQuote.estimatedAmountOut.toNumber() /
-              swapQuote.estimatedAmountIn.toNumber();
-            const slippagePercentage =
-              (Math.abs(finalPoolPrice - initalPoolPrice) * 100) /
-              initalPoolPrice;
-            console.log("Slippage %:", slippagePercentage.toFixed(2));
-            if (slippagePercentage > Number(slippageValue)) {
-              setErrStr("Slippage Exceeded, try increasing tolerance");
-              setTradeEnable(false);
-              contractValue = 0;
-            }
-          } catch (e) {
-            console.log(e);
-            setErrStr("Amount too high compared to available liquidity, please reduce");
-            setTradeEnable(false);
-            contractValue = 0;
-          }
-        }
-        setSeconderyContractInputValue(contractValue.toString());
-      })();
-    }
-
-    setSeconderyUsdcInputValue(parsedValue);
-    setLocalState((prev) => ({
-      ...prev,
-      seconderyUsdcAmount: amountInUsd,
-      seconderyContractAmount: contractValue,
-      isAmountInUsdc: true,
-      lastAmount: amountInUsd,
-    }));
-  };
-
-  const onChangeSeconderyContractValue = (value: string) => {
-    const parsedValue = value.replace(",", ".").replace(/[^0-9.]/g, "");
-    let amountInContract = Number.parseFloat(parsedValue);
-    let usdcValue: number;
-
-    if (isNaN(amountInContract)) amountInContract = 0.0;
-    setErrStr("");
-    setTradeEnable(true);
-    (async () => {
-      if (amountInContract == 0.0) {
-        usdcValue = 0;
-      } else {
-        try {
-          const swapQuote = await swapQuoteByInputToken(
-            state?.whirlpool!,
-            state?.accounts.lcontractMint,
-            DecimalUtil.toU64(DecimalUtil.fromNumber(amountInContract), 6),
-            Percentage.fromDecimal(
-              DecimalUtil.fromNumber(Number(slippageValue))
-            ),
-            ORCA_WHIRLPOOL_PROGRAM_ID,
-            state?.orcaFetcher!,
-            true
-          );
-          usdcValue = swapQuote.estimatedAmountOut.toNumber() / 1e6;
-
-          // Slippage Mechanism
-          const initalPoolPrice = PriceMath.sqrtPriceX64ToPrice(
-            state?.poolState?.sqrtPrice!,
-            6,
-            6
-          ).toNumber();
-          const finalPoolPrice =
-            swapQuote.estimatedAmountOut.toNumber() /
-            swapQuote.estimatedAmountIn.toNumber();
-          const slippagePercentage =
-            (Math.abs(finalPoolPrice - initalPoolPrice) * 100) /
-            initalPoolPrice;
-          console.log("Slippage %:", slippagePercentage.toFixed(2));
-          if (slippagePercentage > Number(slippageValue)) {
-            setErrStr("Slippage Exceeded, try increasing tolerance");
-            setTradeEnable(false);
-            usdcValue = 0;
-          }
-          setSeconderyUsdcInputValue(usdcValue.toString());
-        } catch (e) {
-          console.log(e);
-          setErrStr("Amount too high compared to available liquidity, please reduce");
-          setTradeEnable(false);
-        }
-      }
-    })();
-    setSeconderyContractInputValue(parsedValue);
-    setLocalState((prev) => ({
-      ...prev,
-      seconderyUsdcAmount: usdcValue,
-      seconderyContractAmount: amountInContract,
-      isAmountInUsdc: false,
-      lastAmount: amountInContract,
-    }));
-  };
-
-  const onChangeSlippageValue = (value: any) => {
-    let slippageValue = value.replace(",", ".").replace(/[^0-9.]/g, "");
-    if (slippageValue < 50) {
-      setSlippageValue(Math.max(0, slippageValue).toString());
-    }
-  };
-
   const toggleMmMode = () => {
     setLocalState((prev) => ({
       ...prev,
@@ -612,27 +111,6 @@ function App() {
       ...prev,
       adminMode: !prev.adminMode,
     }));
-  };
-
-  const setMaxUsd = () => {
-    const maxAmount = state?.userState?.usdcFree.toNumber()! / 1e6;
-    onChangeSeconderyUsdValue(maxAmount.toString());
-  };
-
-  const setMaxContract = () => {
-    let maxAmount = 0;
-    if (localState.userPosition == UserPosition.Long) {
-      maxAmount = state?.userState?.lcontractBoughtAsUser.toNumber()! / 1e6;
-    } else if (localState.userPosition == UserPosition.Short) {
-      maxAmount = state?.userState?.scontractSoldAsUser.toNumber()! / 1e6;
-    } else if (state?.userState?.lcontractMintedAsMm.toNumber()! > 0) {
-      maxAmount =
-        BN.max(
-          state?.userState?.lcontractBoughtAsUser!,
-          state?.userState?.scontractSoldAsUser!
-        ).toNumber() / 1e6;
-    }
-    onChangeSeconderyContractValue(maxAmount.toString());
   };
 
   return (
@@ -669,6 +147,15 @@ function App() {
                     </div>
                   )}
                   {localState.userExist && (
+                    <div className="flex gap-3">
+                      <DepositWithdrawModal />
+                      {state?.userState && 
+                  <div className="border-2 border-gray-400/40 rounded-2xl px-4 py-1 hover:border-gray-400/70">
+                    <div className="py-1 text-sm text-slate-300">
+                      Bal: {state?.userState?.usdcFree.toString()} $
+                    </div>
+                  </div>
+                  }
                     <div
                       className="border-2 border-gray-400/40 rounded-2xl px-4 py-1 hover:border-gray-400/70 cursor-pointer"
                       onClick={toggleMmMode}
@@ -679,12 +166,9 @@ function App() {
                           : "Switch to MM Mode"}
                       </div>
                     </div>
-                  )}
-                  <div className="border-2 border-gray-400/40 rounded-2xl px-4 py-1 hover:border-gray-400/70">
-                    <div className="py-1 text-sm text-slate-300">
-                      {localState.usdBalance.toFixed(2)} $
                     </div>
-                  </div>
+                  )}
+                  
                 </div>
               )}
               <WalletMultiButton className="">
@@ -702,377 +186,41 @@ function App() {
               Loading
             </div>
           ) : (
-            <div className="w-full max-w-6xl px-6 lg:px-0">
+            <div className="w-full px-6">
               <div className="w-full h-full flex flex-col items-center">
                 <div className="w-full px-6 lg:px-0">
                   {localState.adminMode && localState.isAdmin ? (
                     <AdminComponent />
-                  ) : (
-                    localState.userExist ? (
-                      localState.mmMode ? (
-                        <div className="w-full flex items-center gap-7 mt-4">
-                          <div className="px-6 py-6 text-white flex flex-col gap-3 w-1/2 border-2 border-gray-300/10 rounded-xl bg-black/50 z-10">
-                            <div className="text-2xl text-lime-200/80">
-                              Your MM Account
-                            </div>
-                            <div className="flex flex-col gap-3 text-sm">
-                              <div className="flex justify-between">
-                                Available Balance:
-                                <div>
-                                  {(
-                                    state?.userState?.usdcFree.toNumber()! / 1e6
-                                  ).toFixed(4)}
-                                </div>
-                              </div>
-                              <div className="flex justify-between">
-                                Collateral Locked:{" "}
-                                <div>
-                                  {(
-                                    state?.userState?.usdcCollateralLockedAsMm.toNumber()! /
-                                    1e6
-                                  ).toFixed(2)}
-                                </div>
-                              </div>
-                              <div className="flex justify-between">
-                                L Contract Minted:{" "}
-                                <div>
-                                  {(
-                                    state?.userState?.lcontractMintedAsMm.toNumber()! /
-                                    1e6
-                                  ).toFixed(4)}
-                                </div>
-                              </div>
-                            </div>
-                            <div className="mt-5 flex gap-5 text-xl items-center">
-                              Amount:{" "}
-                              <input
-                                value={primaryInputValue}
-                                onChange={(e) =>
-                                  onChangePrimaryAmountValue(e.target.value)
-                                }
-                                className="w-full py-3 text-sm text-center text-gray-100 rounded-lg border-2 bg-white-900 rouneded-xl border-gray-100/10 bg-gray-100/10 focus:outline-none"
-                              />
-                            </div>
-                            {state?.contractState?.isSettling ? (
-                              <div className="my-3 flex flex-col items-center">
-                                Contract is in settling mode.
-                                <button
-                                  onClick={onClickMmSettle}
-                                  className="mt-4 px-16 py-2 border-2 border-gray-100/40 rounded-xl hover:bg-blue-200/20 hover:border-blue-100/80"
-                                >
-                                  Settle MM Position
-                                </button>
-                              </div>
-                            ) : (
-                              <div className="mt-4 mb-1 flex flex-row w-full justify-between gap-5">
-                                <button
-                                  onClick={onClickMintAsMm}
-                                  className="w-full px-4 py-4 border-2 border-gray-100/40 rounded-xl hover:bg-blue-200/20 hover:border-blue-100/80"
-                                >
-                                  Mint
-                                </button>
-                                <button
-                                  onClick={onClickBurnAsMm}
-                                  className="w-full px-4 py-4 border-2 border-gray-100/40 rounded-xl hover:bg-blue-200/20 hover:border-blue-100/80"
-                                >
-                                  Burn
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex flex-col mt-4">
-                          <div className="w-full flex items-start gap-10">
-                            <div className="w-full flex flex-col">
-                              <div className="w-full px-6 py-6 text-white flex flex-col gap-3 border-2 border-gray-300/10 rounded-xl bg-black/50 z-10">
-                                <div className="text-2xl text-lime-200/90">
-                                  Your Account
-                                </div>
-                                <div className="mt-1 flex flex-col gap-3 text-md">
-                                  <div className="flex justify-between items-center text-gray-300">
-                                    Net Account Value :
-                                    <div>
-                                      {(
-                                        state?.userState?.usdcFree.toNumber()! /
-                                        1e6
-                                      ).toFixed(6)}{" "}
-                                      USDC
-                                    </div>
-                                  </div>
-                                </div>
-                                <div className="mt-4 flex gap-5 text-xl items-start text-gray-300/90">
-                                  <div className="flex flex-col items-end text-lg">
-                                    Amount
-                                    <div className="text-gray-500 text-xs underline-offset-4">
-                                      (USDC)
-                                    </div>
-                                  </div>
-                                  <input
-                                    value={primaryInputValue}
-                                    onChange={(e) =>
-                                      onChangePrimaryAmountValue(e.target.value)
-                                    }
-                                    className="w-full py-2 px-3 text-sm text-gray-100 rounded-lg border-2 bg-white-900 rouneded-xl border-gray-100/10 bg-gray-100/10 focus:outline-none"
-                                  />
-                                </div>
-                                <div className="mt-4 mb-1 flex flex-row w-full justify-between gap-5">
-                                  <button
-                                    onClick={onClickDeposit}
-                                    className="w-full px-4 py-3 border-2 text-gray-300 border-gray-100/20 rounded-xl hover:border hover:border-white/80"
-                                  >
-                                    Deposit
-                                  </button>
-                                  <button
-                                    onClick={onClickWithdraw}
-                                    className="w-full px-4 py-3 border-2 text-gray-300 border-gray-100/20 rounded-xl hover:border hover:border-white/80"
-                                  >
-                                    Withdraw
-                                  </button>
-                                </div>
-                              </div>
-                              <div className="mt-6 z-10">
-                                <PositionAndStatsComponent
-                                  userPosition={localState.userPosition}
-                                />
-                              </div>
-                            </div>
-                            <div className="w-full py-6 text-white flex flex-col gap-3 border-2 border-gray-300/10 max-w-5xl rounded-xl bg-black/50 z-10">
-                              <div className="px-6 text-2xl text-gray-200">
-                                Trade {selectedContract?.extraInfo?.short_name}
-                              </div>
-                              <ResponsiveContainer height={200}>
-                                <LineChart data={priceData}>
-                                  <Line
-                                    type="monotone"
-                                    dataKey="assetPrice"
-                                    stroke="rgb(217,249,157)"
-                                  />
-                                  <Line
-                                    type="monotone"
-                                    dataKey="pythPrice"
-                                    stroke="gray"
-                                  />
-                                  <XAxis
-                                    dataKey={(v) => parseFloat(v.timestamp)}
-                                    type="number"
-                                    orientation="bottom"
-                                    scale="linear"
-                                    allowDataOverflow={true}
-                                    axisLine={false}
-                                    domain={[chartStartTime, "auto"]}
-                                    tickLine={false}
-                                    tick={false}
-                                    hide={false}
-                                  />
-                                  <YAxis
-                                    dataKey={(v) => parseFloat(v.pythPrice)}
-                                    type="number"
-                                    domain={[yAxisMin, yAxisMax]}
-                                    orientation="right"
-                                    allowDataOverflow={true}
-                                    scale="linear"
-                                    tickCount={5}
-                                  />
-                                </LineChart>
-                              </ResponsiveContainer>
-
-                              <div className="flex flex-col py-3 justify-between items-center text-gray-200 bg-gray-50/10 border-t-2 border-b-2 border-gray-200/30">
-                                <div className="flex justify-between gap-4">
-                                  <div className="flex flex-col items-center">
-                                    <div className="text-gray-300 text-lg">
-                                      {state?.pythData?.price?.toFixed(2) ??
-                                        state?.pythData?.previousPrice.toFixed(
-                                          2
-                                        ) ??
-                                        "NIL"}
-                                    </div>
-                                    <div className="text-gray-500 text-sm underline-offset-4">
-                                      <a href="https://pyth.network/price-feeds/equity-us-spy-usd?cluster=mainnet-beta">
-                                        oracle
-                                      </a>
-                                    </div>
-                                  </div>
-                                  |
-                                  <div className="text-lime-200 text-4xl">
-                                    {state?.assetPrice.toFixed(2)}
-                                  </div>
-                                </div>
-                              </div>
-                              {state?.contractState?.isSettling ? (
-                                localState.userPosition != UserPosition.Long ? (
-                                  <div className="my-3 flex flex-col items-center text-gray-200">
-                                    Contract has been settled.
-                                  </div>
-                                ) : (
-                                  <div className="my-3 flex flex-col items-center text-gray-200">
-                                    Contract is in settling mode.
-                                    <button
-                                      onClick={onClickUserSettle}
-                                      className="mt-4 px-16 py-2 border-2 text-gray-200 border-gray-100/40 rounded-xl hover:bg-blue-200/20 hover:border-blue-100/80"
-                                    >
-                                      Settle Long Position
-                                    </button>
-                                  </div>
-                                )
-                              ) : (
-                                <div>
-                                  <div className="px-6 mt-1 flex flex-col gap-3 text-sm">
-                                    <div className="flex justify-between items-center text-gray-400">
-                                      Available Balance :
-                                      <div>
-                                        {(
-                                          state?.userState?.usdcFree.toNumber()! /
-                                          1e6
-                                        ).toFixed(6)}{" "}
-                                        USDC
-                                      </div>
-                                    </div>
-                                  </div>
-                                  <div className="px-6 mt-3 flex gap-5 text-xl items-start text-gray-200">
-                                    <div className="flex flex-col gap-4 items-start">
-                                      <div className="flex flex-col items-end text-lg">
-                                        Amount
-                                        <div className="mt-5 text-gray-500 text-xs underline-offset-4">
-                                          USDC
-                                        </div>
-                                      </div>
-                                      <div className="mt-6 w-full flex flex-col items-end text-lg">
-                                        <div className="text-gray-500 text-xs underline-offset-4 text-right">
-                                          No of contracts
-                                        </div>
-                                      </div>
-                                    </div>
-                                    <div className="mt-8 w-full flex flex-col gap-4">
-                                      <div className="flex flex-1 items-center">
-                                        <input
-                                          value={seconderyUsdcInputValue}
-                                          onChange={(e) =>
-                                            onChangeSeconderyUsdValue(
-                                              e.target.value
-                                            )
-                                          }
-                                          className="w-full py-3 text-sm px-3 text-gray-100 rounded-l-lg border-2 border-gray-100/10 border-r-0 bg-gray-100/10 focus:outline-none"
-                                        />
-                                        <div
-                                          onClick={setMaxUsd}
-                                          className="flex flex-col py-3 items-center w-32 text-sm text-gray-400 border-2 border-gray-100/30 rounded-r-lg hover:border-gray-200/60 hover:text-white cursor-pointer"
-                                        >
-                                          Max
-                                        </div>
-                                      </div>
-                                      <div className="flex flex-1 items-center">
-                                        <input
-                                          value={seconderyContractInputValue}
-                                          onChange={(e) =>
-                                            onChangeSeconderyContractValue(
-                                              e.target.value
-                                            )
-                                          }
-                                          className="w-full py-3 text-sm px-3 text-gray-100 rounded-l-lg border-2 border-gray-100/10 border-r-0 bg-gray-100/10 focus:outline-none"
-                                        />
-                                        <div
-                                          onClick={setMaxContract}
-                                          className="flex flex-col py-3 items-center w-32 text-sm text-gray-400 border-2 border-gray-100/30 rounded-r-lg hover:border-gray-200/60 hover:text-white cursor-pointer"
-                                        >
-                                          Max
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
-                                  <p className="my-4 ml-20 px-6 text-red-900 text-sm">
-                                    {errStr}
-                                  </p>
-                                  <div className="px-8 flex items-center justify-between mt-2">
-                                    <p className="text-sm text-gray-500 font-regular font-poppins dark:text-white-900">
-                                      Slippage Tolerance
-                                    </p>
-                                    <div className="flex items-center border-2 border-gray-500/40 bg-black rounded-lg overflow-hidden">
-                                      <input
-                                        value={slippageValue}
-                                        onChange={(e) =>
-                                          onChangeSlippageValue(e.target.value)
-                                        }
-                                        className="w-8 py-1 text-sm font-medium text-center text-gray-200 bg-black focus:outline-none border-r border-gray-500/40"
-                                      />
-                                      <p className="px-2 text-sm">%</p>
-                                    </div>
-                                  </div>
-
-                                  <div className="mt-4 px-6 mb-1 flex flex-row w-full justify-between gap-3">
-                                    <div className="w-full flex flex-col justify-between items-center py-1 rounded-xl gap-[0.5px]">
-                                      <button
-                                        disabled={
-                                          localState.userPosition ==
-                                            UserPosition.Short || !tradeEnable
-                                        }
-                                        onClick={onClickOpenLong}
-                                        className="w-full py-2 text-gray-100 bg-green-400/30 rounded-t-xl border-2 border-black hover:border-green-400/60 text-sm disabled:border disabled:border-gray-500/40 disabled:bg-black disabled:text-gray-400"
-                                      >
-                                        Open Long
-                                      </button>
-                                      <button
-                                        disabled={
-                                          localState.userPosition ==
-                                            UserPosition.Short ||
-                                          localState.userPosition ==
-                                            UserPosition.Neutral ||
-                                          !tradeEnable
-                                        }
-                                        onClick={onClickCloseLong}
-                                        className="w-full py-2 text-gray-100 bg-green-400/10 rounded-b-xl border-2 border-black hover:border-green-400/40 text-sm disabled:border disabled:border-gray-500/40 disabled:bg-black disabled:text-gray-400"
-                                      >
-                                        Close Long
-                                      </button>
-                                    </div>
-                                    <div className="w-full flex flex-col justify-between items-center py-1 border-green-100/60 rounded-xl">
-                                      <button
-                                        disabled={
-                                          localState.userPosition ==
-                                            UserPosition.Long || !tradeEnable
-                                        }
-                                        onClick={onClickOpenShort}
-                                        className="w-full py-2 text-gray-100 bg-red-400/30 rounded-t-xl border-2 border-black hover:border-red-400/60 text-sm disabled:border disabled:border-gray-500/40 disabled:bg-black disabled:text-gray-400"
-                                      >
-                                        Open Short
-                                      </button>
-                                      <button
-                                        disabled={
-                                          localState.userPosition ==
-                                            UserPosition.Long ||
-                                          localState.userPosition ==
-                                            UserPosition.Neutral ||
-                                          !tradeEnable
-                                        }
-                                        onClick={onClickCloseShort}
-                                        className="w-full py-2 text-gray-100 bg-red-400/10 rounded-b-xl border-2 border-black hover:border-red-400/40 text-sm disabled:border disabled:border-gray-500/40 disabled:bg-black disabled:text-gray-400"
-                                      >
-                                        Close Short
-                                      </button>
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      )
+                  ) : localState.userExist ? (
+                    localState.mmMode ? (
+                      <div className="w-full flex flex-col items-center">
+                        <YourMmAccount />
+                      </div>
                     ) : (
-                      <div className="w-full mt-56 flex flex-col items-center">
-                        <div className="px-12 py-10 text-white border-2 border-gray-400 bg-black/50 z-10 rounded-2xl">
-                          <div className="flex flex-col gap-5 justify-between items-center">
-                            You seem to not have a user account for this
-                            contract.
-                            <button
-                              onClick={onClickInitUserState}
-                              className="px-4 py-2 border-2 border-gray-100/40 rounded-xl hover:bg-blue-200/20 hover:border-blue-100/80"
-                            >
-                              Create Now.
-                            </button>
-                          </div>
+                      <div className="flex mt-2 gap-7 items-start">
+                        <div className="w-full max-w-xs flex flex-col gap-4">
+                          <PositionAndStatsComponent />
                         </div>
+                        <div className="w-full h-[600px] overflow-hidden rounded-xl">
+                          <TVChartContainer />
+                        </div>
+                        <Trade />
                       </div>
                     )
+                  ) : (
+                    <div className="w-full mt-56 flex flex-col items-center">
+                      <div className="px-12 py-10 text-white border-2 border-gray-400 bg-black/50 z-10 rounded-2xl">
+                        <div className="flex flex-col gap-5 justify-between items-center">
+                          You seem to not have a user account for this contract.
+                          <button
+                            onClick={onClickInitUserState}
+                            className="px-4 py-2 border-2 border-gray-100/40 rounded-xl hover:bg-blue-200/20 hover:border-blue-100/80"
+                          >
+                            Create Now.
+                          </button>
+                        </div>
+                      </div>
+                    </div>
                   )}
                 </div>
               </div>

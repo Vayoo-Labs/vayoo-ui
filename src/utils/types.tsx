@@ -10,10 +10,10 @@ export type vayooState = {
   globalState: IdlAccounts<VayooContracts>['globalState'] | null;
   contractState: IdlAccounts<VayooContracts>['contractState'] | null;
   userState: IdlAccounts<VayooContracts>['userState'] | null;
+  userPosition: UserPosition;
   poolState: WhirlpoolData | null;
   whirlpool: Whirlpool | null;
   orcaFetcher: AccountFetcher | null;
-  pythData: PriceData;
   assetPrice: number;
   accounts: any;
 } | null;
@@ -32,7 +32,18 @@ export type PositionAndStatsComponentParams = {
 export type selectedContractData = {
   name: string,
   whirlpoolKey: PublicKey,
-  pythFeed: PublicKey,
-  pythExponent: number,
+  oracleFeedType: number,
+  oracleFeed: PublicKey,
+  oracleExponent: number,
   extraInfo: any
 } | null;
+
+export type OracleData = {
+  price: number,
+  previousPrice: number
+} | null;
+
+export const OracleFeedType = {
+  Pyth: 0,
+  Switchboard: 1
+}

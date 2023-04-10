@@ -39,7 +39,6 @@ const WalletContextProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
   const wallets = [
     new SolflareWalletAdapter(),
-    new GlowWalletAdapter(),
   ];
 
   const onError = useCallback((error: WalletError) => {
