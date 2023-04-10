@@ -481,9 +481,9 @@ const Trade = () => {
         <div>
           <div className="px-6 mt-1 flex flex-col gap-3 text-sm">
             <div className="flex justify-between items-center text-gray-400">
-              Available Balance :
+              Free Margin :
               <div>
-                {(state?.userState?.usdcFree.toNumber()! / 1e6).toFixed(6)} USDC
+                {(state?.userState?.usdcFree.toNumber()! / 1e6).toFixed(2)} USDC
               </div>
             </div>
           </div>
