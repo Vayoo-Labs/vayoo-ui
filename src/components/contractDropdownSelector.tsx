@@ -49,7 +49,7 @@ const ContractDropDownSelectorComponent = () => {
             <div className="flex gap-1">
 
           Asset: <div className="text-lime-200">
-            {selectedContract?.extraInfo.market_name}
+            {selectedContract?.extraInfo.ui_name}
             </div>
             </div>
           <svg
