@@ -69,7 +69,7 @@ const ContractDropDownSelectorComponent = () => {
       </div>
 
         {isOpen && (
-        <div className={`fixed inset-0 mt-20 bg-black bg-opacity-10 z-40 backdrop-blur-sm`}>
+        <div className={`fixed inset-0 mt-20 bg-black bg-opacity-30 z-40`}>
             </div>
         )}
       {isOpen && (

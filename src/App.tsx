@@ -16,9 +16,9 @@ import twitterLogo from "./assets/twitter-logo.svg";
 import telegramLogo from "./assets/telegram-logo.svg";
 import ContractDropDownSelectorComponent from "./components/contractDropdownSelector";
 import { TVChartContainer } from "./components/TradingView";
-import YourUserAccount from "./components/yourUserAccount";
 import YourMmAccount from "./components/yourMmAccount";
 import Trade from "./components/trade";
+import DepositWithdrawModal from "./components/depositWithdrawModal";
 
 function App() {
   const wallet = useWallet();
@@ -147,6 +147,8 @@ function App() {
                     </div>
                   )}
                   {localState.userExist && (
+                    <div className="flex gap-3">
+                      <DepositWithdrawModal />
                     <div
                       className="border-2 border-gray-400/40 rounded-2xl px-4 py-1 hover:border-gray-400/70 cursor-pointer"
                       onClick={toggleMmMode}
@@ -156,6 +158,7 @@ function App() {
                           ? "Switch to User Mode"
                           : "Switch to MM Mode"}
                       </div>
+                    </div>
                     </div>
                   )}
                   <div className="border-2 border-gray-400/40 rounded-2xl px-4 py-1 hover:border-gray-400/70">
@@ -193,7 +196,6 @@ function App() {
                     ) : (
                       <div className="flex mt-2 gap-7 items-start">
                         <div className="w-full max-w-xs flex flex-col gap-4">
-                          <YourUserAccount />
                           <PositionAndStatsComponent />
                         </div>
                         <div className="w-full h-[600px] overflow-hidden rounded-xl">
