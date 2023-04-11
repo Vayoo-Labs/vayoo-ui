@@ -152,7 +152,7 @@ function App() {
                       {state?.userState && 
                   <div className="border-2 border-gray-400/40 rounded-2xl px-4 py-1 hover:border-gray-400/70">
                     <div className="py-1 text-sm text-slate-300">
-                      Bal: {state?.userState?.usdcFree.toString()} $
+                      {(state?.userState?.usdcFree.toNumber() / 1e6).toFixed(2)} $
                     </div>
                   </div>
                   }
