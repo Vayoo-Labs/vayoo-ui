@@ -80,12 +80,15 @@ const PositionAndStatsComponent = () => {
           </div>
         </div>
       ) : (
-        <div className="mt-1 flex flex-col gap-3 text-sm">
+        <div className="mt-1 flex flex-col gap-3 text-xs text-right">
           <div className="flex justify-between items-center text-gray-400">
             Limiting Amplitude :<div>{state?.contractState?.limitingAmplitude.toNumber()}</div>
           </div>
-          <div className="flex justify-between items-center text-gray-400">
-            Time of Maturity :<div>{maturity.toUTCString()}</div>
+          <div className="flex justify-between text-gray-400">
+            <div className="whitespace-nowrap">
+              Time of Maturity :
+              </div>
+              <div className="">{maturity.toUTCString()}</div>
           </div>
           {(state?.contractState?.isSettling) && (
             <div className="flex justify-between items-center text-gray-400">
