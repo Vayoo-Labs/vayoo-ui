@@ -408,7 +408,6 @@ export function VMStateProvider({ children = undefined as any }) {
                 price: parsedPythData.price!,
                 previousPrice: parsedPythData.previousPrice,
               });
-              setRefresh((prev) => !prev);
             })();
             // Add listener on pyth account for refreshes
             controller = connection.onAccountChange(
@@ -419,7 +418,6 @@ export function VMStateProvider({ children = undefined as any }) {
                   price: parsedPythData.price!,
                   previousPrice: parsedPythData.previousPrice,
                 });
-                setRefresh((prev) => !prev);
               }
             );
           } else if (
