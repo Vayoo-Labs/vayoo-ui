@@ -127,9 +127,12 @@ function App() {
               </div>
             </a>
             <div className="flex justify-around gap-2 items-center">
-              {connected && (
+              {!loading && (
                 <div className="flex gap-3 items-center">
-                  {localState.isAdmin && (
+                  <div className="z-50">
+                    <ContractDropDownSelectorComponent />
+                  </div>
+                  {connected && localState.isAdmin && (
                     <div
                       className="border-2 border-gray-400/40 rounded-2xl px-4 py-1 hover:border-gray-400/70 cursor-pointer"
                       onClick={toggleAdminMode}
@@ -141,34 +144,40 @@ function App() {
                       </div>
                     </div>
                   )}
-                  {!loading && (
-                    <div className="z-50">
-                      <ContractDropDownSelectorComponent />
-                    </div>
-                  )}
+
                   {localState.userExist && (
                     <div className="flex gap-3">
                       <DepositWithdrawModal />
-                      {state?.userState && 
-                  <div className="border-2 border-gray-400/40 rounded-2xl px-4 py-1 hover:border-gray-400/70">
-                    <div className="py-1 text-sm text-slate-300">
-                      {(state?.userState?.usdcFree.toNumber() / 1e6).toFixed(2)} $
-                    </div>
-                  </div>
-                  }
-                    <div
-                      className="border-2 border-gray-400/40 rounded-2xl px-4 py-1 hover:border-gray-400/70 cursor-pointer"
-                      onClick={toggleMmMode}
-                    >
-                      <div className="py-1 text-sm text-slate-300">
-                        {localState.mmMode
-                          ? "Switch to User Mode"
-                          : "Switch to MM Mode"}
+                      {state?.userState && (
+                        <div className="border-2 border-gray-400/40 rounded-xl px-4 py-1 hover:border-gray-400/70">
+                          <div className="py-1 text-sm text-slate-300">
+                            {(
+                              state?.userState?.usdcFree.toNumber() / 1e6
+                            ).toFixed(2)}{" "}
+                            $
+                          </div>
+                        </div>
+                      )}
+                      <div
+                        className="border-2 border-gray-400/40 rounded-xl px-4 py-1 hover:border-gray-400/70 cursor-pointer"
+                        onClick={toggleMmMode}
+                      >
+                        <div className="py-1 text-sm text-slate-300">
+                          {localState.mmMode
+                            ? "Switch to User Mode"
+                            : "Switch to MM Mode"}
+                        </div>
                       </div>
                     </div>
+                  )}
+                  {connected && !localState.userExist && (
+                    <div
+                      className="text-sm border-2 text-slate-300 border-gray-400/40 rounded-xl px-4 py-2 hover:border-2 hover:border-gray-400 cursor-pointer overflow-hidden"
+                      onClick={onClickInitUserState}
+                    >
+                      Create Vayoo Account
                     </div>
                   )}
-                  
                 </div>
               )}
               <WalletMultiButton className="">
@@ -191,35 +200,19 @@ function App() {
                 <div className="w-full px-6 lg:px-0">
                   {localState.adminMode && localState.isAdmin ? (
                     <AdminComponent />
-                  ) : localState.userExist ? (
-                    localState.mmMode ? (
-                      <div className="w-full flex flex-col items-center">
-                        <YourMmAccount />
-                      </div>
-                    ) : (
-                      <div className="flex mt-2 gap-7 items-start">
-                        <div className="w-full max-w-xs flex flex-col gap-4">
-                          <PositionAndStatsComponent />
-                        </div>
-                        <div className="w-full h-[600px] overflow-hidden rounded-xl">
-                          <TVChartContainer />
-                        </div>
-                        <Trade />
-                      </div>
-                    )
+                  ) : localState.mmMode ? (
+                    <div className="w-full flex flex-col items-center">
+                      <YourMmAccount />
+                    </div>
                   ) : (
-                    <div className="w-full mt-56 flex flex-col items-center">
-                      <div className="px-12 py-10 text-white border-2 border-gray-400 bg-black/50 z-10 rounded-2xl">
-                        <div className="flex flex-col gap-5 justify-between items-center">
-                          You seem to not have a user account for this contract.
-                          <button
-                            onClick={onClickInitUserState}
-                            className="px-4 py-2 border-2 border-gray-100/40 rounded-xl hover:bg-blue-200/20 hover:border-blue-100/80"
-                          >
-                            Create Now.
-                          </button>
-                        </div>
+                    <div className="flex mt-2 gap-7 items-start">
+                      <div className="w-full max-w-xs flex flex-col gap-4">
+                        <PositionAndStatsComponent />
                       </div>
+                      <div className="w-full h-[600px] overflow-hidden rounded-xl">
+                        <TVChartContainer />
+                      </div>
+                      <Trade />
                     </div>
                   )}
                 </div>

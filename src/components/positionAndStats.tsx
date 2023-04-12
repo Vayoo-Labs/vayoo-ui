@@ -48,34 +48,35 @@ const PositionAndStatsComponent = () => {
             Net Position:
             <div
               className={`font-bold text-lg text-gray-400 ${
-                state?.userPosition != UserPosition.Neutral &&
-                (state?.userPosition == UserPosition.Long
-                  ? "text-green-600"
-                  : "text-red-600")
+                state?.userPosition == UserPosition.Long &&
+               "text-green-600" 
+              } ${
+                state?.userPosition == UserPosition.Short &&
+               "text-red-600" 
               }`}
             >
-              {state?.userPosition != UserPosition.Neutral &&
-                (state?.userPosition == UserPosition.Long ? "+" : "-")}
-              {Math.abs(
+              {state?.userPosition == UserPosition.Long && "+"}
+              {state?.userPosition == UserPosition.Short && "-"}
+              {state?.userState ? Math.abs(
                 state?.userState?.contractPositionNet.toNumber()! / 1e6
-              ).toFixed(6)}{" "}
+              ).toFixed(6) : 0}{" "}
               {selectedContract?.extraInfo.short_name}
             </div>
           </div>
           <div className="flex justify-between items-center text-gray-400">
             Long Position:
             <div>
-              {(
+              {state?.userState? (
                 state?.userState?.lcontractBoughtAsUser.toNumber()! / 1e6
-              ).toFixed(6)}
+              ).toFixed(6) : 0}
             </div>
           </div>
           <div className="flex justify-between items-center text-gray-400">
             Short Position:
             <div>
-              {(
+              {state?.userState ? (
                 state?.userState?.scontractSoldAsUser.toNumber()! / 1e6
-              ).toFixed(6)}
+              ).toFixed(6) : 0}
             </div>
           </div>
         </div>

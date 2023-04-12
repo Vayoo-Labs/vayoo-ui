@@ -104,7 +104,7 @@ const DepositWithdrawModal = () => {
     <div>
       <button
         type="button"
-        className="flex justify-center w-full rounded-2xl border-2 border-gray-400/40 shadow-sm px-4 py-2 bg-black text-sm  text-slate-300 hover:border-gray-400/70"
+        className="flex justify-center w-full rounded-xl border-2 border-gray-400/40 shadow-sm px-4 py-2 bg-black text-sm  text-slate-300 hover:border-gray-400/70"
         id="menu-button"
         aria-expanded="true"
         aria-haspopup="true"
