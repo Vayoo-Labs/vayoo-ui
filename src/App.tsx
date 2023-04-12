@@ -209,7 +209,7 @@ function App() {
                       <div className="w-full max-w-xs flex flex-col gap-4">
                         <PositionAndStatsComponent />
                       </div>
-                      <div className="w-full h-[600px] overflow-hidden rounded-xl">
+                      <div className="w-full h-[450px] overflow-hidden rounded-xl">
                         <TVChartContainer />
                       </div>
                       <Trade />
