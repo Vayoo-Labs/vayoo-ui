@@ -255,17 +255,18 @@ export function VMStateProvider({ children = undefined as any }) {
       }
 
       let userPosition: UserPosition;
-      if (userState?.lcontractBoughtAsUser.toNumber()! > 0) {
-        userPosition = UserPosition.Long;
-      } else if (userState?.scontractSoldAsUser.toNumber()! < 0) {
-        userPosition = UserPosition.Short;
-      } else {
-        userPosition = UserPosition.Neutral;
-      }
-      if (state?.userState?.lcontractMintedAsMm.toNumber()! > 0) {
+      if (userState?.lcontractMintedAsMm.toNumber()! > 0) {
         userPosition = UserPosition.Mm;
+      } else {
+        if (userState?.lcontractBoughtAsUser.toNumber()! > 0) {
+          userPosition = UserPosition.Long;
+        } else if (userState?.scontractSoldAsUser.toNumber()! < 0) {
+          userPosition = UserPosition.Short;
+        } else {
+          userPosition = UserPosition.Neutral;
+        }
       }
-
+    
       accounts = {
         ...accounts,
         lcontractMint,
@@ -397,6 +398,7 @@ export function VMStateProvider({ children = undefined as any }) {
               setRefresh((prev) => !prev);
             }
           });
+        }
           if (selectedContract?.oracleFeedType == OracleFeedType.Pyth) {
             // Pyth Feed Initial Fetching
             (async () => {
@@ -458,7 +460,6 @@ export function VMStateProvider({ children = undefined as any }) {
             })();
           }
         }
-      }
       return () => {
         if (
           selectedContract?.oracleFeedType == OracleFeedType.Pyth &&
