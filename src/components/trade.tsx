@@ -441,7 +441,7 @@ const Trade = () => {
         </LineChart>
       </ResponsiveContainer> */}
 
-      <div className="flex flex-col py-3 justify-between items-center text-gray-200 bg-gray-50/10 border-t border-b border-gray-200/30">
+      <div className="flex flex-col py-3 justify-between items-center text-gray-200 bg-gradient-to-r from-gray-600/50 via-gray-50/5 to-gray-600/50 border-t border-b border-gray-200/30">
         <div className="flex justify-between gap-4 items-start">
           <div className="flex flex-col items-center">
             <div className="text-gray-300 text-md">
