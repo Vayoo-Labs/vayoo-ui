@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { AiOutlineSwap } from 'react-icons/ai'
 import {
   useOracleState,
   useSelectedContract,
@@ -49,7 +50,10 @@ const Trade = () => {
   const [tradeEnable, setTradeEnable] = useState(true);
   const [usdcInputValue, setUsdcInputValue] = useState("0");
   const [contractInputValue, setContractInputValue] = useState("0");
-  const [slippageValue, setSlippageValue] = useState("5");
+  const [slippageTolerance, setSlippageTolerance] = useState(5);
+  const [priceImpact, setPriceImpact] = useState(0);
+  const [executionPrice, setExecutionPrice] = useState(0);
+  const [isLongTrade, setIsLongTrade] = useState(true);
 
   // const [priceData, setPriceData] = useState<any>([]);
   // const [yAxisMin, setYAxisMin] = useState(0);
@@ -96,7 +100,7 @@ const Trade = () => {
       state,
       localState.lastAmount,
       localState.isAmountInUsdc,
-      Number(slippageValue),
+      Number(slippageTolerance),
       wallet
     )
       .then((txHash: string) => {
@@ -128,7 +132,7 @@ const Trade = () => {
       state,
       localState.lastAmount,
       localState.isAmountInUsdc,
-      Number(slippageValue),
+      Number(slippageTolerance),
       wallet
     )
       .then((txHash: string) => {
@@ -160,7 +164,7 @@ const Trade = () => {
       state,
       localState.lastAmount,
       localState.isAmountInUsdc,
-      Number(slippageValue),
+      Number(slippageTolerance),
       wallet
     )
       .then((txHash: string) => {
@@ -192,7 +196,7 @@ const Trade = () => {
       state,
       localState.lastAmount,
       localState.isAmountInUsdc,
-      Number(slippageValue),
+      Number(slippageTolerance),
       wallet
     )
       .then((txHash: string) => {
@@ -238,7 +242,7 @@ const Trade = () => {
       });
   };
 
-  const onChangeSeconderyUsdValue = (value: string) => {
+  const onChangeUsdcValue = (value: string) => {
     const parsedValue = value.replace(",", ".").replace(/[^0-9.]/g, "");
     let amountInUsd = Number.parseFloat(parsedValue);
     let contractValue: number;
@@ -260,7 +264,7 @@ const Trade = () => {
               state?.whirlpool!,
               USDC_MINT,
               DecimalUtil.toU64(DecimalUtil.fromNumber(amountInUsd), 6),
-              Percentage.fromFraction(Number(slippageValue), 100),
+              Percentage.fromFraction(Number(slippageTolerance), 100),
               ORCA_WHIRLPOOL_PROGRAM_ID,
               state?.orcaFetcher!,
               true
@@ -273,17 +277,16 @@ const Trade = () => {
               6,
               6
             ).toNumber();
-            const finalPoolPrice =
+            const executionPoolPrice =
               swapQuote.estimatedAmountOut.toNumber() /
               swapQuote.estimatedAmountIn.toNumber();
             const slippagePercentage =
-              (Math.abs(finalPoolPrice - initalPoolPrice) * 100) /
+              (Math.abs(executionPoolPrice - initalPoolPrice) * 100) /
               initalPoolPrice;
-            console.log("Slippage %:", slippagePercentage.toFixed(2));
-            if (slippagePercentage > Number(slippageValue)) {
+            setPriceImpact(slippagePercentage);
+            if (slippagePercentage > Number(slippageTolerance)) {
               setErrStr("Slippage Exceeded, try increasing tolerance");
               setTradeEnable(false);
-              contractValue = 0;
             }
           } catch (e) {
             console.log(e);
@@ -308,7 +311,7 @@ const Trade = () => {
     }));
   };
 
-  const onChangeSeconderyContractValue = (value: string) => {
+  const onChangeContractValue = (value: string) => {
     const parsedValue = value.replace(",", ".").replace(/[^0-9.]/g, "");
     let amountInContract = Number.parseFloat(parsedValue);
     let usdcValue: number;
@@ -326,31 +329,29 @@ const Trade = () => {
             state?.accounts.lcontractMint,
             DecimalUtil.toU64(DecimalUtil.fromNumber(amountInContract), 6),
             Percentage.fromDecimal(
-              DecimalUtil.fromNumber(Number(slippageValue))
+              DecimalUtil.fromNumber(Number(slippageTolerance))
             ),
             ORCA_WHIRLPOOL_PROGRAM_ID,
             state?.orcaFetcher!,
             true
           );
           usdcValue = swapQuote.estimatedAmountOut.toNumber() / 1e6;
-
           // Slippage Mechanism
           const initalPoolPrice = PriceMath.sqrtPriceX64ToPrice(
             state?.poolState?.sqrtPrice!,
             6,
             6
           ).toNumber();
-          const finalPoolPrice =
+          const executionPoolPrice =
             swapQuote.estimatedAmountOut.toNumber() /
             swapQuote.estimatedAmountIn.toNumber();
           const slippagePercentage =
-            (Math.abs(finalPoolPrice - initalPoolPrice) * 100) /
+            (Math.abs(executionPoolPrice - initalPoolPrice) * 100) /
             initalPoolPrice;
-          console.log("Slippage %:", slippagePercentage.toFixed(2));
-          if (slippagePercentage > Number(slippageValue)) {
+          setPriceImpact(slippagePercentage);
+          if (slippagePercentage > Number(slippageTolerance)) {
             setErrStr("Slippage Exceeded, try increasing tolerance");
             setTradeEnable(false);
-            usdcValue = 0;
           }
           setUsdcInputValue(usdcValue.toString());
         } catch (e) {
@@ -359,6 +360,7 @@ const Trade = () => {
             "Amount too high compared to available liquidity, please reduce"
           );
           setTradeEnable(false);
+          usdcValue = 0;
         }
       }
     })();
@@ -375,7 +377,7 @@ const Trade = () => {
   const onChangeSlippageValue = (value: any) => {
     let slippageValue = value.replace(",", ".").replace(/[^0-9.]/g, "");
     if (slippageValue < 50) {
-      setSlippageValue(Math.max(0, slippageValue).toString());
+      setSlippageTolerance(Math.max(0, slippageValue));
     }
   };
 
@@ -383,7 +385,7 @@ const Trade = () => {
     const maxAmount = state?.userState
       ? state?.userState?.usdcFree.toNumber()! / 1e6
       : 0;
-    onChangeSeconderyUsdValue(maxAmount.toString());
+    onChangeUsdcValue(maxAmount.toString());
   };
 
   const setMaxContract = () => {
@@ -399,8 +401,24 @@ const Trade = () => {
           state?.userState?.scontractSoldAsUser!
         ).toNumber() / 1e6;
     }
-    onChangeSeconderyContractValue(maxAmount.toString());
+    onChangeContractValue(maxAmount.toString());
   };
+
+  useEffect(() => {
+    isLongTrade
+      ? setExecutionPrice(state?.assetPrice! + (state?.assetPrice! * priceImpact/100))
+      : setExecutionPrice(
+          state?.assetPrice! - (state?.assetPrice! * priceImpact/100)
+        );
+  }, [isLongTrade, priceImpact]);
+
+  useEffect(() => {
+    if(localState.isAmountInUsdc) {
+      onChangeUsdcValue(localState.usdcAmount.toString())
+    } else {
+      onChangeContractValue(localState.contractAmount.toString())
+    }
+  }, [slippageTolerance])
 
   return (
     <div className="w-full max-w-xs py-6 text-white flex flex-col gap-3 border-2 border-gray-300/10 rounded-xl bg-black/50 z-10">
@@ -508,7 +526,7 @@ const Trade = () => {
               <div className="flex flex-1 items-center">
                 <input
                   value={usdcInputValue}
-                  onChange={(e) => onChangeSeconderyUsdValue(e.target.value)}
+                  onChange={(e) => onChangeUsdcValue(e.target.value)}
                   className="w-full py-2 text-sm px-3 text-gray-100 rounded-l-lg border-2 border-gray-100/10 border-r-0 bg-gray-100/10 focus:outline-none"
                 />
                 <div
@@ -522,7 +540,7 @@ const Trade = () => {
                 <input
                   value={contractInputValue}
                   onChange={(e) =>
-                    onChangeSeconderyContractValue(e.target.value)
+                    onChangeContractValue(e.target.value)
                   }
                   className="w-full py-2 text-sm px-3 text-gray-100 rounded-l-lg border-2 border-gray-100/10 border-r-0 bg-gray-100/10 focus:outline-none"
                 />
@@ -535,20 +553,18 @@ const Trade = () => {
               </div>
             </div>
           </div>
-          <p className="mt-4 ml-20 px-6 text-red-900 text-sm">{errStr}</p>
-          <div className="px-8 flex items-center justify-between mt-2">
-            <p className="text-sm text-gray-500 font-regular font-poppins dark:text-white-900">
-              Slippage Tolerance
-            </p>
+          <div className="mt-4 px-8 flex items-center justify-between">
+            <p className="text-xs text-gray-500">Slippage Tolerance</p>
             <div className="flex items-center border-2 border-gray-500/40 bg-black rounded-lg overflow-hidden">
               <input
-                value={slippageValue}
+                value={slippageTolerance}
                 onChange={(e) => onChangeSlippageValue(e.target.value)}
-                className="w-8 py-1 text-sm font-medium text-center text-gray-200 bg-black focus:outline-none border-r border-gray-500/40"
+                className="w-8 py-1 text-xs font-medium text-center text-gray-200 bg-black focus:outline-none border-r border-gray-500/40"
               />
-              <p className="px-2 text-sm">%</p>
+              <p className="px-2 text-xs">%</p>
             </div>
           </div>
+          <p className="mt-4 px-8 text-red-500/50 text-xs">{errStr}</p>
 
           <div className="mt-3 px-6 flex flex-row w-full justify-between gap-3">
             <div className="w-full py-1 rounded-xl">
@@ -632,6 +648,33 @@ const Trade = () => {
               </div>
             </div>
           )}
+          {localState.usdcAmount != 0 ? (localState.contractAmount != 0 ? (
+            <div>
+              <div className="mt-4 px-6 w-full flex justify-between text-xs text-gray-400">
+                Slippage:{" "}
+                <div
+                  className={`${
+                    priceImpact < slippageTolerance
+                      ? "text-green-300/50"
+                      : "text-red-500/50"
+                  }`}
+                >
+                  {priceImpact.toFixed(2)} %
+                </div>
+              </div>
+              <div className="mt-2 px-6 w-full flex justify-between text-xs text-gray-400">
+                Execution Price: <div className="flex justify-between gap-1 items-center">{executionPrice.toFixed(2)}
+                <AiOutlineSwap
+              size={16}
+              className={`cursor-pointer hover:opacity-75 ${isLongTrade ? 'text-green-300/50' : 'text-red-500/50'}`}
+              onClick={() => {
+                setIsLongTrade(!isLongTrade);
+              }}
+              title={isLongTrade ? 'Switch to Short Mode':'Switch to Long Mode'}
+            /></div>
+              </div>
+            </div>
+          ): null): null}
         </div>
       )}
     </div>
