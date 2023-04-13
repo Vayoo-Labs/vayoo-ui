@@ -37,7 +37,7 @@ export const TVChartContainer = () => {
   const defaultProps: ChartContainerProps = {
     symbol: selectedContract?.name,
     // @ts-ignore
-    interval: '1',
+    interval: '30',
     auto_save_delay: 5,
     theme: 'Dark',
     containerId: 'tv_chart_container',
