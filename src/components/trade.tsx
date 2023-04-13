@@ -593,6 +593,32 @@ const Trade = () => {
               </button>
             </div>
           </div>
+          <div className="mt-1 px-6 flex flex-row w-full justify-between gap-3">
+            <div className="w-full py-1 rounded-xl">
+              <button
+                disabled={
+                 !tradeEnable || !state?.userState
+                }
+                onClick={onClickCloseLong}
+                className={`bg-green-400/10 hover:border-green-400/40
+                  w-full py-3 text-gray-100  rounded-lg border-2 border-white/10 text-sm disabled:border disabled:border-gray-500/40 disabled:bg-black disabled:text-gray-400 disabled:cursor-not-allowed`}
+              >
+                Close Long
+              </button>
+            </div>
+            <div className="w-full flex flex-col justify-between items-center py-1 border-green-100/60 rounded-xl">
+            <button
+                disabled={
+                 !tradeEnable || !state?.userState
+                }
+                onClick={onClickCloseShort}
+                className={`bg-red-400/10 hover:border-red-400/40
+                  w-full py-3 text-gray-100  rounded-lg border-2 border-white/10 text-sm disabled:border disabled:border-gray-500/40 disabled:bg-black disabled:text-gray-400 disabled:cursor-not-allowed`}
+              >
+                Close Short
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
