@@ -380,7 +380,9 @@ const Trade = () => {
   };
 
   const setMaxUsd = () => {
-    const maxAmount = state?.userState ? state?.userState?.usdcFree.toNumber()! / 1e6 : 0;
+    const maxAmount = state?.userState
+      ? state?.userState?.usdcFree.toNumber()! / 1e6
+      : 0;
     onChangeSeconderyUsdValue(maxAmount.toString());
   };
 
@@ -481,7 +483,10 @@ const Trade = () => {
             <div className="flex justify-between items-center text-gray-400">
               Free Margin :
               <div>
-                {state?.userState ? (state?.userState?.usdcFree.toNumber()! / 1e6).toFixed(2) : 0} USDC
+                {state?.userState
+                  ? (state?.userState?.usdcFree.toNumber()! / 1e6).toFixed(2)
+                  : 0}{" "}
+                USDC
               </div>
             </div>
           </div>
@@ -548,21 +553,26 @@ const Trade = () => {
           <div className="mt-3 px-6 flex flex-row w-full justify-between gap-3">
             <div className="w-full py-1 rounded-xl">
               <button
-                disabled={
-                 !tradeEnable || !state?.userState
+                disabled={!tradeEnable || !state?.userState}
+                onClick={
+                  state?.userPosition == UserPosition.Neutral ||
+                  state?.userPosition == UserPosition.Mm
+                    ? onClickOpenLong
+                    : state?.userPosition == UserPosition.Long
+                    ? onClickOpenLong
+                    : onClickOpenShort
                 }
-                onClick={state?.userPosition == UserPosition.Neutral || state?.userPosition == UserPosition.Mm
-                  ? onClickOpenLong
-                  : state?.userPosition == UserPosition.Long
-                  ? onClickOpenLong
-                  : onClickOpenShort}
-                className={`${state?.userPosition == UserPosition.Neutral || state?.userPosition == UserPosition.Mm
-                  ? "bg-green-400/30 hover:border-green-400/60"
-                  : state?.userPosition == UserPosition.Long
-                  ? "bg-green-400/30 hover:border-green-400/60"
-                  : "bg-red-400/30 hover:border-red-400/60"} w-full py-3 text-gray-100  rounded-lg border-2 border-white/10 text-sm disabled:border disabled:border-gray-500/40 disabled:bg-black disabled:text-gray-400 disabled:cursor-not-allowed`}
+                className={`${
+                  state?.userPosition == UserPosition.Neutral ||
+                  state?.userPosition == UserPosition.Mm
+                    ? "bg-green-400/30 hover:border-green-400/60"
+                    : state?.userPosition == UserPosition.Long
+                    ? "bg-green-400/30 hover:border-green-400/60"
+                    : "bg-red-400/30 hover:border-red-400/60"
+                } w-full py-3 text-gray-100  rounded-lg border-2 border-white/10 text-sm disabled:border disabled:border-gray-500/40 disabled:bg-black disabled:text-gray-400 disabled:cursor-not-allowed`}
               >
-                {state?.userPosition == UserPosition.Neutral || state?.userPosition == UserPosition.Mm
+                {state?.userPosition == UserPosition.Neutral ||
+                state?.userPosition == UserPosition.Mm
                   ? "Long"
                   : state?.userPosition == UserPosition.Long
                   ? "Long"
@@ -571,21 +581,26 @@ const Trade = () => {
             </div>
             <div className="w-full flex flex-col justify-between items-center py-1 border-green-100/60 rounded-xl">
               <button
-                disabled={
-                  !tradeEnable || !state?.userState
+                disabled={!tradeEnable || !state?.userState}
+                onClick={
+                  state?.userPosition == UserPosition.Neutral ||
+                  state?.userPosition == UserPosition.Mm
+                    ? onClickOpenShort
+                    : state?.userPosition == UserPosition.Long
+                    ? onClickCloseLong
+                    : onClickCloseShort
                 }
-                onClick={state?.userPosition == UserPosition.Neutral || state?.userPosition == UserPosition.Mm
-                  ? onClickOpenShort
-                  : state?.userPosition == UserPosition.Long
-                  ? onClickCloseLong
-                  : onClickCloseShort}
-                className={`${state?.userPosition == UserPosition.Neutral || state?.userPosition == UserPosition.Mm
-                  ? "bg-red-400/30 hover:border-red-400/60"
-                  : state?.userPosition == UserPosition.Long
-                  ? "bg-green-400/10 hover:border-green-400/40"
-                  : "bg-red-400/10 hover:border-red-400/40"} w-full py-3 text-gray-100  rounded-lg border-2 border-white/10 text-sm disabled:border disabled:border-gray-500/40 disabled:bg-black disabled:text-gray-400 disabled:cursor-not-allowed`}
+                className={`${
+                  state?.userPosition == UserPosition.Neutral ||
+                  state?.userPosition == UserPosition.Mm
+                    ? "bg-red-400/30 hover:border-red-400/60"
+                    : state?.userPosition == UserPosition.Long
+                    ? "bg-green-400/10 hover:border-green-400/40"
+                    : "bg-red-400/10 hover:border-red-400/40"
+                } w-full py-3 text-gray-100  rounded-lg border-2 border-white/10 text-sm disabled:border disabled:border-gray-500/40 disabled:bg-black disabled:text-gray-400 disabled:cursor-not-allowed`}
               >
-                {state?.userPosition == UserPosition.Neutral || state?.userPosition == UserPosition.Mm
+                {state?.userPosition == UserPosition.Neutral ||
+                state?.userPosition == UserPosition.Mm
                   ? "Short"
                   : state?.userPosition == UserPosition.Long
                   ? "Close Long"
@@ -593,32 +608,30 @@ const Trade = () => {
               </button>
             </div>
           </div>
-          <div className="mt-1 px-6 flex flex-row w-full justify-between gap-3">
-            <div className="w-full py-1 rounded-xl">
-              <button
-                disabled={
-                 !tradeEnable || !state?.userState
-                }
-                onClick={onClickCloseLong}
-                className={`bg-green-400/10 hover:border-green-400/40
+          {state?.userPosition == UserPosition.Mm && (
+            <div className="mt-1 px-6 flex flex-row w-full justify-between gap-3">
+              <div className="w-full py-1 rounded-xl">
+                <button
+                  disabled={!tradeEnable || !state?.userState}
+                  onClick={onClickCloseLong}
+                  className={`bg-green-400/10 hover:border-green-400/40
                   w-full py-3 text-gray-100  rounded-lg border-2 border-white/10 text-sm disabled:border disabled:border-gray-500/40 disabled:bg-black disabled:text-gray-400 disabled:cursor-not-allowed`}
-              >
-                Close Long
-              </button>
-            </div>
-            <div className="w-full flex flex-col justify-between items-center py-1 border-green-100/60 rounded-xl">
-            <button
-                disabled={
-                 !tradeEnable || !state?.userState
-                }
-                onClick={onClickCloseShort}
-                className={`bg-red-400/10 hover:border-red-400/40
+                >
+                  Close Long
+                </button>
+              </div>
+              <div className="w-full flex flex-col justify-between items-center py-1 border-green-100/60 rounded-xl">
+                <button
+                  disabled={!tradeEnable || !state?.userState}
+                  onClick={onClickCloseShort}
+                  className={`bg-red-400/10 hover:border-red-400/40
                   w-full py-3 text-gray-100  rounded-lg border-2 border-white/10 text-sm disabled:border disabled:border-gray-500/40 disabled:bg-black disabled:text-gray-400 disabled:cursor-not-allowed`}
-              >
-                Close Short
-              </button>
+                >
+                  Close Short
+                </button>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       )}
     </div>
