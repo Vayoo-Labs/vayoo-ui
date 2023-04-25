@@ -256,11 +256,17 @@ export function VMStateProvider({ children = undefined as any }) {
 
       let userPosition: UserPosition;
       if (userState?.lcontractMintedAsMm.toNumber()! > 0) {
-        userPosition = UserPosition.Mm;
+        if (userState?.lcontractBoughtAsUser.toNumber()! > 0) {
+          userPosition = UserPosition.MmAndLong;
+        } else if (userState?.scontractSoldAsUser.toNumber()! > 0) {
+          userPosition = UserPosition.MmAndShort;
+        } else {
+          userPosition = UserPosition.Mm;
+        }
       } else {
         if (userState?.lcontractBoughtAsUser.toNumber()! > 0) {
           userPosition = UserPosition.Long;
-        } else if (userState?.scontractSoldAsUser.toNumber()! < 0) {
+        } else if (userState?.scontractSoldAsUser.toNumber()! > 0) {
           userPosition = UserPosition.Short;
         } else {
           userPosition = UserPosition.Neutral;

@@ -11,7 +11,7 @@ import {
 import AdminComponent from "./components/admin";
 import toast, { Toaster } from "react-hot-toast";
 import { initUserState } from "./utils/vayoo-web3";
-import PositionAndStatsComponent from "./components/positionAndStats";
+import StatsComponent from "./components/stats";
 import twitterLogo from "./assets/twitter-logo.svg";
 import telegramLogo from "./assets/telegram-logo.svg";
 import ContractDropDownSelectorComponent from "./components/contractDropdownSelector";
@@ -19,6 +19,7 @@ import { TVChartContainer } from "./components/TradingView";
 import YourMmAccount from "./components/yourMmAccount";
 import Trade from "./components/trade";
 import DepositWithdrawModal from "./components/depositWithdrawModal";
+import Positions from "./components/positions";
 
 function App() {
   const wallet = useWallet();
@@ -79,6 +80,15 @@ function App() {
     localState.mmMode,
     selectedContract,
   ]);
+
+  useEffect(() => {
+    if (state?.assetPrice) {
+      document.title = `${state?.assetPrice.toFixed(2)} ${selectedContract?.extraInfo.short_name} - Vayoo Markets`
+
+    }
+  }, [
+    state?.assetPrice
+  ])
 
   const onClickInitUserState = async () => {
     await initUserState(state, selectedContract?.name!, wallet)
@@ -205,15 +215,18 @@ function App() {
                       <YourMmAccount />
                     </div>
                   ) : (
-                    <div className="flex mt-2 gap-7 items-start">
-                      <div className="w-full max-w-xs flex flex-col gap-4">
-                        <PositionAndStatsComponent />
+                    <>
+                      <div className="flex mt-2 gap-5 items-start">
+                        <div className="w-full h-[480px] overflow-hidden rounded-xl">
+                          <TVChartContainer />
+                        </div>
+                        <Trade />
                       </div>
-                      <div className="w-full h-[450px] overflow-hidden rounded-xl">
-                        <TVChartContainer />
+                      <div className="mt-6 w-full flex gap-5">
+                        <Positions />
+                        <StatsComponent />
                       </div>
-                      <Trade />
-                    </div>
+                    </>
                   )}
                 </div>
               </div>

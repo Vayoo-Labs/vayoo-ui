@@ -22,7 +22,9 @@ export enum UserPosition {
   Long,
   Short,
   Neutral,
-  Mm
+  Mm,
+  MmAndLong,
+  MmAndShort,
 }
 
 export type PositionAndStatsComponentParams = {

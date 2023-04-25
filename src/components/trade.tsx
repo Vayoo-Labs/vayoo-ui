@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { AiOutlineSwap } from 'react-icons/ai'
+import { AiOutlineSwap } from "react-icons/ai";
+import { MdSwapVert } from "react-icons/md";
 import {
   useOracleState,
   useSelectedContract,
@@ -42,16 +43,16 @@ const Trade = () => {
   const [localState, setLocalState] = useState({
     usdcAmount: 0,
     contractAmount: 0,
-    userPosition: UserPosition.Neutral,
     isAmountInUsdc: true,
     lastAmount: 0,
   });
-  const [errStr, setErrStr] = useState("");
+  const [errStr, setErrStr] = useState<string | null>(null);
   const [tradeEnable, setTradeEnable] = useState(true);
   const [usdcInputValue, setUsdcInputValue] = useState("0");
   const [contractInputValue, setContractInputValue] = useState("0");
-  const [slippageTolerance, setSlippageTolerance] = useState(5);
-  const [priceImpact, setPriceImpact] = useState(0);
+  const [slippageTolerance, setSlippageTolerance] = useState(1);
+  const [slippage, setSlippage] = useState(0);
+  const [diffPoolPrice, setDiffPoolPrice] = useState(0);
   const [executionPrice, setExecutionPrice] = useState(0);
   const [isLongTrade, setIsLongTrade] = useState(true);
 
@@ -94,6 +95,14 @@ const Trade = () => {
   //     clearInterval(interval);
   //   };
   // }, [selectedContract]);
+
+  useEffect(() => {
+    if (state?.userPosition == UserPosition.Short || state?.userPosition == UserPosition.MmAndShort) {
+      setIsLongTrade(false);
+    } else {
+      setIsLongTrade(true);
+    }
+  }, [state?.userPosition])
 
   const onClickOpenLong = async () => {
     await openLong(
@@ -253,7 +262,7 @@ const Trade = () => {
       );
       setTradeEnable(false);
     } else {
-      setErrStr("");
+      setErrStr(null);
       setTradeEnable(true);
       (async () => {
         if (amountInUsd == 0.0) {
@@ -280,10 +289,13 @@ const Trade = () => {
             const executionPoolPrice =
               swapQuote.estimatedAmountOut.toNumber() /
               swapQuote.estimatedAmountIn.toNumber();
+            const diffPoolPrice = Math.abs(
+              executionPoolPrice - initalPoolPrice
+            );
+            setDiffPoolPrice(diffPoolPrice);
             const slippagePercentage =
-              (Math.abs(executionPoolPrice - initalPoolPrice) * 100) /
-              initalPoolPrice;
-            setPriceImpact(slippagePercentage);
+              (diffPoolPrice * 100) / state?.assetPrice!;
+            setSlippage(slippagePercentage);
             if (slippagePercentage > Number(slippageTolerance)) {
               setErrStr("Slippage Exceeded, try increasing tolerance");
               setTradeEnable(false);
@@ -317,7 +329,7 @@ const Trade = () => {
     let usdcValue: number;
 
     if (isNaN(amountInContract)) amountInContract = 0.0;
-    setErrStr("");
+    setErrStr(null);
     setTradeEnable(true);
     (async () => {
       if (amountInContract == 0.0) {
@@ -345,10 +357,10 @@ const Trade = () => {
           const executionPoolPrice =
             swapQuote.estimatedAmountOut.toNumber() /
             swapQuote.estimatedAmountIn.toNumber();
-          const slippagePercentage =
-            (Math.abs(executionPoolPrice - initalPoolPrice) * 100) /
-            initalPoolPrice;
-          setPriceImpact(slippagePercentage);
+          const diffPoolPrice = Math.abs(executionPoolPrice - initalPoolPrice);
+          setDiffPoolPrice(diffPoolPrice);
+          const slippagePercentage = (diffPoolPrice * 100) / state?.assetPrice!;
+          setSlippage(slippagePercentage);
           if (slippagePercentage > Number(slippageTolerance)) {
             setErrStr("Slippage Exceeded, try increasing tolerance");
             setTradeEnable(false);
@@ -406,22 +418,38 @@ const Trade = () => {
 
   useEffect(() => {
     isLongTrade
-      ? setExecutionPrice(state?.assetPrice! + (state?.assetPrice! * priceImpact/100))
-      : setExecutionPrice(
-          state?.assetPrice! - (state?.assetPrice! * priceImpact/100)
-        );
-  }, [isLongTrade, priceImpact]);
+      ? setExecutionPrice(state?.assetPrice! + diffPoolPrice)
+      : setExecutionPrice(state?.assetPrice! - diffPoolPrice);
+  }, [isLongTrade, slippage]);
 
   useEffect(() => {
-    if(localState.isAmountInUsdc) {
-      onChangeUsdcValue(localState.usdcAmount.toString())
+    if (localState.isAmountInUsdc) {
+      onChangeUsdcValue(localState.usdcAmount.toString());
     } else {
-      onChangeContractValue(localState.contractAmount.toString())
+      onChangeContractValue(localState.contractAmount.toString());
     }
-  }, [slippageTolerance])
+  }, [slippageTolerance]);
+
+  useEffect(() => {
+    onChangeContractValue("0");
+    onChangeUsdcValue("0");
+  }, [selectedContract]);
 
   return (
-    <div className="w-full max-w-xs py-6 text-white flex flex-col gap-3 border-2 border-gray-300/10 rounded-xl bg-black/50 z-10">
+    <div className="min-h-[480px] w-full max-w-xs py-6 text-white flex flex-col gap-3 border-2 border-gray-300/10 rounded-xl bg-black/50 z-10 relative">
+      <button
+        className={`absolute top-0 right-0 py-[6px] p-4 pr-2 pt-1 flex justify-between gap-1 items-center border-l-[0.5px] border-b-[0.5px] rounded-bl-lg rounded-tr-lg text-sm cursor-pointer disabled:cursor-not-allowed ${isLongTrade ? 'bg-lime-200/20 border-lime-200/60 text-lime-200/90' : 'bg-red-400/20 border-red-400/60 text-red-400/90'} opacity-80 hover:opacity-100`}
+        onClick={() => {
+          setIsLongTrade(!isLongTrade);
+        }}
+        disabled={!(state?.userPosition == UserPosition.Mm || state?.userPosition == UserPosition.Neutral)}
+      >
+        {isLongTrade ? 'Long' : 'Short' }
+        <MdSwapVert
+          size={16}
+          title={isLongTrade ? "Switch to Short Mode" : "Switch to Long Mode"}
+        />
+      </button>
       <div className="px-6 text-lg text-gray-200">
         Trade {selectedContract?.extraInfo?.short_name}
       </div>
@@ -497,33 +525,21 @@ const Trade = () => {
         )
       ) : (
         <div>
-          <div className="px-6 mt-1 flex flex-col gap-3 text-sm">
-            <div className="flex justify-between items-center text-gray-400">
+          <div className="px-8 mt-1 flex flex-col gap-3 text-sm">
+            <div className="flex justify-between items-center text-gray-400 text-xs">
               Free Margin :
               <div>
                 {state?.userState
                   ? (state?.userState?.usdcFree.toNumber()! / 1e6).toFixed(2)
                   : 0}{" "}
-                USDC
+                $
               </div>
             </div>
           </div>
-          <div className="px-6 mt-3 flex gap-5 text-xl items-start text-gray-200">
-            <div className="flex flex-col gap-4 items-start">
-              <div className="flex flex-col items-end text-lg">
-                Amount
-                <div className="mt-4 text-gray-500 text-xs underline-offset-4">
-                  USDC
-                </div>
-              </div>
-              <div className="mt-4 w-full flex flex-col items-end text-lg">
-                <div className="text-gray-500 text-xs underline-offset-4 text-right">
-                  No of contracts
-                </div>
-              </div>
-            </div>
-            <div className="mt-8 w-full flex flex-col gap-4">
-              <div className="flex flex-1 items-center">
+          <div className="px-8 mt-4 flex flex-col gap-5 text-gray-200 items-center">
+            <div className="w-full flex justify-between gap-4 items-start text-xs text-gray-500">
+              <div className="py-2 w-14">USDC</div>
+              <div className="w-8 flex flex-1 items-center">
                 <input
                   value={usdcInputValue}
                   onChange={(e) => onChangeUsdcValue(e.target.value)}
@@ -536,12 +552,13 @@ const Trade = () => {
                   Max
                 </div>
               </div>
-              <div className="flex flex-1 items-center">
+            </div>
+            <div className="w-full flex gap-4 justify-between items-start text-xs text-gray-500">
+              <div className="w-14">No of Contracts</div>
+              <div className="w-48 flex flex-1 items-center">
                 <input
                   value={contractInputValue}
-                  onChange={(e) =>
-                    onChangeContractValue(e.target.value)
-                  }
+                  onChange={(e) => onChangeContractValue(e.target.value)}
                   className="w-full py-2 text-sm px-3 text-gray-100 rounded-l-lg border-2 border-gray-100/10 border-r-0 bg-gray-100/10 focus:outline-none"
                 />
                 <div
@@ -561,120 +578,85 @@ const Trade = () => {
                 onChange={(e) => onChangeSlippageValue(e.target.value)}
                 className="w-8 py-1 text-xs font-medium text-center text-gray-200 bg-black focus:outline-none border-r border-gray-500/40"
               />
-              <p className="px-2 text-xs">%</p>
+              <p className="px-2 text-xs text-gray-300">%</p>
             </div>
           </div>
-          <p className="mt-4 px-8 text-red-500/50 text-xs">{errStr}</p>
-
-          <div className="mt-3 px-6 flex flex-row w-full justify-between gap-3">
-            <div className="w-full py-1 rounded-xl">
-              <button
-                disabled={!tradeEnable || !state?.userState}
-                onClick={
-                  state?.userPosition == UserPosition.Neutral ||
-                  state?.userPosition == UserPosition.Mm
-                    ? onClickOpenLong
-                    : state?.userPosition == UserPosition.Long
-                    ? onClickOpenLong
-                    : onClickOpenShort
-                }
-                className={`${
-                  state?.userPosition == UserPosition.Neutral ||
-                  state?.userPosition == UserPosition.Mm
-                    ? "bg-green-400/30 hover:border-green-400/60"
-                    : state?.userPosition == UserPosition.Long
-                    ? "bg-green-400/30 hover:border-green-400/60"
-                    : "bg-red-400/30 hover:border-red-400/60"
-                } w-full py-3 text-gray-100  rounded-lg border-2 border-white/10 text-sm disabled:border disabled:border-gray-500/40 disabled:bg-black disabled:text-gray-400 disabled:cursor-not-allowed`}
-              >
-                {state?.userPosition == UserPosition.Neutral ||
-                state?.userPosition == UserPosition.Mm
-                  ? "Long"
-                  : state?.userPosition == UserPosition.Long
-                  ? "Long"
-                  : "Short"}
-              </button>
-            </div>
-            <div className="w-full flex flex-col justify-between items-center py-1 border-green-100/60 rounded-xl">
-              <button
-                disabled={!tradeEnable || !state?.userState}
-                onClick={
-                  state?.userPosition == UserPosition.Neutral ||
-                  state?.userPosition == UserPosition.Mm
-                    ? onClickOpenShort
-                    : state?.userPosition == UserPosition.Long
-                    ? onClickCloseLong
-                    : onClickCloseShort
-                }
-                className={`${
-                  state?.userPosition == UserPosition.Neutral ||
-                  state?.userPosition == UserPosition.Mm
-                    ? "bg-red-400/30 hover:border-red-400/60"
-                    : state?.userPosition == UserPosition.Long
-                    ? "bg-green-400/10 hover:border-green-400/40"
-                    : "bg-red-400/10 hover:border-red-400/40"
-                } w-full py-3 text-gray-100  rounded-lg border-2 border-white/10 text-sm disabled:border disabled:border-gray-500/40 disabled:bg-black disabled:text-gray-400 disabled:cursor-not-allowed`}
-              >
-                {state?.userPosition == UserPosition.Neutral ||
-                state?.userPosition == UserPosition.Mm
-                  ? "Short"
-                  : state?.userPosition == UserPosition.Long
-                  ? "Close Long"
-                  : "Close Short"}
-              </button>
-            </div>
-          </div>
-          {state?.userPosition == UserPosition.Mm && (
-            <div className="mt-1 px-6 flex flex-row w-full justify-between gap-3">
-              <div className="w-full py-1 rounded-xl">
-                <button
-                  disabled={!tradeEnable || !state?.userState}
-                  onClick={onClickCloseLong}
-                  className={`bg-green-400/10 hover:border-green-400/40
-                  w-full py-3 text-gray-100  rounded-lg border-2 border-white/10 text-sm disabled:border disabled:border-gray-500/40 disabled:bg-black disabled:text-gray-400 disabled:cursor-not-allowed`}
-                >
-                  Close Long
-                </button>
-              </div>
-              <div className="w-full flex flex-col justify-between items-center py-1 border-green-100/60 rounded-xl">
-                <button
-                  disabled={!tradeEnable || !state?.userState}
-                  onClick={onClickCloseShort}
-                  className={`bg-red-400/10 hover:border-red-400/40
-                  w-full py-3 text-gray-100  rounded-lg border-2 border-white/10 text-sm disabled:border disabled:border-gray-500/40 disabled:bg-black disabled:text-gray-400 disabled:cursor-not-allowed`}
-                >
-                  Close Short
-                </button>
+          {errStr && (
+            <p className="mt-4 px-8 py-1 text-red-500/50 text-sm">{errStr}</p>
+          )}
+          {!errStr && (
+            <div>
+              <div className="py-1 mt-3 px-6 flex flex-row w-full justify-between gap-3">
+                <div className="w-full rounded-xl">
+                  <button
+                    disabled={!tradeEnable || !state?.userState}
+                    onClick={
+                      isLongTrade
+                        ? onClickOpenLong
+                        : onClickOpenShort
+                    }
+                    className={`${
+                      isLongTrade
+                        ? "bg-lime-200/30 hover:border-lime-200/60 text-lime-200/70 hover:text-lime-200"
+                        : "bg-red-400/20 hover:border-red-400/60 text-red-400/70 hover:text-red-400"
+                    } w-full py-3 text-gray-100  rounded-lg border-2 border-white/10 text-sm disabled:border disabled:border-gray-500/40 disabled:bg-black disabled:text-gray-400 disabled:cursor-not-allowed`}
+                  >
+                    {isLongTrade
+                      ? "Long"
+                      : "Short"}
+                  </button>
+                </div>
+                {!(state?.userPosition == UserPosition.Neutral || state?.userPosition == UserPosition.Mm) &&
+                <div className="w-full flex flex-col justify-between items-center border-green-100/60 rounded-xl">
+                  <button
+                    disabled={!tradeEnable || !state?.userState}
+                    onClick={
+                      state?.userPosition == UserPosition.Long ||
+                          state?.userPosition == UserPosition.MmAndLong
+                        ? onClickCloseLong
+                        : onClickCloseShort
+                    }
+                    className={`${
+                      state?.userPosition == UserPosition.Long ||
+                          state?.userPosition == UserPosition.MmAndLong
+                        ? "bg-lime-200/10 hover:border-lime-200/40 text-lime-200/40 hover:text-lime-200/60"
+                        : "bg-red-400/10 hover:border-red-400/40 text-red-400/40 hover:text-red-400/60"
+                    } w-full py-3 text-gray-100  rounded-lg border-2 border-white/10 text-sm disabled:border disabled:border-gray-500/40 disabled:bg-black disabled:text-gray-400 disabled:cursor-not-allowed`}
+                  >
+                    {state?.userPosition == UserPosition.Long ||
+                        state?.userPosition == UserPosition.MmAndLong
+                      ? "Close Long"
+                      : "Close Short"}
+                  </button>
+                </div>
+}
               </div>
             </div>
           )}
-          {localState.usdcAmount != 0 ? (localState.contractAmount != 0 ? (
-            <div>
-              <div className="mt-4 px-6 w-full flex justify-between text-xs text-gray-400">
-                Slippage:{" "}
-                <div
-                  className={`${
-                    priceImpact < slippageTolerance
-                      ? "text-green-300/50"
-                      : "text-red-500/50"
-                  }`}
-                >
-                  {priceImpact.toFixed(2)} %
+          {localState.usdcAmount != 0 ? (
+            localState.contractAmount != 0 ? (
+              <div>
+                <div className="mt-4 px-6 w-full flex justify-between text-xs text-gray-400">
+                  Slippage:{" "}
+                  <div
+                    className={`${
+                      slippage < slippageTolerance
+                        ? "text-green-300/50"
+                        : "text-red-500/50"
+                    }`}
+                  >
+                    ~ {slippage.toFixed(2)} %
+                  </div>
+                </div>
+                <div className="mt-2 px-6 w-full flex justify-between text-xs text-gray-400">
+                  Execution Price:{" "}
+                  <div className="flex justify-between gap-1 items-center">
+                    {executionPrice.toFixed(2)}
+                  </div>
                 </div>
               </div>
-              <div className="mt-2 px-6 w-full flex justify-between text-xs text-gray-400">
-                Execution Price: <div className="flex justify-between gap-1 items-center">{executionPrice.toFixed(2)}
-                <AiOutlineSwap
-              size={16}
-              className={`cursor-pointer hover:opacity-75 ${isLongTrade ? 'text-green-300/50' : 'text-red-500/50'}`}
-              onClick={() => {
-                setIsLongTrade(!isLongTrade);
-              }}
-              title={isLongTrade ? 'Switch to Short Mode':'Switch to Long Mode'}
-            /></div>
-              </div>
-            </div>
-          ): null): null}
+            ) : null
+          ) : null}
         </div>
       )}
     </div>
