@@ -30,7 +30,7 @@ const LeaderboardComponent = () => {
             return <>
             <div className="text-gray-300">{index + 1}</div>
             <a href={`https://solscan.io/account/${userPnl["userKey"]}`} target="_blank">
-            <div className="text-gray-300 tracking-widest">{shortenAddress(userPnl["userKey"], 4, 10)}</div>
+            <div className="text-gray-300 hover:text-gray-100 tracking-widest">{shortenAddress(userPnl["userKey"], 4, 10)}</div>
             </a>
             <div className={`${userPnl["totalPnl"] > 0 ? "text-green-500"
                 : "text-red-600"}`}>{userPnl["totalPnl"].toFixed(4)} $</div>
