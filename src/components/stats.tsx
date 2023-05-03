@@ -15,7 +15,7 @@ const StatsComponent = () => {
     <div className="w-full max-w-xs px-6 py-6 text-white flex flex-col gap-3 border-2 border-gray-300/10 rounded-xl bg-black/50 z-10">
       <div className="flex gap-3">
         <div
-          className={`cursor-pointer text-lg text-gray-200`}
+          className="text-lg text-gray-200"
         >
           Stats
         </div>
