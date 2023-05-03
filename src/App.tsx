@@ -20,6 +20,7 @@ import YourMmAccount from "./components/yourMmAccount";
 import Trade from "./components/trade";
 import DepositWithdrawModal from "./components/depositWithdrawModal";
 import Positions from "./components/positions";
+import LeaderboardComponent from "./components/leaderboard";
 
 function App() {
   const wallet = useWallet();
@@ -35,6 +36,7 @@ function App() {
     userExist: false,
     isAdmin: false,
     adminMode: true,
+    leaderboardMode: false,
     mmMode: false,
     netAccountValueUsd: 0,
   });
@@ -83,12 +85,11 @@ function App() {
 
   useEffect(() => {
     if (state?.assetPrice) {
-      document.title = `${state?.assetPrice.toFixed(2)} ${selectedContract?.extraInfo.short_name} - Vayoo Markets`
-
+      document.title = `${state?.assetPrice.toFixed(2)} ${
+        selectedContract?.extraInfo.short_name
+      } - Vayoo Markets`;
     }
-  }, [
-    state?.assetPrice
-  ])
+  }, [state?.assetPrice]);
 
   const onClickInitUserState = async () => {
     await initUserState(state, selectedContract?.name!, wallet)
@@ -113,6 +114,7 @@ function App() {
     setLocalState((prev) => ({
       ...prev,
       mmMode: !prev.mmMode,
+      leaderboardMode: false,
     }));
   };
 
@@ -120,6 +122,14 @@ function App() {
     setLocalState((prev) => ({
       ...prev,
       adminMode: !prev.adminMode,
+      leaderboardMode: false,
+    }));
+  };
+
+  const toggleLeaderboardMode = () => {
+    setLocalState((prev) => ({
+      ...prev,
+      leaderboardMode: !prev.leaderboardMode,
     }));
   };
 
@@ -129,13 +139,23 @@ function App() {
         {/* Header */}
         <div className="w-full flex flex-col items-center">
           <div className="w-full flex justify-between p-3 max-w-9xl items-center">
-            <a href="https://vayoo.markets">
-              <div className="ml-2 flex gap-0 items-center">
-                <p className="text-lime-200 text-2xl italic">Vayoo</p>
-                <p className="text-slate-300 text-2xl italic">Markets</p>
-                <p className="text-lime-200 text-2xl italic">.</p>
+            <div className="flex justify-between gap-6 items-center">
+              <a href="https://vayoo.markets">
+                <div className="ml-2 flex gap-0 items-center">
+                  <p className="text-lime-200 text-2xl italic">Vayoo</p>
+                  <p className="text-slate-300 text-2xl italic">Markets</p>
+                  <p className="text-lime-200 text-2xl italic">.</p>
+                </div>
+              </a>
+              <div
+                className="cursor-pointer underline underline-offset-4 decoration-gray-400"
+                onClick={toggleLeaderboardMode}
+              >
+                <p className="text-gray-400 text-sm">
+                  {!localState.leaderboardMode ? "Leaderboards" : "Trade"}
+                </p>
               </div>
-            </a>
+            </div>
             <div className="flex justify-around gap-2 items-center">
               {!loading && (
                 <div className="flex gap-3 items-center">
@@ -214,6 +234,8 @@ function App() {
                     <div className="w-full flex flex-col items-center">
                       <YourMmAccount />
                     </div>
+                  ) : localState.leaderboardMode ? (
+                    <div className="mt-10 flex flex-col items-center"><LeaderboardComponent /></div>
                   ) : (
                     <>
                       <div className="flex mt-2 gap-5 items-start">

@@ -14,8 +14,9 @@ export async function getVayooProgramInstance(connection: Connection, wallet: an
 }
 
 // shorten the checksummed version of the input address to have 4 characters at start and end
-export function shortenAddress(address: string, chars = 4): string {
-    return `${address.slice(0, chars)}...${address.slice(-chars)}`;
+export function shortenAddress(address: string, chars = 4, middleSpace = 3): string {
+    const middleDots = "......................................................"
+    return `${address.slice(0, chars)}${middleDots.slice(0, middleSpace)}${address.slice(-chars)}`;
 }
 
 export const toUiAmount = (inputNumber: number | string, numDecimals: number) => {
