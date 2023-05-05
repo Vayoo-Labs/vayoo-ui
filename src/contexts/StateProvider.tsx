@@ -201,7 +201,7 @@ export function VMStateProvider({ children = undefined as any }) {
         selectedContract?.oracleExponent! -
       contractState?.limitingAmplitude.toNumber()! / 2;
 
-    if (wallet?.publicKey) {
+    if (wallet.connected && wallet.publicKey) {
       const userStateKey = getUserStatePDA(
         selectedContract?.name!,
         wallet.publicKey!
@@ -313,7 +313,7 @@ export function VMStateProvider({ children = undefined as any }) {
 
       return;
     }
-
+    else {
     setState({
       vayooProgram: program,
       accounts: null,
@@ -326,6 +326,8 @@ export function VMStateProvider({ children = undefined as any }) {
       whirlpool: null,
       orcaFetcher,
     });
+  }
+
   };
 
   // const updateMiniState = async () => {
