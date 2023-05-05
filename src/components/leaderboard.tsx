@@ -34,7 +34,7 @@ const LeaderboardComponent = () => {
 
   return (
     <div className="w-full max-w-5xl px-6 py-10 pb-16 text-white flex flex-col gap-3 border-2 border-gray-300/10 rounded-xl bg-black/50 z-10">
-      {leaderboardData ? (
+      {userRank ? (
         <>
           <div className="text-xl text-gray-300 text-center">Leaderboard</div>
           <div className="px-8 mt-6 grid grid-cols-4 gap-y-5 text-md text-center">
@@ -51,12 +51,14 @@ const LeaderboardComponent = () => {
                         userRank == index + 1 &&
                         "py-3 border-l border-t border-b border-gray-300/40 rounded-tl-xl rounded-bl-xl"
                       }`}
+                      key={`a ${index}`}
                     >
                       {index + 1}
                     </div>
                     <a
                       href={`https://solscan.io/account/${userPnl["userKey"]}`}
                       target="_blank"
+                      key={`b ${index}`}
                     >
                       <div
                         className={`text-gray-300 hover:text-gray-100 tracking-widest ${
@@ -78,6 +80,7 @@ const LeaderboardComponent = () => {
                         userRank == index + 1 &&
                         "py-3 border-t border-b border-gray-300/40"
                       }`}
+                      key={`c ${index}`}
                     >
                       {userPnl["currentPos"] > 0 && "+"}
                       {userPnl["currentPos"] < 0 && "-"}
@@ -94,6 +97,7 @@ const LeaderboardComponent = () => {
                         userRank == index + 1 &&
                         "py-3 border-r border-t border-b border-gray-300/40 rounded-tr-xl rounded-br-xl"
                       }`}
+                      key={`d ${index}`}
                     >
                       {userPnl["totalPnl"].toFixed(4)} $
                     </div>
@@ -103,7 +107,7 @@ const LeaderboardComponent = () => {
           </div>
         </>
       ) : (
-        <div className="flex flex-col items-center text-2xl text-white">
+        <div className="flex flex-col items-center text-2xl text-gray-200">
           Loading...
         </div>
       )}
