@@ -2,7 +2,11 @@ import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { useEffect, useState } from "react";
 import { getAtaTokenBalanceByOwner, shortenAddress } from "./utils";
-import { ADMIN_KEYS, USDC_MINT } from "./utils/constants";
+import {
+  ADMIN_KEYS,
+  USDC_MINT,
+  VAYOO_BACKEND_ENDPOINT,
+} from "./utils/constants";
 import {
   useSelectedContract,
   useSubscribeTx,
@@ -21,6 +25,7 @@ import Trade from "./components/trade";
 import DepositWithdrawModal from "./components/depositWithdrawModal";
 import Positions from "./components/positions";
 import LeaderboardComponent from "./components/leaderboard";
+import { fetchAxiosWithRetry } from "./utils/web3-utils";
 
 function App() {
   const wallet = useWallet();
@@ -32,13 +37,13 @@ function App() {
   const [refresh, setRefresh] = useState(false);
 
   const [localState, setLocalState] = useState({
-    usdBalance: 0,
     userExist: false,
     isAdmin: false,
     adminMode: true,
     leaderboardMode: false,
     mmMode: false,
     netAccountValueUsd: 0,
+    rank: 0,
   });
 
   const toggleLocalRefresh = () => {
@@ -48,7 +53,7 @@ function App() {
 
   useEffect(() => {
     (async () => {
-      if (wallet?.publicKey) {
+      if (wallet?.publicKey && selectedContract) {
         if (ADMIN_KEYS.includes(wallet.publicKey.toString()!)) {
           setLocalState((prev) => ({
             ...prev,
@@ -61,16 +66,17 @@ function App() {
           }));
         }
         const userExist = state?.userState ? true : false;
-        const usdBalance =
-          (await getAtaTokenBalanceByOwner(
-            connection,
-            wallet.publicKey!,
-            USDC_MINT
-          )) / 1e6;
+        const rank = (
+          await fetchAxiosWithRetry(
+            `${VAYOO_BACKEND_ENDPOINT}/pnl/rank/${
+              selectedContract?.name
+            }/${wallet.publicKey.toString()}`
+          )
+        ).data!;
         setLocalState((prev) => ({
           ...prev,
-          usdBalance,
           userExist,
+          rank,
         }));
       }
     })();
@@ -126,11 +132,18 @@ function App() {
     }));
   };
 
-  const toggleLeaderboardMode = () => {
-    setLocalState((prev) => ({
-      ...prev,
-      leaderboardMode: !prev.leaderboardMode,
-    }));
+  const toggleLeaderboardMode = (forced = false) => {
+    if (forced) {
+      setLocalState((prev) => ({
+        ...prev,
+        leaderboardMode: true,
+      }));
+    } else {
+      setLocalState((prev) => ({
+        ...prev,
+        leaderboardMode: !prev.leaderboardMode,
+      }));
+    }
   };
 
   return (
@@ -139,7 +152,7 @@ function App() {
         {/* Header */}
         <div className="w-full flex flex-col items-center">
           <div className="w-full flex justify-between p-3 max-w-9xl items-center">
-            <div className="flex justify-between gap-6 items-center">
+            <div className="flex justify-between gap-5 items-center">
               <a href="https://vayoo.markets">
                 <div className="ml-2 flex gap-0 items-center">
                   <p className="text-lime-200 text-2xl italic">Vayoo</p>
@@ -148,14 +161,21 @@ function App() {
                 </div>
               </a>
               <div
-                className="cursor-pointer underline underline-offset-4 decoration-gray-400"
-                onClick={toggleLeaderboardMode}
+                className="cursor-pointer underline underline-offset-4 decoration-gray-400 hover:decoration-gray-300"
+                onClick={() => toggleLeaderboardMode()}
               >
-                <p className="text-gray-400 text-sm">
+                <p className="text-gray-400 hover:text-gray-300 text-sm">
                   {!localState.leaderboardMode ? "Leaderboards" : "Trade"}
                 </p>
               </div>
+              <div
+                className="cursor-pointer border-2 rounded-xl px-3 py-1 border-lime-200/50 hover:border-gray-200/60 text-gray-200 hover:text-white glow_green"
+                onClick={() => toggleLeaderboardMode(true)}
+              >
+                <p className=" text-md">Rank : {localState.rank}</p>
+              </div>
             </div>
+
             <div className="flex justify-around gap-2 items-center">
               {!loading && (
                 <div className="flex gap-3 items-center">
@@ -235,7 +255,9 @@ function App() {
                       <YourMmAccount />
                     </div>
                   ) : localState.leaderboardMode ? (
-                    <div className="mt-10 flex flex-col items-center"><LeaderboardComponent /></div>
+                    <div className="mt-10 flex flex-col items-center">
+                      <LeaderboardComponent />
+                    </div>
                   ) : (
                     <>
                       <div className="flex mt-2 gap-5 items-start">
