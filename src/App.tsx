@@ -79,6 +79,12 @@ function App() {
             userExist,
             rank,
           }));
+        } else {
+          setLocalState((prev) => ({
+            ...prev,
+            userExist,
+            rank: null,
+          }));
         }
       }
       if (!wallet.connected) {
