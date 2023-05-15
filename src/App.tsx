@@ -66,18 +66,20 @@ function App() {
           }));
         }
         const userExist = state?.userState ? true : false;
-        const rank = (
+        let rank = (
           await fetchAxiosWithRetry(
             `${VAYOO_BACKEND_ENDPOINT}/pnl/rank/${
               selectedContract?.name
             }/${wallet.publicKey.toString()}`
           )
         ).data!;
-        setLocalState((prev) => ({
-          ...prev,
-          userExist,
-          rank,
-        }));
+        if (!rank.err)  {
+          setLocalState((prev) => ({
+            ...prev,
+            userExist,
+            rank,
+          }));
+        }
       }
       if (!wallet.connected) {
         setLocalState((prev) => ({
@@ -167,6 +169,7 @@ function App() {
                   <p className="text-lime-200 text-2xl italic">.</p>
                 </div>
               </a>
+              {wallet.connected && localState.rank && 
               <div
                 className="cursor-pointer underline underline-offset-4 decoration-gray-400 hover:decoration-gray-300"
                 onClick={() => toggleLeaderboardMode()}
@@ -175,6 +178,7 @@ function App() {
                   {!localState.leaderboardMode ? "Leaderboards" : "Trade"}
                 </p>
               </div>
+              }
               {localState.rank && (
                 <div
                   className="cursor-pointer border-2 rounded-xl px-3 py-1 border-lime-200/50 hover:border-gray-200/60 text-gray-200 hover:text-white glow_green"
