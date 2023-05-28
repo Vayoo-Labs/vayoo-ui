@@ -25,6 +25,7 @@
     "@solana/wallet-adapter-wallets": "^0.19.15",
     "@solana/web3.js": "^1.73.3",
     "@switchboard-xyz/solana.js": "file:./libs/@switchboard-xyz/solana.js",
+    "@vercel/analytics": "^1.0.1",
     "axios": "^1.3.4",
     "immutable-tuple": "^0.4.10",
     "react": "^18.2.0",
