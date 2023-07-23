@@ -280,7 +280,7 @@ function App() {
                   ) : (
                     <>
                       <div className="flex mt-2 gap-5 items-start">
-                        <div className="w-full h-[480px] overflow-hidden rounded-xl">
+                        <div className="w-full h-[560px] overflow-hidden rounded-xl">
                           <TVChartContainer />
                         </div>
                         <Trade />

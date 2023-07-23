@@ -15,7 +15,7 @@ import {
   openShort,
   userSettle,
 } from "../utils/vayoo-web3";
-import { useWallet } from "@solana/wallet-adapter-react";
+import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { UserPosition } from "../utils/types";
 import {
   USDC_MINT,
@@ -24,6 +24,7 @@ import {
 } from "../utils/constants";
 import {
   ORCA_WHIRLPOOL_PROGRAM_ID,
+  PoolUtil,
   PriceMath,
   swapQuoteByInputToken,
   swapQuoteByOutputToken,
@@ -32,16 +33,20 @@ import { DecimalUtil, Percentage } from "@orca-so/common-sdk";
 import { BN } from "@project-serum/anchor";
 import { Line, LineChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
 import { fetchAxiosWithRetry } from "../utils/web3-utils";
+import { getAccount, getMint } from "@solana/spl-token-v2";
+import { getTokenBalance } from "../utils/whirlpoolUtils/utils/token";
+import { toUiAmount } from "../utils";
 
 const Trade = () => {
   const { state, toggleRefresh, loading } = useVMState();
   const wallet = useWallet();
+  const { connection } = useConnection();
   const subscribeTx = useSubscribeTx();
   const oracleState = useOracleState();
   const { selectedContract } = useSelectedContract();
 
   const [localState, setLocalState] = useState({
-    usdcAmount: 0,
+    marginAmount: 0,
     contractAmount: 0,
     isAmountInUsdc: true,
     lastAmount: 0,
@@ -54,6 +59,10 @@ const Trade = () => {
   const [slippage, setSlippage] = useState(0);
   const [diffPoolPrice, setDiffPoolPrice] = useState(0);
   const [executionPrice, setExecutionPrice] = useState(0);
+  const [feeValue, setFeeValue] = useState(0);
+  const [liquidityValue, setLiquidityValue] = useState(0);
+  const [marginUsedValue, setMarginUsedValue] = useState(0);
+  const [leverageValue, setLeverageValue] = useState(0);
   const [isLongTrade, setIsLongTrade] = useState(true);
 
   // const [priceData, setPriceData] = useState<any>([]);
@@ -97,12 +106,15 @@ const Trade = () => {
   // }, [selectedContract]);
 
   useEffect(() => {
-    if (state?.userPosition == UserPosition.Short || state?.userPosition == UserPosition.MmAndShort) {
+    if (
+      state?.userPosition == UserPosition.Short ||
+      state?.userPosition == UserPosition.MmAndShort
+    ) {
       setIsLongTrade(false);
     } else {
       setIsLongTrade(true);
     }
-  }, [state?.userPosition])
+  }, [state?.userPosition]);
 
   const onClickOpenLong = async () => {
     await openLong(
@@ -129,7 +141,7 @@ const Trade = () => {
         setContractInputValue("0");
         setLocalState((prev) => ({
           ...prev,
-          usdcAmount: 0,
+          marginAmount: 0,
           contractAmount: 0,
         }));
         toggleRefresh();
@@ -161,7 +173,7 @@ const Trade = () => {
         setContractInputValue("0");
         setLocalState((prev) => ({
           ...prev,
-          usdcAmount: 0,
+          marginAmount: 0,
           contractAmount: 0,
         }));
         toggleRefresh();
@@ -193,7 +205,7 @@ const Trade = () => {
         setContractInputValue("0");
         setLocalState((prev) => ({
           ...prev,
-          usdcAmount: 0,
+          marginAmount: 0,
           contractAmount: 0,
         }));
         toggleRefresh();
@@ -225,7 +237,7 @@ const Trade = () => {
         setContractInputValue("0");
         setLocalState((prev) => ({
           ...prev,
-          usdcAmount: 0,
+          marginAmount: 0,
           contractAmount: 0,
         }));
         toggleRefresh();
@@ -253,10 +265,11 @@ const Trade = () => {
 
   const onChangeUsdcValue = (value: string) => {
     const parsedValue = value.replace(",", ".").replace(/[^0-9.]/g, "");
-    let amountInUsd = Number.parseFloat(parsedValue);
+    let amountInNominalUsd = Number.parseFloat(parsedValue);
+    let marginUsed = amountInNominalUsd / leverageValue;
     let contractValue: number;
-    if (isNaN(amountInUsd)) amountInUsd = 0.0;
-    if (amountInUsd > USER_TRADE_CAP_USD) {
+    if (isNaN(marginUsed)) marginUsed = 0.0;
+    if (marginUsed > USER_TRADE_CAP_USD) {
       setErrStr(
         "Amount too high compared to available liquidity, please reduce"
       );
@@ -265,14 +278,14 @@ const Trade = () => {
       setErrStr(null);
       setTradeEnable(true);
       (async () => {
-        if (amountInUsd == 0.0) {
+        if (marginUsed == 0.0) {
           contractValue = 0;
         } else {
           try {
             const swapQuote = await swapQuoteByOutputToken(
               state?.whirlpool!,
               USDC_MINT,
-              DecimalUtil.toU64(DecimalUtil.fromNumber(amountInUsd), 6),
+              DecimalUtil.toU64(DecimalUtil.fromNumber(marginUsed), 6),
               Percentage.fromFraction(Number(slippageTolerance), 100),
               ORCA_WHIRLPOOL_PROGRAM_ID,
               state?.orcaFetcher!,
@@ -300,6 +313,15 @@ const Trade = () => {
               setErrStr("Slippage Exceeded, try increasing tolerance");
               setTradeEnable(false);
             }
+            // Position Margin 
+            setMarginUsedValue(marginUsed)
+            // Fee Value Calc
+            const feeValue = PoolUtil.getFeeRate(state?.poolState?.feeRate!)
+              .toDecimal()
+              .mul(DecimalUtil.fromNumber(amountInNominalUsd))
+              .div(DecimalUtil.fromNumber(leverageValue))
+              .toNumber();
+            setFeeValue(feeValue);
           } catch (e) {
             console.log(e);
             setErrStr(
@@ -316,24 +338,24 @@ const Trade = () => {
     setUsdcInputValue(parsedValue);
     setLocalState((prev) => ({
       ...prev,
-      usdcAmount: amountInUsd,
+      marginAmount: marginUsed,
       contractAmount: contractValue,
       isAmountInUsdc: true,
-      lastAmount: amountInUsd,
+      lastAmount: marginUsed,
     }));
   };
 
   const onChangeContractValue = (value: string) => {
     const parsedValue = value.replace(",", ".").replace(/[^0-9.]/g, "");
     let amountInContract = Number.parseFloat(parsedValue);
-    let usdcValue: number;
+    let marginUsed: number;
 
     if (isNaN(amountInContract)) amountInContract = 0.0;
     setErrStr(null);
     setTradeEnable(true);
     (async () => {
       if (amountInContract == 0.0) {
-        usdcValue = 0;
+        marginUsed = 0;
       } else {
         try {
           const swapQuote = await swapQuoteByInputToken(
@@ -347,7 +369,8 @@ const Trade = () => {
             state?.orcaFetcher!,
             true
           );
-          usdcValue = swapQuote.estimatedAmountOut.toNumber() / 1e6;
+          marginUsed = swapQuote.estimatedAmountOut.toNumber() / 1e6;
+          setMarginUsedValue(marginUsed);
           // Slippage Mechanism
           const initalPoolPrice = PriceMath.sqrtPriceX64ToPrice(
             state?.poolState?.sqrtPrice!,
@@ -365,21 +388,29 @@ const Trade = () => {
             setErrStr("Slippage Exceeded, try increasing tolerance");
             setTradeEnable(false);
           }
-          setUsdcInputValue(usdcValue.toString());
+          const amountInNominalUsd = marginUsed * leverageValue;
+          setUsdcInputValue(amountInNominalUsd.toFixed(6));
+          // Fee Value Calc
+          const feeValue = PoolUtil.getFeeRate(state?.poolState?.feeRate!)
+            .toDecimal()
+            .mul(DecimalUtil.fromNumber(amountInNominalUsd))
+            .div(DecimalUtil.fromNumber(leverageValue))
+            .toNumber();
+          setFeeValue(feeValue);
         } catch (e) {
           console.log(e);
           setErrStr(
             "Amount too high compared to available liquidity, please reduce"
           );
           setTradeEnable(false);
-          usdcValue = 0;
+          marginUsed = 0;
         }
       }
     })();
     setContractInputValue(parsedValue);
     setLocalState((prev) => ({
       ...prev,
-      usdcAmount: usdcValue,
+      marginAmount: marginUsed,
       contractAmount: amountInContract,
       isAmountInUsdc: false,
       lastAmount: amountInContract,
@@ -394,10 +425,11 @@ const Trade = () => {
   };
 
   const setMaxUsd = () => {
-    const maxAmount = state?.userState
+    const maxMarginAmount = state?.userState
       ? state?.userState?.usdcFree.toNumber()! / 1e6
       : 0;
-    onChangeUsdcValue(maxAmount.toString());
+    const maxNominalAmount = maxMarginAmount * leverageValue;
+    onChangeUsdcValue(maxNominalAmount.toFixed(6));
   };
 
   const setMaxContract = () => {
@@ -424,7 +456,8 @@ const Trade = () => {
 
   useEffect(() => {
     if (localState.isAmountInUsdc) {
-      onChangeUsdcValue(localState.usdcAmount.toString());
+      const nominalValue = localState.marginAmount * leverageValue;
+      onChangeUsdcValue(nominalValue.toString());
     } else {
       onChangeContractValue(localState.contractAmount.toString());
     }
@@ -435,16 +468,55 @@ const Trade = () => {
     onChangeUsdcValue("0");
   }, [selectedContract]);
 
+  useEffect(() => {
+    // Leverage Calc
+    const poolPrice = PriceMath.sqrtPriceX64ToPrice(
+      state?.poolState?.sqrtPrice! ?? 0,
+      6,
+      6
+    ).toNumber();
+    
+    if (isLongTrade) {
+      const leverage = state?.assetPrice! / poolPrice;
+      setLeverageValue(leverage);
+    } else {
+      const leverage = state?.assetPrice! / (state?.contractState?.limitingAmplitude.toNumber()! - poolPrice);
+      setLeverageValue(leverage);
+    }
+    (async () => {
+      // Liquidity Calc
+      const tokenA = Number((await getAccount(connection, state?.poolState?.tokenVaultA!)).amount.toString());
+      const tokenADecimals = (await getMint(connection, state?.poolState?.tokenMintA!)).decimals;
+      const tokenAUi = toUiAmount(tokenA, tokenADecimals);
+      const tokenB = Number((await getAccount(connection, state?.poolState?.tokenVaultB!)).amount.toString());
+      const tokenBDecimals = (await getMint(connection, state?.poolState?.tokenMintB!)).decimals;
+      const tokenBUi = toUiAmount(tokenB, tokenBDecimals);
+      // Assuming Token B = USDC
+      const tokenAUsdValue = tokenAUi * state?.assetPrice!;
+      const totalLiquidityUsdc = tokenAUsdValue + tokenBUi;
+      setLiquidityValue(totalLiquidityUsdc);
+    })();
+  }, [state?.assetPrice, isLongTrade]);
+
   return (
-    <div className="min-h-[480px] w-full max-w-xs py-6 text-white flex flex-col gap-3 border-2 border-gray-300/10 rounded-xl bg-black/50 z-10 relative">
+    <div className="min-h-[560px] w-full max-w-xs py-6 text-white flex flex-col gap-3 border-2 border-gray-300/10 rounded-xl bg-black/50 z-10 relative">
       <button
-        className={`absolute top-0 right-0 py-[6px] p-4 pr-2 pt-1 flex justify-between gap-1 items-center border-l-[0.5px] border-b-[0.5px] rounded-bl-lg rounded-tr-lg text-sm cursor-pointer disabled:cursor-not-allowed ${isLongTrade ? 'bg-lime-200/20 border-lime-200/60 text-lime-200/90' : 'bg-red-400/20 border-red-400/60 text-red-400/90'} opacity-80 hover:opacity-100`}
+        className={`absolute top-0 right-0 py-[6px] p-4 pr-2 pt-1 flex justify-between gap-1 items-center border-l-[0.5px] border-b-[0.5px] rounded-bl-lg rounded-tr-lg text-sm cursor-pointer disabled:cursor-not-allowed ${
+          isLongTrade
+            ? "bg-lime-200/20 border-lime-200/60 text-lime-200/90"
+            : "bg-red-400/20 border-red-400/60 text-red-400/90"
+        } opacity-80 hover:opacity-100`}
         onClick={() => {
           setIsLongTrade(!isLongTrade);
         }}
-        disabled={!(state?.userPosition == UserPosition.Mm || state?.userPosition == UserPosition.Neutral)}
+        disabled={
+          !(
+            state?.userPosition == UserPosition.Mm ||
+            state?.userPosition == UserPosition.Neutral
+          )
+        }
       >
-        {isLongTrade ? 'Long' : 'Short' }
+        {isLongTrade ? "Long" : "Short"}
         <MdSwapVert
           size={16}
           title={isLongTrade ? "Switch to Short Mode" : "Switch to Long Mode"}
@@ -525,20 +597,9 @@ const Trade = () => {
         )
       ) : (
         <div>
-          <div className="px-8 mt-1 flex flex-col gap-3 text-sm">
-            <div className="flex justify-between items-center text-gray-400 text-xs">
-              Free Margin :
-              <div>
-                {state?.userState
-                  ? (state?.userState?.usdcFree.toNumber()! / 1e6).toFixed(2)
-                  : 0}{" "}
-                $
-              </div>
-            </div>
-          </div>
           <div className="px-8 mt-4 flex flex-col gap-5 text-gray-200 items-center">
             <div className="w-full flex justify-between gap-4 items-start text-xs text-gray-500">
-              <div className="py-2 w-14">USDC</div>
+              <div className="py-2 w-14">USDC (Nominal)</div>
               <div className="w-8 flex flex-1 items-center">
                 <input
                   value={usdcInputValue}
@@ -590,50 +651,47 @@ const Trade = () => {
                 <div className="w-full rounded-xl">
                   <button
                     disabled={!tradeEnable || !state?.userState}
-                    onClick={
-                      isLongTrade
-                        ? onClickOpenLong
-                        : onClickOpenShort
-                    }
+                    onClick={isLongTrade ? onClickOpenLong : onClickOpenShort}
                     className={`${
                       isLongTrade
                         ? "bg-lime-200/30 hover:border-lime-200/60 text-lime-200/70 hover:text-lime-200"
                         : "bg-red-400/20 hover:border-red-400/60 text-red-400/70 hover:text-red-400"
                     } w-full py-3 text-gray-100  rounded-lg border-2 border-white/10 text-sm disabled:border disabled:border-gray-500/40 disabled:bg-black disabled:text-gray-400 disabled:cursor-not-allowed`}
                   >
-                    {isLongTrade
-                      ? "Long"
-                      : "Short"}
+                    {isLongTrade ? "Long" : "Short"}
                   </button>
                 </div>
-                {!(state?.userPosition == UserPosition.Neutral || state?.userPosition == UserPosition.Mm) &&
-                <div className="w-full flex flex-col justify-between items-center border-green-100/60 rounded-xl">
-                  <button
-                    disabled={!tradeEnable || !state?.userState}
-                    onClick={
-                      state?.userPosition == UserPosition.Long ||
-                          state?.userPosition == UserPosition.MmAndLong
-                        ? onClickCloseLong
-                        : onClickCloseShort
-                    }
-                    className={`${
-                      state?.userPosition == UserPosition.Long ||
-                          state?.userPosition == UserPosition.MmAndLong
-                        ? "bg-lime-200/10 hover:border-lime-200/40 text-lime-200/40 hover:text-lime-200/60"
-                        : "bg-red-400/10 hover:border-red-400/40 text-red-400/40 hover:text-red-400/60"
-                    } w-full py-3 text-gray-100  rounded-lg border-2 border-white/10 text-sm disabled:border disabled:border-gray-500/40 disabled:bg-black disabled:text-gray-400 disabled:cursor-not-allowed`}
-                  >
-                    {state?.userPosition == UserPosition.Long ||
+                {!(
+                  state?.userPosition == UserPosition.Neutral ||
+                  state?.userPosition == UserPosition.Mm
+                ) && (
+                  <div className="w-full flex flex-col justify-between items-center border-green-100/60 rounded-xl">
+                    <button
+                      disabled={!tradeEnable || !state?.userState}
+                      onClick={
+                        state?.userPosition == UserPosition.Long ||
                         state?.userPosition == UserPosition.MmAndLong
-                      ? "Close Long"
-                      : "Close Short"}
-                  </button>
-                </div>
-}
+                          ? onClickCloseLong
+                          : onClickCloseShort
+                      }
+                      className={`${
+                        state?.userPosition == UserPosition.Long ||
+                        state?.userPosition == UserPosition.MmAndLong
+                          ? "bg-lime-200/10 hover:border-lime-200/40 text-lime-200/40 hover:text-lime-200/60"
+                          : "bg-red-400/10 hover:border-red-400/40 text-red-400/40 hover:text-red-400/60"
+                      } w-full py-3 text-gray-100  rounded-lg border-2 border-white/10 text-sm disabled:border disabled:border-gray-500/40 disabled:bg-black disabled:text-gray-400 disabled:cursor-not-allowed`}
+                    >
+                      {state?.userPosition == UserPosition.Long ||
+                      state?.userPosition == UserPosition.MmAndLong
+                        ? "Close Long"
+                        : "Close Short"}
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           )}
-          {localState.usdcAmount != 0 ? (
+          {localState.marginAmount != 0 ? (
             localState.contractAmount != 0 ? (
               <div>
                 <div className="mt-4 px-6 w-full flex justify-between text-xs text-gray-400">
@@ -648,10 +706,34 @@ const Trade = () => {
                     ~ {slippage.toFixed(2)} %
                   </div>
                 </div>
-                <div className="mt-2 px-6 w-full flex justify-between text-xs text-gray-400">
+                <div className="mt-3 px-6 w-full flex justify-between text-xs text-gray-400">
                   Execution Price:{" "}
                   <div className="flex justify-between gap-1 items-center">
                     {executionPrice.toFixed(2)}
+                  </div>
+                </div>
+                <div className="mt-3 px-6 w-full flex justify-between text-xs text-gray-400">
+                  Margin Used:{" "}
+                  <div className="flex justify-between gap-1 items-center">
+                    {marginUsedValue.toFixed(2)} $
+                  </div>
+                </div>
+                <div className="mt-3 px-6 w-full flex justify-between text-xs text-gray-400">
+                  Leverage:{" "}
+                  <div className="flex justify-between gap-1 items-center">
+                    {leverageValue.toFixed(2)} x
+                  </div>
+                </div>
+                <div className="mt-3 px-6 w-full flex justify-between text-xs text-gray-400">
+                  Fee (0.3%/{leverageValue.toFixed(2)}x):{" "}
+                  <div className="flex justify-between gap-1 items-center">
+                    {feeValue.toFixed(2)} $
+                  </div>
+                </div>
+                <div className="mt-3 px-6 w-full flex justify-between text-xs text-gray-400">
+                  Liquidity (USD) :{" "}
+                  <div className="flex justify-between gap-1 items-center">
+                    {liquidityValue.toFixed(2)} $
                   </div>
                 </div>
               </div>
