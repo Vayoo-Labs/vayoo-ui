@@ -725,7 +725,7 @@ const Trade = () => {
                   </div>
                 </div>
                 <div className="mt-3 px-6 w-full flex justify-between text-xs text-gray-400">
-                  Fee (0.3%/{leverageValue.toFixed(2)}x):{" "}
+                  Fee :{" "}
                   <div className="flex justify-between gap-1 items-center">
                     {feeValue.toFixed(2)} $
                   </div>
