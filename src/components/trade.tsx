@@ -331,7 +331,7 @@ const Trade = () => {
             contractValue = 0;
           }
         }
-        setContractInputValue(contractValue.toString());
+        setContractInputValue((amountInNominalUsd / state?.assetPrice!).toFixed(6));
       })();
     }
 
@@ -389,7 +389,7 @@ const Trade = () => {
             setTradeEnable(false);
           }
           const amountInNominalUsd = marginUsed * leverageValue;
-          setUsdcInputValue(amountInNominalUsd.toFixed(6));
+          setUsdcInputValue((amountInContract * state?.assetPrice!).toFixed(6));
           // Fee Value Calc
           const feeValue = PoolUtil.getFeeRate(state?.poolState?.feeRate!)
             .toDecimal()
@@ -484,6 +484,7 @@ const Trade = () => {
       setLeverageValue(leverage);
     }
     (async () => {
+      if (state?.poolState) {
       // Liquidity Calc
       const tokenA = Number((await getAccount(connection, state?.poolState?.tokenVaultA!)).amount.toString());
       const tokenADecimals = (await getMint(connection, state?.poolState?.tokenMintA!)).decimals;
@@ -495,6 +496,7 @@ const Trade = () => {
       const tokenAUsdValue = tokenAUi * state?.assetPrice!;
       const totalLiquidityUsdc = tokenAUsdValue + tokenBUi;
       setLiquidityValue(totalLiquidityUsdc);
+      }
     })();
   }, [state?.assetPrice, isLongTrade]);
 
