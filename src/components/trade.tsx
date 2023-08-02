@@ -280,6 +280,7 @@ const Trade = () => {
       (async () => {
         if (marginUsed == 0.0) {
           contractValue = 0;
+          setContractInputValue("0");
         } else {
           try {
             const swapQuote = await swapQuoteByOutputToken(
@@ -358,6 +359,7 @@ const Trade = () => {
     (async () => {
       if (amountInContract == 0.0) {
         marginUsed = 0;
+        setUsdcInputValue("0");
       } else {
         try {
           const swapQuote = await swapQuoteByInputToken(
