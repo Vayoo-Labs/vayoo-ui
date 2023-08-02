@@ -279,8 +279,8 @@ function App() {
                     </div>
                   ) : (
                     <>
-                      <div className="flex mt-2 gap-5 items-start">
-                        <div className="w-full h-[560px] overflow-hidden rounded-xl">
+                      <div className="flex mt-2 gap-5 items-start min-h-[560px] h-[calc(100vh-480px)]">
+                        <div className="w-full h-full overflow-hidden rounded-xl">
                           <TVChartContainer />
                         </div>
                         <Trade />
@@ -296,7 +296,7 @@ function App() {
             </div>
           )}
         </div>
-
+        {/* Footer */}
         <div className="mt-4 w-full h-[50px] bottom-4 right-2 py-3 px-6 flex flex-col items-end">
           <div className="flex gap-4 items-center">
             <div className="text-sm text-gray-300 hover:underline-offset-4 hover:underline">

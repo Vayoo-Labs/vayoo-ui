@@ -313,8 +313,8 @@ const Trade = () => {
               setErrStr("Slippage Exceeded, try increasing tolerance");
               setTradeEnable(false);
             }
-            // Position Margin 
-            setMarginUsedValue(marginUsed)
+            // Position Margin
+            setMarginUsedValue(marginUsed);
             // Fee Value Calc
             const feeValue = PoolUtil.getFeeRate(state?.poolState?.feeRate!)
               .toDecimal()
@@ -331,7 +331,9 @@ const Trade = () => {
             contractValue = 0;
           }
         }
-        setContractInputValue((amountInNominalUsd / state?.assetPrice!).toFixed(6));
+        setContractInputValue(
+          (amountInNominalUsd / state?.assetPrice!).toFixed(6)
+        );
       })();
     }
 
@@ -475,33 +477,47 @@ const Trade = () => {
       6,
       6
     ).toNumber();
-    
+
     if (isLongTrade) {
       const leverage = state?.assetPrice! / poolPrice;
       setLeverageValue(leverage);
     } else {
-      const leverage = state?.assetPrice! / (state?.contractState?.limitingAmplitude.toNumber()! - poolPrice);
+      const leverage =
+        state?.assetPrice! /
+        (state?.contractState?.limitingAmplitude.toNumber()! - poolPrice);
       setLeverageValue(leverage);
     }
     (async () => {
       if (state?.poolState) {
-      // Liquidity Calc
-      const tokenA = Number((await getAccount(connection, state?.poolState?.tokenVaultA!)).amount.toString());
-      const tokenADecimals = (await getMint(connection, state?.poolState?.tokenMintA!)).decimals;
-      const tokenAUi = toUiAmount(tokenA, tokenADecimals);
-      const tokenB = Number((await getAccount(connection, state?.poolState?.tokenVaultB!)).amount.toString());
-      const tokenBDecimals = (await getMint(connection, state?.poolState?.tokenMintB!)).decimals;
-      const tokenBUi = toUiAmount(tokenB, tokenBDecimals);
-      // Assuming Token B = USDC
-      const tokenAUsdValue = tokenAUi * state?.assetPrice!;
-      const totalLiquidityUsdc = tokenAUsdValue + tokenBUi;
-      setLiquidityValue(totalLiquidityUsdc);
+        // Liquidity Calc
+        const tokenA = Number(
+          (
+            await getAccount(connection, state?.poolState?.tokenVaultA!)
+          ).amount.toString()
+        );
+        const tokenADecimals = (
+          await getMint(connection, state?.poolState?.tokenMintA!)
+        ).decimals;
+        const tokenAUi = toUiAmount(tokenA, tokenADecimals);
+        const tokenB = Number(
+          (
+            await getAccount(connection, state?.poolState?.tokenVaultB!)
+          ).amount.toString()
+        );
+        const tokenBDecimals = (
+          await getMint(connection, state?.poolState?.tokenMintB!)
+        ).decimals;
+        const tokenBUi = toUiAmount(tokenB, tokenBDecimals);
+        // Assuming Token B = USDC
+        const tokenAUsdValue = tokenAUi * state?.assetPrice!;
+        const totalLiquidityUsdc = tokenAUsdValue + tokenBUi;
+        setLiquidityValue(totalLiquidityUsdc);
       }
     })();
   }, [state?.assetPrice, isLongTrade]);
 
   return (
-    <div className="min-h-[560px] w-full max-w-xs py-6 text-white flex flex-col gap-3 border-2 border-gray-300/10 rounded-xl bg-black/50 z-10 relative">
+    <div className="h-full min-h-[560px] w-full max-w-xs py-6 text-white flex flex-col gap-3 border-2 border-gray-300/10 rounded-xl bg-black/50 z-10 relative">
       <button
         className={`absolute top-0 right-0 py-[6px] p-4 pr-2 pt-1 flex justify-between gap-1 items-center border-l-[0.5px] border-b-[0.5px] rounded-bl-lg rounded-tr-lg text-sm cursor-pointer disabled:cursor-not-allowed ${
           isLongTrade
@@ -598,149 +614,153 @@ const Trade = () => {
           </div>
         )
       ) : (
-        <div>
-          <div className="px-8 mt-4 flex flex-col gap-5 text-gray-200 items-center">
-            <div className="w-full flex justify-between gap-4 items-start text-xs text-gray-500">
-              <div className="py-2 w-14">USDC (Nominal)</div>
-              <div className="w-8 flex flex-1 items-center">
-                <input
-                  value={usdcInputValue}
-                  onChange={(e) => onChangeUsdcValue(e.target.value)}
-                  className="w-full py-2 text-sm px-3 text-gray-100 rounded-l-lg border-2 border-gray-100/10 border-r-0 bg-gray-100/10 focus:outline-none"
-                />
-                <div
-                  onClick={setMaxUsd}
-                  className="flex flex-col py-2 items-center w-32 text-sm text-gray-400 border-2 border-gray-100/30 rounded-r-lg hover:border-gray-200/60 hover:text-white cursor-pointer"
-                >
-                  Max
-                </div>
-              </div>
-            </div>
-            <div className="w-full flex gap-4 justify-between items-start text-xs text-gray-500">
-              <div className="w-14">No of Contracts</div>
-              <div className="w-48 flex flex-1 items-center">
-                <input
-                  value={contractInputValue}
-                  onChange={(e) => onChangeContractValue(e.target.value)}
-                  className="w-full py-2 text-sm px-3 text-gray-100 rounded-l-lg border-2 border-gray-100/10 border-r-0 bg-gray-100/10 focus:outline-none"
-                />
-                <div
-                  onClick={setMaxContract}
-                  className="flex flex-col py-2 items-center w-32 text-sm text-gray-400 border-2 border-gray-100/30 rounded-r-lg hover:border-gray-200/60 hover:text-white cursor-pointer"
-                >
-                  Max
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="mt-4 px-8 flex items-center justify-between">
-            <p className="text-xs text-gray-500">Slippage Tolerance</p>
-            <div className="flex items-center border-2 border-gray-500/40 bg-black rounded-lg overflow-hidden">
-              <input
-                value={slippageTolerance}
-                onChange={(e) => onChangeSlippageValue(e.target.value)}
-                className="w-8 py-1 text-xs font-medium text-center text-gray-200 bg-black focus:outline-none border-r border-gray-500/40"
-              />
-              <p className="px-2 text-xs text-gray-300">%</p>
-            </div>
-          </div>
-          {errStr && (
-            <p className="mt-4 px-8 py-1 text-red-500/50 text-sm">{errStr}</p>
-          )}
-          {!errStr && (
-            <div>
-              <div className="py-1 mt-3 px-6 flex flex-row w-full justify-between gap-3">
-                <div className="w-full rounded-xl">
-                  <button
-                    disabled={!tradeEnable || !state?.userState}
-                    onClick={isLongTrade ? onClickOpenLong : onClickOpenShort}
-                    className={`${
-                      isLongTrade
-                        ? "bg-lime-200/30 hover:border-lime-200/60 text-lime-200/70 hover:text-lime-200"
-                        : "bg-red-400/20 hover:border-red-400/60 text-red-400/70 hover:text-red-400"
-                    } w-full py-3 text-gray-100  rounded-lg border-2 border-white/10 text-sm disabled:border disabled:border-gray-500/40 disabled:bg-black disabled:text-gray-400 disabled:cursor-not-allowed`}
+        <div className="h-full flex flex-col justify-between">
+          <div>
+            <div className="px-8 mt-4 flex flex-col gap-5 text-gray-200 items-center">
+              <div className="w-full flex justify-between gap-4 items-start text-xs text-gray-500">
+                <div className="py-2 w-14">USDC (Nominal)</div>
+                <div className="w-8 flex flex-1 items-center">
+                  <input
+                    value={usdcInputValue}
+                    onChange={(e) => onChangeUsdcValue(e.target.value)}
+                    className="w-full py-2 text-sm px-3 text-gray-100 rounded-l-lg border-2 border-gray-100/10 border-r-0 bg-gray-100/10 focus:outline-none"
+                  />
+                  <div
+                    onClick={setMaxUsd}
+                    className="flex flex-col py-2 items-center w-32 text-sm text-gray-400 border-2 border-gray-100/30 rounded-r-lg hover:border-gray-200/60 hover:text-white cursor-pointer"
                   >
-                    {isLongTrade ? "Long" : "Short"}
-                  </button>
+                    Max
+                  </div>
                 </div>
-                {!(
-                  state?.userPosition == UserPosition.Neutral ||
-                  state?.userPosition == UserPosition.Mm
-                ) && (
-                  <div className="w-full flex flex-col justify-between items-center border-green-100/60 rounded-xl">
+              </div>
+              <div className="w-full flex gap-4 justify-between items-start text-xs text-gray-500">
+                <div className="w-14">No of Contracts</div>
+                <div className="w-48 flex flex-1 items-center">
+                  <input
+                    value={contractInputValue}
+                    onChange={(e) => onChangeContractValue(e.target.value)}
+                    className="w-full py-2 text-sm px-3 text-gray-100 rounded-l-lg border-2 border-gray-100/10 border-r-0 bg-gray-100/10 focus:outline-none"
+                  />
+                  <div
+                    onClick={setMaxContract}
+                    className="flex flex-col py-2 items-center w-32 text-sm text-gray-400 border-2 border-gray-100/30 rounded-r-lg hover:border-gray-200/60 hover:text-white cursor-pointer"
+                  >
+                    Max
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="mt-4 px-8 flex items-center justify-between">
+              <p className="text-xs text-gray-500">Slippage Tolerance</p>
+              <div className="flex items-center border-2 border-gray-500/40 bg-black rounded-lg overflow-hidden">
+                <input
+                  value={slippageTolerance}
+                  onChange={(e) => onChangeSlippageValue(e.target.value)}
+                  className="w-8 py-1 text-xs font-medium text-center text-gray-200 bg-black focus:outline-none border-r border-gray-500/40"
+                />
+                <p className="px-2 text-xs text-gray-300">%</p>
+              </div>
+            </div>
+            {errStr && (
+              <p className="mt-4 px-8 py-1 text-red-500/50 text-sm">{errStr}</p>
+            )}
+            {!errStr && (
+              <div>
+                <div className="py-1 mt-3 px-6 flex flex-row w-full justify-between gap-3">
+                  <div className="w-full rounded-xl">
                     <button
                       disabled={!tradeEnable || !state?.userState}
-                      onClick={
-                        state?.userPosition == UserPosition.Long ||
-                        state?.userPosition == UserPosition.MmAndLong
-                          ? onClickCloseLong
-                          : onClickCloseShort
-                      }
+                      onClick={isLongTrade ? onClickOpenLong : onClickOpenShort}
                       className={`${
-                        state?.userPosition == UserPosition.Long ||
-                        state?.userPosition == UserPosition.MmAndLong
-                          ? "bg-lime-200/10 hover:border-lime-200/40 text-lime-200/40 hover:text-lime-200/60"
-                          : "bg-red-400/10 hover:border-red-400/40 text-red-400/40 hover:text-red-400/60"
+                        isLongTrade
+                          ? "bg-lime-200/30 hover:border-lime-200/60 text-lime-200/70 hover:text-lime-200"
+                          : "bg-red-400/20 hover:border-red-400/60 text-red-400/70 hover:text-red-400"
                       } w-full py-3 text-gray-100  rounded-lg border-2 border-white/10 text-sm disabled:border disabled:border-gray-500/40 disabled:bg-black disabled:text-gray-400 disabled:cursor-not-allowed`}
                     >
-                      {state?.userPosition == UserPosition.Long ||
-                      state?.userPosition == UserPosition.MmAndLong
-                        ? "Close Long"
-                        : "Close Short"}
+                      {isLongTrade ? "Long" : "Short"}
                     </button>
                   </div>
-                )}
-              </div>
-            </div>
-          )}
-          {localState.marginAmount != 0 ? (
-            localState.contractAmount != 0 ? (
-              <div>
-                <div className="mt-4 px-6 w-full flex justify-between text-xs text-gray-400">
-                  Slippage:{" "}
-                  <div
-                    className={`${
-                      slippage < slippageTolerance
-                        ? "text-green-300/50"
-                        : "text-red-500/50"
-                    }`}
-                  >
-                    ~ {slippage.toFixed(2)} %
-                  </div>
-                </div>
-                <div className="mt-3 px-6 w-full flex justify-between text-xs text-gray-400">
-                  Execution Price:{" "}
-                  <div className="flex justify-between gap-1 items-center">
-                    {executionPrice.toFixed(2)}
-                  </div>
-                </div>
-                <div className="mt-3 px-6 w-full flex justify-between text-xs text-gray-400">
-                  Margin Used:{" "}
-                  <div className="flex justify-between gap-1 items-center">
-                    {marginUsedValue.toFixed(2)} $
-                  </div>
-                </div>
-                <div className="mt-3 px-6 w-full flex justify-between text-xs text-gray-400">
-                  Leverage:{" "}
-                  <div className="flex justify-between gap-1 items-center">
-                    {leverageValue.toFixed(2)} x
-                  </div>
-                </div>
-                <div className="mt-3 px-6 w-full flex justify-between text-xs text-gray-400">
-                  Fee :{" "}
-                  <div className="flex justify-between gap-1 items-center">
-                    {feeValue.toFixed(2)} $
-                  </div>
-                </div>
-                <div className="mt-3 px-6 w-full flex justify-between text-xs text-gray-400">
-                  Liquidity (USD) :{" "}
-                  <div className="flex justify-between gap-1 items-center">
-                    {liquidityValue.toFixed(2)} $
-                  </div>
+                  {!(
+                    state?.userPosition == UserPosition.Neutral ||
+                    state?.userPosition == UserPosition.Mm
+                  ) && (
+                    <div className="w-full flex flex-col justify-between items-center border-green-100/60 rounded-xl">
+                      <button
+                        disabled={!tradeEnable || !state?.userState}
+                        onClick={
+                          state?.userPosition == UserPosition.Long ||
+                          state?.userPosition == UserPosition.MmAndLong
+                            ? onClickCloseLong
+                            : onClickCloseShort
+                        }
+                        className={`${
+                          state?.userPosition == UserPosition.Long ||
+                          state?.userPosition == UserPosition.MmAndLong
+                            ? "bg-lime-200/10 hover:border-lime-200/40 text-lime-200/40 hover:text-lime-200/60"
+                            : "bg-red-400/10 hover:border-red-400/40 text-red-400/40 hover:text-red-400/60"
+                        } w-full py-3 text-gray-100  rounded-lg border-2 border-white/10 text-sm disabled:border disabled:border-gray-500/40 disabled:bg-black disabled:text-gray-400 disabled:cursor-not-allowed`}
+                      >
+                        {state?.userPosition == UserPosition.Long ||
+                        state?.userPosition == UserPosition.MmAndLong
+                          ? "Close Long"
+                          : "Close Short"}
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
-            ) : null
-          ) : null}
+            )}
+          </div>
+          <div className="pb-2">
+            {localState.marginAmount != 0 ? (
+              localState.contractAmount != 0 ? (
+                <div>
+                  <div className="mt-4 px-6 w-full flex justify-between text-xs text-gray-400">
+                    Slippage:{" "}
+                    <div
+                      className={`${
+                        slippage < slippageTolerance
+                          ? "text-green-300/50"
+                          : "text-red-500/50"
+                      }`}
+                    >
+                      ~ {slippage.toFixed(2)} %
+                    </div>
+                  </div>
+                  <div className="mt-3 px-6 w-full flex justify-between text-xs text-gray-400">
+                    Execution Price:{" "}
+                    <div className="flex justify-between gap-1 items-center">
+                      {executionPrice.toFixed(2)}
+                    </div>
+                  </div>
+                  <div className="mt-3 px-6 w-full flex justify-between text-xs text-gray-400">
+                    Margin Used:{" "}
+                    <div className="flex justify-between gap-1 items-center">
+                      {marginUsedValue.toFixed(2)} $
+                    </div>
+                  </div>
+                  <div className="mt-3 px-6 w-full flex justify-between text-xs text-gray-400">
+                    Leverage:{" "}
+                    <div className="flex justify-between gap-1 items-center">
+                      {leverageValue.toFixed(2)} x
+                    </div>
+                  </div>
+                  <div className="mt-3 px-6 w-full flex justify-between text-xs text-gray-400">
+                    Fee :{" "}
+                    <div className="flex justify-between gap-1 items-center">
+                      {feeValue.toFixed(2)} $
+                    </div>
+                  </div>
+                  <div className="mt-3 px-6 w-full flex justify-between text-xs text-gray-400">
+                    Liquidity (USD) :{" "}
+                    <div className="flex justify-between gap-1 items-center">
+                      {liquidityValue.toFixed(2)} $
+                    </div>
+                  </div>
+                </div>
+              ) : null
+            ) : null}{" "}
+          </div>
         </div>
       )}
     </div>
