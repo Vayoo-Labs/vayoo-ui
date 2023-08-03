@@ -179,16 +179,4 @@ const DepositWithdrawModal = () => {
   );
 };
 
-const Item = tw.div`
-  px-4 py-2 text-sm text-slate-300 hover:text-lime-200 cursor-pointer
-`;
-
 export default DepositWithdrawModal;
-function subscribeTx(
-  txHash: string,
-  arg1: () => string,
-  arg2: () => string,
-  arg3: () => string
-) {
-  throw new Error("Function not implemented.");
-}
