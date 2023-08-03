@@ -323,6 +323,9 @@ const Trade = () => {
               .div(DecimalUtil.fromNumber(leverageValue))
               .toNumber();
             setFeeValue(feeValue);
+            setContractInputValue(
+              (amountInNominalUsd / state?.assetPrice!).toFixed(6)
+            );
           } catch (e) {
             console.log(e);
             setErrStr(
@@ -330,11 +333,9 @@ const Trade = () => {
             );
             setTradeEnable(false);
             contractValue = 0;
+            setContractInputValue("0");
           }
         }
-        setContractInputValue(
-          (amountInNominalUsd / state?.assetPrice!).toFixed(6)
-        );
       })();
     }
 
@@ -408,6 +409,7 @@ const Trade = () => {
           );
           setTradeEnable(false);
           marginUsed = 0;
+          setUsdcInputValue("0");
         }
       }
     })();
