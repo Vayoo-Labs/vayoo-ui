@@ -116,7 +116,7 @@ export const TVChartContainer = () => {
   return (
     <div
       id={defaultProps.containerId as string}
-      className={"TVChartContainer relative z-10"}
+      className={"TVChartContainer relative z-[2]"}
     />
   );
 };

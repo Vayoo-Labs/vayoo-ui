@@ -198,7 +198,7 @@ function App() {
             <div className="flex justify-around gap-2 items-center">
               {!loading && (
                 <div className="flex gap-3 items-center">
-                  <div className="z-50">
+                  <div className="z-[3]">
                     <ContractDropDownSelectorComponent />
                   </div>
                   {connected && localState.isAdmin && (
@@ -279,7 +279,7 @@ function App() {
                     </div>
                   ) : (
                     <>
-                      <div className="flex mt-2 gap-5 items-start min-h-[560px] h-[calc(100vh-480px)]">
+                      <div className="flex mt-2 gap-5 items-start min-h-[570px] h-[calc(100vh-480px)]">
                         <div className="w-full h-full overflow-hidden rounded-xl">
                           <TVChartContainer />
                         </div>
@@ -328,8 +328,8 @@ function App() {
             </div>
           </div>
         </div>
-        <div className="absolute z-[0] w-[55%] h-[50%] -left-[10%] top-60 gray__gradient"></div>
-        <div className="absolute z-[0] w-[50%] h-[70%] -right-[45%] bottom-20 gray__gradient"></div>
+        <div className="absolute z-[1] w-[55%] h-[50%] -left-[10%] top-60 gray__gradient"></div>
+        <div className="absolute z-[1] w-[50%] h-[70%] -right-[45%] bottom-20 gray__gradient"></div>
         <Toaster
           position="bottom-left"
           reverseOrder={false}
