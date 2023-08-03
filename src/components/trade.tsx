@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { AiOutlineSwap } from "react-icons/ai";
 import { MdSwapVert } from "react-icons/md";
 import {
@@ -21,6 +21,7 @@ import {
   USDC_MINT,
   USER_TRADE_CAP_USD,
   VAYOO_BACKEND_ENDPOINT,
+  slippageWarningThreshold,
 } from "../utils/constants";
 import {
   ORCA_WHIRLPOOL_PROGRAM_ID,
@@ -36,6 +37,7 @@ import { fetchAxiosWithRetry } from "../utils/web3-utils";
 import { getAccount, getMint } from "@solana/spl-token-v2";
 import { getTokenBalance } from "../utils/whirlpoolUtils/utils/token";
 import { toUiAmount } from "../utils";
+import { IoMdClose } from "react-icons/io";
 
 const Trade = () => {
   const { state, toggleRefresh, loading } = useVMState();
@@ -64,6 +66,35 @@ const Trade = () => {
   const [marginUsedValue, setMarginUsedValue] = useState(0);
   const [leverageValue, setLeverageValue] = useState(0);
   const [isLongTrade, setIsLongTrade] = useState(true);
+
+  // Slippage Pop Up
+  const [isSlippagePopupOpen, setIsSlippagePopupOpen] = useState(false);
+  const slippagePopupModalRef = useRef<HTMLDivElement>(null);
+  const [confirmTradeHandler, setConfirmTradeHandler] = useState<any>(
+    () => () => onClickOpenLong({ slippageCheck: false })
+  );
+  const tradeButtonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    // handle auto closing of dropdown, if clicked outside the componenet
+    function handleClickOutside(event: any) {
+      if (
+        isSlippagePopupOpen &&
+        slippagePopupModalRef.current &&
+        !slippagePopupModalRef.current.contains(event.target)
+      ) {
+        setIsSlippagePopupOpen(false);
+      } 
+    }
+
+    // Bind the event listener
+    document.addEventListener("click", handleClickOutside);
+
+    // Unbind the event listener on cleanup
+    return () => {
+      document.removeEventListener("click", handleClickOutside);
+    };
+  }, [isSlippagePopupOpen, slippagePopupModalRef, tradeButtonRef.current]);
 
   // const [priceData, setPriceData] = useState<any>([]);
   // const [yAxisMin, setYAxisMin] = useState(0);
@@ -116,132 +147,164 @@ const Trade = () => {
     }
   }, [state?.userPosition]);
 
-  const onClickOpenLong = async () => {
-    await openLong(
-      state,
-      localState.lastAmount,
-      localState.isAmountInUsdc,
-      Number(slippageTolerance),
-      wallet
-    )
-      .then((txHash: string) => {
-        subscribeTx(
-          txHash,
-          () => toast("Open Long Transaction Sent"),
-          () => toast.success("Open Long Transaction Confirmed."),
-          () => toast.error("Open Long Transaction Failed")
-        );
-      })
-      .catch((e) => {
-        console.log(e);
-        toast.error("Transaction Error!");
-      })
-      .finally(() => {
-        setUsdcInputValue("0");
-        setContractInputValue("0");
-        setLocalState((prev) => ({
-          ...prev,
-          marginAmount: 0,
-          contractAmount: 0,
-        }));
-        toggleRefresh();
-      });
+  const onClickOpenLong = async ({ slippageCheck = true }: any) => {
+    if (slippageCheck && slippage > slippageWarningThreshold) {
+      setConfirmTradeHandler(
+        () => () => onClickOpenLong({ slippageCheck: false })
+      );
+      setTimeout(() => setIsSlippagePopupOpen(true), 50);
+    } else {
+      setTimeout(() => setIsSlippagePopupOpen(false), 500);
+      await openLong(
+        state,
+        localState.lastAmount,
+        localState.isAmountInUsdc,
+        Number(slippageTolerance),
+        wallet
+      )
+        .then((txHash: string) => {
+          subscribeTx(
+            txHash,
+            () => toast("Open Long Transaction Sent"),
+            () => toast.success("Open Long Transaction Confirmed."),
+            () => toast.error("Open Long Transaction Failed")
+          );
+        })
+        .catch((e) => {
+          console.log(e);
+          toast.error("Transaction Error!");
+        })
+        .finally(() => {
+          setUsdcInputValue("0");
+          setContractInputValue("0");
+          setLocalState((prev) => ({
+            ...prev,
+            marginAmount: 0,
+            contractAmount: 0,
+          }));
+          toggleRefresh();
+        });
+    }
   };
 
-  const onClickCloseLong = async () => {
-    await closeLong(
-      state,
-      localState.lastAmount,
-      localState.isAmountInUsdc,
-      Number(slippageTolerance),
-      wallet
-    )
-      .then((txHash: string) => {
-        subscribeTx(
-          txHash,
-          () => toast("Close Long Transaction Sent"),
-          () => toast.success("Close Long Transaction Confirmed."),
-          () => toast.error("Close Long Transaction Failed")
-        );
-      })
-      .catch((e) => {
-        console.log(e);
-        toast.error("Transaction Error!");
-      })
-      .finally(() => {
-        setUsdcInputValue("0");
-        setContractInputValue("0");
-        setLocalState((prev) => ({
-          ...prev,
-          marginAmount: 0,
-          contractAmount: 0,
-        }));
-        toggleRefresh();
-      });
+  const onClickCloseLong = async ({ slippageCheck = true }: any) => {
+    if (slippageCheck && slippage > slippageWarningThreshold) {
+      setConfirmTradeHandler(
+        () => () => onClickCloseLong({ slippageCheck: false })
+      );
+      setTimeout(() => setIsSlippagePopupOpen(true), 50);
+    } else if (!slippageCheck) {
+      setTimeout(() => setIsSlippagePopupOpen(false), 500);
+      await closeLong(
+        state,
+        localState.lastAmount,
+        localState.isAmountInUsdc,
+        Number(slippageTolerance),
+        wallet
+      )
+        .then((txHash: string) => {
+          subscribeTx(
+            txHash,
+            () => toast("Close Long Transaction Sent"),
+            () => toast.success("Close Long Transaction Confirmed."),
+            () => toast.error("Close Long Transaction Failed")
+          );
+        })
+        .catch((e) => {
+          console.log(e);
+          toast.error("Transaction Error!");
+        })
+        .finally(() => {
+          setUsdcInputValue("0");
+          setContractInputValue("0");
+          setLocalState((prev) => ({
+            ...prev,
+            marginAmount: 0,
+            contractAmount: 0,
+          }));
+          toggleRefresh();
+        });
+    }
   };
 
-  const onClickOpenShort = async () => {
-    await openShort(
-      state,
-      localState.lastAmount,
-      localState.isAmountInUsdc,
-      Number(slippageTolerance),
-      wallet
-    )
-      .then((txHash: string) => {
-        subscribeTx(
-          txHash,
-          () => toast("Open Short Transaction Sent"),
-          () => toast.success("Open Short Transaction Confirmed."),
-          () => toast.error("Open Short Transaction Failed")
-        );
-      })
-      .catch((e) => {
-        console.log(e);
-        toast.error("Transaction Error!");
-      })
-      .finally(() => {
-        setUsdcInputValue("0");
-        setContractInputValue("0");
-        setLocalState((prev) => ({
-          ...prev,
-          marginAmount: 0,
-          contractAmount: 0,
-        }));
-        toggleRefresh();
-      });
+  const onClickOpenShort = async ({ slippageCheck = true }: any) => {
+    if (slippageCheck && slippage > slippageWarningThreshold) {
+      setConfirmTradeHandler(
+        () => () => onClickOpenShort({ slippageCheck: false })
+      );
+      setTimeout(() => setIsSlippagePopupOpen(true), 50);
+    } else if (!slippageCheck) {
+      setTimeout(() => setIsSlippagePopupOpen(false), 500);
+      await openShort(
+        state,
+        localState.lastAmount,
+        localState.isAmountInUsdc,
+        Number(slippageTolerance),
+        wallet
+      )
+        .then((txHash: string) => {
+          subscribeTx(
+            txHash,
+            () => toast("Open Short Transaction Sent"),
+            () => toast.success("Open Short Transaction Confirmed."),
+            () => toast.error("Open Short Transaction Failed")
+          );
+        })
+        .catch((e) => {
+          console.log(e);
+          toast.error("Transaction Error!");
+        })
+        .finally(() => {
+          setUsdcInputValue("0");
+          setContractInputValue("0");
+          setLocalState((prev) => ({
+            ...prev,
+            marginAmount: 0,
+            contractAmount: 0,
+          }));
+          toggleRefresh();
+        });
+    }
   };
 
-  const onClickCloseShort = async () => {
-    await closeShort(
-      state,
-      localState.lastAmount,
-      localState.isAmountInUsdc,
-      Number(slippageTolerance),
-      wallet
-    )
-      .then((txHash: string) => {
-        subscribeTx(
-          txHash,
-          () => toast("Close Short Transaction Sent"),
-          () => toast.success("Close Short Transaction Confirmed."),
-          () => toast.error("Close Short Transaction Failed")
-        );
-      })
-      .catch((e) => {
-        console.log(e);
-        toast.error("Transaction Error!");
-      })
-      .finally(() => {
-        setUsdcInputValue("0");
-        setContractInputValue("0");
-        setLocalState((prev) => ({
-          ...prev,
-          marginAmount: 0,
-          contractAmount: 0,
-        }));
-        toggleRefresh();
-      });
+  const onClickCloseShort = async ({ slippageCheck = true }: any) => {
+    if (slippageCheck && slippage > slippageWarningThreshold) {
+      setConfirmTradeHandler(
+        () => () => onClickCloseShort({ slippageCheck: false })
+      );
+      setTimeout(() => setIsSlippagePopupOpen(true), 50);
+    } else if (!slippageCheck) {
+      setTimeout(() => setIsSlippagePopupOpen(false), 500);
+      await closeShort(
+        state,
+        localState.lastAmount,
+        localState.isAmountInUsdc,
+        Number(slippageTolerance),
+        wallet
+      )
+        .then((txHash: string) => {
+          subscribeTx(
+            txHash,
+            () => toast("Close Short Transaction Sent"),
+            () => toast.success("Close Short Transaction Confirmed."),
+            () => toast.error("Close Short Transaction Failed")
+          );
+        })
+        .catch((e) => {
+          console.log(e);
+          toast.error("Transaction Error!");
+        })
+        .finally(() => {
+          setUsdcInputValue("0");
+          setContractInputValue("0");
+          setLocalState((prev) => ({
+            ...prev,
+            marginAmount: 0,
+            contractAmount: 0,
+          }));
+          toggleRefresh();
+        });
+    }
   };
 
   const onClickUserSettle = async () => {
@@ -521,7 +584,7 @@ const Trade = () => {
   }, [state?.assetPrice, isLongTrade]);
 
   return (
-    <div className="h-full min-h-[560px] w-full max-w-xs py-6 text-white flex flex-col gap-3 border-2 border-gray-300/10 rounded-xl bg-black/50 z-10 relative">
+    <div className="h-full min-h-[570px] w-full max-w-xs py-6 text-white flex flex-col gap-3 border-2 border-gray-300/10 rounded-xl bg-black/50 z-[3] relative">
       <button
         className={`absolute top-0 right-0 py-[6px] p-4 pr-2 pt-1 flex justify-between gap-1 items-center border-l-[0.5px] border-b-[0.5px] rounded-bl-lg rounded-tr-lg text-sm cursor-pointer disabled:cursor-not-allowed ${
           isLongTrade
@@ -675,6 +738,7 @@ const Trade = () => {
                     <button
                       disabled={!tradeEnable || !state?.userState}
                       onClick={isLongTrade ? onClickOpenLong : onClickOpenShort}
+                      ref={tradeButtonRef}
                       className={`${
                         isLongTrade
                           ? "bg-lime-200/30 hover:border-lime-200/60 text-lime-200/70 hover:text-lime-200"
@@ -697,6 +761,7 @@ const Trade = () => {
                             ? onClickCloseLong
                             : onClickCloseShort
                         }
+                        ref={tradeButtonRef}
                         className={`${
                           state?.userPosition == UserPosition.Long ||
                           state?.userPosition == UserPosition.MmAndLong
@@ -765,6 +830,55 @@ const Trade = () => {
               ) : null
             ) : null}{" "}
           </div>
+          {isSlippagePopupOpen && (
+            <div className={`fixed inset-0 bg-black bg-opacity-60 z-[4]`}></div>
+          )}
+          {isSlippagePopupOpen && (
+            <div className="fixed inset-0 z-[4] w-screen h-screen">
+              <div className="mt-[250px] w-screen h-screen flex flex-col items-center">
+                <div
+                  className="relative w-full max-w-md px-6 py-6 text-white flex flex-col gap-3 border-2 border-gray-300/40 rounded-xl bg-black z-50"
+                  ref={slippagePopupModalRef}
+                >
+                  <div className="flex justify-between">
+                    <div className="text-lg text-lime-200/90">
+                      Confirm Trade
+                    </div>
+                    <IoMdClose
+                      size={24}
+                      className="cursor-pointer top-5 right-5 hover:opacity-75 text-white"
+                      onClick={() => {
+                        setIsSlippagePopupOpen(false);
+                      }}
+                    />
+                  </div>
+                  <div className="mt-4 flex flex-col gap-3 text-sm items-center">
+                    <div className="w-full px-6 flex justify-between text-gray-300/80 text-md">
+                      Expected Slippage for this trade is:{" "}
+                      <span className="pl-1 text-red-500/70">
+                        {" "}
+                        {slippage.toFixed(2)} %{" "}
+                      </span>
+                    </div>
+                    <div className="px-6 w-full flex justify-between text-md text-gray-300/80">
+                      Execution Price:{" "}
+                      <div className="flex justify-between gap-1 items-center">
+                        {executionPrice.toFixed(2)}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-4 mb-1 flex flex-row w-full justify-between gap-5 text-md">
+                    <button
+                      onClick={() => confirmTradeHandler()}
+                      className="w-full px-4 py-3 border-2 text-gray-300 border-gray-100/20 rounded-xl hover:border hover:border-white/80"
+                    >
+                      Confirm
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
