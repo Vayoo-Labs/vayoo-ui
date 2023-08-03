@@ -1,5 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
-import { AiOutlineSwap } from "react-icons/ai";
+import { useEffect, useRef, useState } from "react";
 import { MdSwapVert } from "react-icons/md";
 import {
   useOracleState,
@@ -20,7 +19,6 @@ import { UserPosition } from "../utils/types";
 import {
   USDC_MINT,
   USER_TRADE_CAP_USD,
-  VAYOO_BACKEND_ENDPOINT,
   slippageWarningThreshold,
 } from "../utils/constants";
 import {
@@ -32,10 +30,7 @@ import {
 } from "@orca-so/whirlpools-sdk";
 import { DecimalUtil, Percentage } from "@orca-so/common-sdk";
 import { BN } from "@project-serum/anchor";
-import { Line, LineChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
-import { fetchAxiosWithRetry } from "../utils/web3-utils";
 import { getAccount, getMint } from "@solana/spl-token-v2";
-import { getTokenBalance } from "../utils/whirlpoolUtils/utils/token";
 import { toUiAmount } from "../utils";
 import { IoMdClose } from "react-icons/io";
 
@@ -95,46 +90,6 @@ const Trade = () => {
       document.removeEventListener("click", handleClickOutside);
     };
   }, [isSlippagePopupOpen, slippagePopupModalRef, tradeButtonRef.current]);
-
-  // const [priceData, setPriceData] = useState<any>([]);
-  // const [yAxisMin, setYAxisMin] = useState(0);
-  // const [yAxisMax, setYAxisMax] = useState(0);
-  // const [chartStartTime, setChartStartTime] = useState(0);
-
-  //  useEffect(() => {
-  //   const interval = setInterval(
-  //     () =>
-  //       (async () => {
-  //         let priceMax = 0;
-  //         let priceMin = 0;
-  //         let priceFeedData: any[] = (
-  //           await fetchAxiosWithRetry(
-  //             `${VAYOO_BACKEND_ENDPOINT}/priceFeed/${selectedContract?.name.replace(
-  //               "/",
-  //               "-"
-  //             )}`
-  //           )
-  //         ).data;
-  //         let localPriceFeedData = priceFeedData.map((pricePoint: any) => {
-  //           priceMax = Math.max(
-  //             pricePoint.assetPrice,
-  //             pricePoint.oraclePrice,
-  //             priceMax
-  //           );
-  //           priceMin = Math.min(pricePoint.assetPrice, pricePoint.oraclePrice);
-  //           return pricePoint;
-  //         });
-  //         setPriceData(localPriceFeedData);
-  //         setChartStartTime(localPriceFeedData.at(-1)?.timestamp - 900); // last 15 mins
-  //         setYAxisMax(priceMax + 0.005 * priceMax);
-  //         setYAxisMin(priceMin - 0.005 * priceMax);
-  //       })(),
-  //     1000
-  //   );
-  //   return () => {
-  //     clearInterval(interval);
-  //   };
-  // }, [selectedContract]);
 
   useEffect(() => {
     if (
