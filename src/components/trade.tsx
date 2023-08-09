@@ -148,7 +148,7 @@ const Trade = () => {
         () => () => onClickCloseLong({ slippageCheck: false })
       );
       setTimeout(() => setIsSlippagePopupOpen(true), 50);
-    } else if (!slippageCheck) {
+    } else  {
       setTimeout(() => setIsSlippagePopupOpen(false), 500);
       await closeLong(
         state,
@@ -188,7 +188,7 @@ const Trade = () => {
         () => () => onClickOpenShort({ slippageCheck: false })
       );
       setTimeout(() => setIsSlippagePopupOpen(true), 50);
-    } else if (!slippageCheck) {
+    } else {
       setTimeout(() => setIsSlippagePopupOpen(false), 500);
       await openShort(
         state,
@@ -228,7 +228,7 @@ const Trade = () => {
         () => () => onClickCloseShort({ slippageCheck: false })
       );
       setTimeout(() => setIsSlippagePopupOpen(true), 50);
-    } else if (!slippageCheck) {
+    } else {
       setTimeout(() => setIsSlippagePopupOpen(false), 500);
       await closeShort(
         state,
