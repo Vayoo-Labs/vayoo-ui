@@ -6,8 +6,12 @@ import {
   IChartingLibraryWidget,
 } from "../../utils/charting_library";
 import { flatten } from "../../utils/tvUtils/utils";
-import { useSelectedContract } from "../../contexts/StateProvider";
-import { VAYOO_BACKEND_ENDPOINT } from "../../utils/constants";
+import { useSelectedContract, useVMState } from "../../contexts/StateProvider";
+import {
+  VAYOO_BACKEND_ENDPOINT,
+  decimalPrecisionForLargePricedAssets,
+  decimalPrecisionForSmallPricedAssets,
+} from "../../utils/constants";
 
 export interface ChartContainerProps {
   symbol: ChartingLibraryWidgetOptions["symbol"];
@@ -51,6 +55,12 @@ export const TVChartContainer = () => {
     datafeedUrl: VAYOO_BACKEND_ENDPOINT + "/tv",
     studiesOverrides: {},
   };
+
+  const { state } = useVMState();
+  const precision =
+    state?.assetPrice! > 1
+      ? Math.pow(10, decimalPrecisionForLargePricedAssets)
+      : Math.pow(10, decimalPrecisionForSmallPricedAssets);
 
   const chartProperties = JSON.parse(
     localStorage.getItem("chartproperties") || "{}"
@@ -106,7 +116,8 @@ export const TVChartContainer = () => {
         "mainSeriesProperties.candleStyle.wickDownColor": "#f23645",
         "paneProperties.backgroundType": "gradient",
         "paneProperties.backgroundGradientStartColor": "#131722",
-        "paneProperties.backgroundGradientEndColor": "#000000"
+        "paneProperties.backgroundGradientEndColor": "#000000",
+        "mainSeriesProperties.minTick": `${precision},1,false`,
       },
     };
 

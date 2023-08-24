@@ -19,3 +19,5 @@ export const DUMMY_PYTH_KEY = "Gnt27xtC473ZT2Mw5u8wZ68Z3gULkSTb5DuxJy7eJotD";
 export const DUMMY_SWITCHBOARD_KEY = "ETAaeeuQBwsh9mC2gCov9WdhJENZuffRMXY2HgjCcSL9";
 
 export const slippageWarningThreshold = 0.3;
+export const decimalPrecisionForLargePricedAssets = 2;
+export const decimalPrecisionForSmallPricedAssets = 6;

@@ -169,7 +169,7 @@ export function VMStateProvider({ children = undefined as any }) {
       pythFeed: DUMMY_PYTH_KEY,
       switchboardFeed: DUMMY_SWITCHBOARD_KEY,
     };
-
+    let assetPrice: number;
     const whirlpool = await whirlpoolClient.getPool(
       selectedContract?.whirlpoolKey!,
       true
@@ -195,11 +195,6 @@ export function VMStateProvider({ children = undefined as any }) {
       6,
       6
     );
-    const assetPrice =
-      poolPrice.toNumber() +
-      contractState?.startingPrice.toNumber()! /
-        selectedContract?.oracleExponent! -
-      contractState?.limitingAmplitude.toNumber()! / 2;
 
     if (wallet.connected && wallet.publicKey) {
       const userStateKey = getUserStatePDA(
@@ -242,12 +237,24 @@ export function VMStateProvider({ children = undefined as any }) {
         userStateKey
       );
 
-      if (contractState?.feedType == OracleFeedType.Pyth) {
+      if (contractState?.oracleFeedType == OracleFeedType.Pyth) {
+        assetPrice =
+          poolPrice.toNumber() +
+          contractState?.startingPrice.toNumber()! /
+            selectedContract?.oracleExponent! -
+          contractState?.limitingAmplitude.toNumber()! / 2;
         accounts = {
           ...accounts,
           pythFeed: selectedContract?.oracleFeed,
         };
-      } else if (contractState?.feedType == OracleFeedType.Switchboard) {
+      } else if (contractState?.oracleFeedType == OracleFeedType.Switchboard) {
+        assetPrice =
+          poolPrice.toNumber() +
+          contractState?.startingPrice.toNumber()! /
+            selectedContract?.oracleExponent! -
+          contractState?.limitingAmplitude.toNumber()! /
+            2 /
+            selectedContract?.oracleExponent!;
         accounts = {
           ...accounts,
           switchboardFeed: selectedContract?.oracleFeed,
@@ -272,7 +279,7 @@ export function VMStateProvider({ children = undefined as any }) {
           userPosition = UserPosition.Neutral;
         }
       }
-    
+
       accounts = {
         ...accounts,
         lcontractMint,
@@ -312,22 +319,20 @@ export function VMStateProvider({ children = undefined as any }) {
       }));
 
       return;
+    } else {
+      setState({
+        vayooProgram: program,
+        accounts: null,
+        contractState: contractState,
+        globalState: null,
+        userState: null,
+        userPosition: UserPosition.Neutral,
+        poolState: whirlpoolState,
+        assetPrice: assetPrice!,
+        whirlpool: null,
+        orcaFetcher,
+      });
     }
-    else {
-    setState({
-      vayooProgram: program,
-      accounts: null,
-      contractState: contractState,
-      globalState: null,
-      userState: null,
-      userPosition: UserPosition.Neutral,
-      poolState: whirlpoolState,
-      assetPrice: assetPrice,
-      whirlpool: null,
-      orcaFetcher,
-    });
-  }
-
   };
 
   // const updateMiniState = async () => {
@@ -407,67 +412,67 @@ export function VMStateProvider({ children = undefined as any }) {
             }
           });
         }
-          if (selectedContract?.oracleFeedType == OracleFeedType.Pyth) {
-            // Pyth Feed Initial Fetching
-            (async () => {
-              const pythAccount = (
-                await connection.getAccountInfo(selectedContract?.oracleFeed!)
-              )?.data!;
-              const parsedPythData = parsePriceData(pythAccount);
+        if (selectedContract?.oracleFeedType == OracleFeedType.Pyth) {
+          // Pyth Feed Initial Fetching
+          (async () => {
+            const pythAccount = (
+              await connection.getAccountInfo(selectedContract?.oracleFeed!)
+            )?.data!;
+            const parsedPythData = parsePriceData(pythAccount);
+            setOracleState({
+              price: parsedPythData.price!,
+              previousPrice: parsedPythData.previousPrice,
+            });
+          })();
+          // Add listener on pyth account for refreshes
+          controller = connection.onAccountChange(
+            selectedContract?.oracleFeed!,
+            (account) => {
+              const parsedPythData = parsePriceData(account.data);
               setOracleState({
                 price: parsedPythData.price!,
                 previousPrice: parsedPythData.previousPrice,
               });
-            })();
-            // Add listener on pyth account for refreshes
+            }
+          );
+        } else if (
+          selectedContract?.oracleFeedType == OracleFeedType.Switchboard
+        ) {
+          // Switchboard Feed Initial Fetching
+          (async () => {
+            const aggregatorAccount = new AggregatorAccount(
+              switchboardProgram!,
+              selectedContract?.oracleFeed
+            );
+            const result = (
+              await aggregatorAccount.fetchLatestValue()
+            )?.toNumber()!;
+            setOracleState({
+              price: result,
+              previousPrice: result,
+            });
+            // Add listener on switchboard account for refreshes
             controller = connection.onAccountChange(
               selectedContract?.oracleFeed!,
-              (account) => {
-                const parsedPythData = parsePriceData(account.data);
-                setOracleState({
-                  price: parsedPythData.price!,
-                  previousPrice: parsedPythData.previousPrice,
-                });
+              () => {
+                (async (account) => {
+                  const aggregatorAccount = new AggregatorAccount(
+                    switchboardProgram!,
+                    selectedContract?.oracleFeed
+                  );
+                  const result = (
+                    await aggregatorAccount.fetchLatestValue()
+                  )?.toNumber()!;
+                  setOracleState({
+                    price: result,
+                    previousPrice: result,
+                  });
+                })();
               }
             );
-          } else if (
-            selectedContract?.oracleFeedType == OracleFeedType.Switchboard
-          ) {
-            // Switchboard Feed Initial Fetching
-            (async () => {
-              const aggregatorAccount = new AggregatorAccount(
-                switchboardProgram!,
-                selectedContract?.oracleFeed
-              );
-              const result = (
-                await aggregatorAccount.fetchLatestValue()
-              )?.toNumber()!;
-              setOracleState({
-                price: result,
-                previousPrice: result,
-              });
-              // Add listener on switchboard account for refreshes
-              controller = connection.onAccountChange(
-                selectedContract?.oracleFeed!,
-                () => {
-                  (async (account) => {
-                    const aggregatorAccount = new AggregatorAccount(
-                      switchboardProgram!,
-                      selectedContract?.oracleFeed
-                    );
-                    const result = (
-                      await aggregatorAccount.fetchLatestValue()
-                    )?.toNumber()!;
-                    setOracleState({
-                      price: result,
-                      previousPrice: result,
-                    });
-                  })();
-                }
-              );
-            })();
-          }
+          })();
         }
+      }
       return () => {
         if (
           selectedContract?.oracleFeedType == OracleFeedType.Pyth &&
