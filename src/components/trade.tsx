@@ -607,8 +607,8 @@ const Trade = () => {
         <div className="flex justify-between gap-4 items-start">
           <div className="flex flex-col items-center">
             <div className="text-gray-300 text-md">
-              {(state?.assetPrice! > 1 ? oracleState?.price?.toFixed(decimalPrecisionForLargePricedAssets) : oracleState?.price.toFixed(decimalPrecisionForSmallPricedAssets)) ??
-                (state?.assetPrice! > 1 ? oracleState?.previousPrice.toFixed(decimalPrecisionForLargePricedAssets) : oracleState?.previousPrice.toFixed(decimalPrecisionForSmallPricedAssets)) ??
+              {(state?.assetPrice! > 1 ? oracleState?.price?.toFixed(decimalPrecisionForLargePricedAssets) : oracleState?.price?.toFixed(decimalPrecisionForSmallPricedAssets)) ??
+                (state?.assetPrice! > 1 ? oracleState?.previousPrice?.toFixed(decimalPrecisionForLargePricedAssets) : oracleState?.previousPrice.toFixed(decimalPrecisionForSmallPricedAssets)) ??
                 "NIL"}
             </div>
             <div className="text-gray-500 text-xs underline-offset-4">
@@ -617,7 +617,7 @@ const Trade = () => {
           </div>
           |
           <div className="text-lime-200 text-2xl">
-            {state?.assetPrice! > 1 ? (state?.assetPrice.toFixed(decimalPrecisionForLargePricedAssets)) : (state?.assetPrice.toFixed
+            {state?.assetPrice! > 1 ? (state?.assetPrice?.toFixed(decimalPrecisionForLargePricedAssets)) : (state?.assetPrice?.toFixed
               (decimalPrecisionForSmallPricedAssets))}
           </div>
         </div>
