@@ -757,7 +757,7 @@ const Trade = () => {
                   <div className="mt-3 px-6 w-full flex justify-between text-xs text-gray-400">
                     Execution Price:{" "}
                     <div className="flex justify-between gap-1 items-center">
-                      {executionPrice.toFixed(2)}
+                    {executionPrice > 1 ? executionPrice.toFixed(decimalPrecisionForLargePricedAssets) : executionPrice.toFixed(decimalPrecisionForSmallPricedAssets)}
                     </div>
                   </div>
                   <div className="mt-3 px-6 w-full flex justify-between text-xs text-gray-400">
@@ -821,7 +821,7 @@ const Trade = () => {
                     <div className="px-6 w-full flex justify-between text-md text-gray-300/80">
                       Execution Price:{" "}
                       <div className="flex justify-between gap-1 items-center">
-                        {executionPrice.toFixed(2)}
+                        {executionPrice > 1 ? executionPrice.toFixed(decimalPrecisionForLargePricedAssets) : executionPrice.toFixed(decimalPrecisionForSmallPricedAssets)}
                       </div>
                     </div>
                   </div>
