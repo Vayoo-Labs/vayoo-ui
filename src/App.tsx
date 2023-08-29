@@ -6,6 +6,8 @@ import {
   ADMIN_KEYS,
   USDC_MINT,
   VAYOO_BACKEND_ENDPOINT,
+  decimalPrecisionForLargePricedAssets,
+  decimalPrecisionForSmallPricedAssets,
 } from "./utils/constants";
 import {
   useSelectedContract,
@@ -73,7 +75,7 @@ function App() {
             }/${wallet.publicKey.toString()}`
           )
         ).data!;
-        if (!rank.err)  {
+        if (!rank.err) {
           setLocalState((prev) => ({
             ...prev,
             userExist,
@@ -106,9 +108,17 @@ function App() {
 
   useEffect(() => {
     if (state?.assetPrice) {
-      document.title = `${state?.assetPrice.toFixed(2)} ${
-        selectedContract?.extraInfo.short_name
-      } - Vayoo Markets`;
+      document.title = `${
+        state.assetPrice > 1
+          ? Number(
+              state?.assetPrice.toFixed(decimalPrecisionForLargePricedAssets)
+            )
+          : Number(
+              state.assetPrice.toFixed(
+                Math.min(decimalPrecisionForSmallPricedAssets, 4)
+              )
+            )
+      } ${selectedContract?.extraInfo.short_name} - Vayoo Markets`;
     }
   }, [state?.assetPrice]);
 
@@ -175,16 +185,16 @@ function App() {
                   <p className="text-lime-200 text-2xl italic">.</p>
                 </div>
               </a>
-              {wallet.connected && localState.rank && 
-              <div
-                className="cursor-pointer underline underline-offset-4 decoration-gray-400 hover:decoration-gray-300"
-                onClick={() => toggleLeaderboardMode()}
-              >
-                <p className="text-gray-400 hover:text-gray-300 text-sm">
-                  {!localState.leaderboardMode ? "Leaderboards" : "Trade"}
-                </p>
-              </div>
-              }
+              {wallet.connected && localState.rank && (
+                <div
+                  className="cursor-pointer underline underline-offset-4 decoration-gray-400 hover:decoration-gray-300"
+                  onClick={() => toggleLeaderboardMode()}
+                >
+                  <p className="text-gray-400 hover:text-gray-300 text-sm">
+                    {!localState.leaderboardMode ? "Leaderboards" : "Trade"}
+                  </p>
+                </div>
+              )}
               {localState.rank && (
                 <div
                   className="cursor-pointer border-2 rounded-xl px-3 py-1 border-lime-200/50 hover:border-gray-200/60 text-gray-200 hover:text-white glow_green"
@@ -238,14 +248,16 @@ function App() {
                         </div>
                       </div>
                     </div>
-                  ) :
-                  connected && !localState.userExist && (
-                    <div
-                      className="bg-gradient-to-r from-gray-400/20 via-gray-50/5 to-gray-400/20 hover:from-gray-400/20 hover:via-gray-50/5 hover:to-gray-400/30 text-sm border-2 text-slate-300 border-gray-400/50 rounded-xl px-4 py-2 hover:border-2 hover:border-gray-400/70 cursor-pointer overflow-hidden"
-                      onClick={onClickInitUserState}
-                    >
-                      Create Vayoo Account
-                    </div>
+                  ) : (
+                    connected &&
+                    !localState.userExist && (
+                      <div
+                        className="bg-gradient-to-r from-gray-400/20 via-gray-50/5 to-gray-400/20 hover:from-gray-400/20 hover:via-gray-50/5 hover:to-gray-400/30 text-sm border-2 text-slate-300 border-gray-400/50 rounded-xl px-4 py-2 hover:border-2 hover:border-gray-400/70 cursor-pointer overflow-hidden"
+                        onClick={onClickInitUserState}
+                      >
+                        Create Vayoo Account
+                      </div>
+                    )
                   )}
                 </div>
               )}

@@ -1,9 +1,17 @@
 import { useSelectedContract, useVMState } from "../contexts/StateProvider";
+import { decimalPrecisionForLargePricedAssets, decimalPrecisionForSmallPricedAssets } from "../utils/constants";
+import { OracleFeedType } from "../utils/types";
 
 const StatsComponent = () => {
   const { state, loading } = useVMState();
   const { selectedContract } = useSelectedContract();
+  let limitingAmplitude: number;
 
+  if (state?.contractState?.oracleFeedType == OracleFeedType.Switchboard) {
+    limitingAmplitude = state?.contractState?.limitingAmplitude.toNumber()! / selectedContract?.oracleExponent!
+  } else {
+    limitingAmplitude = state?.contractState?.limitingAmplitude.toNumber()!
+  }
   const maturity = new Date(
     state?.contractState?.endingTime.toNumber()! * 1000
   );
@@ -23,7 +31,7 @@ const StatsComponent = () => {
       </div>
         <div className="mt-1 flex flex-col gap-3 text-xs text-right">
           <div className="flex justify-between items-center text-gray-400">
-            Limiting Amplitude :<div>{state?.contractState?.limitingAmplitude.toNumber()}</div>
+            Limiting Amplitude :<div>{limitingAmplitude}</div>
           </div>
           <div className="flex justify-between text-gray-400">
             <div className="whitespace-nowrap">
@@ -35,9 +43,11 @@ const StatsComponent = () => {
             <div className="flex justify-between items-center text-gray-400">
               Price at Maturity :
               <div>
-                {(
+                {state?.assetPrice! > 1 ? (
                   state?.contractState?.endingPrice.toNumber()! / selectedContract?.oracleExponent!
-                ).toFixed(2)}{" "}
+                ).toFixed(decimalPrecisionForLargePricedAssets): (
+                  state?.contractState?.endingPrice.toNumber()! / selectedContract?.oracleExponent!
+                ).toFixed(decimalPrecisionForSmallPricedAssets)}{" "}
                 USD
               </div>
             </div>
@@ -49,9 +59,10 @@ const StatsComponent = () => {
           <div className="flex justify-between items-center text-gray-400">
             Starting Price :
             <div>
-              {(
+              {state?.assetPrice! > 1 ? (
                 state?.contractState?.startingPrice.toNumber()! / selectedContract?.oracleExponent!
-              ).toFixed(2)}{" "}
+              ).toFixed(decimalPrecisionForLargePricedAssets) : (state?.contractState?.startingPrice.toNumber()! / selectedContract?.oracleExponent!
+              ).toFixed(decimalPrecisionForSmallPricedAssets)}{" "}
               USD
             </div>
           </div>
