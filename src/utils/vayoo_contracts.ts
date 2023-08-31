@@ -1054,61 +1054,6 @@ export type VayooContracts = {
           "type": "u64"
         }
       ]
-    },
-    {
-      "name": "adminSetsAmplitude",
-      "docs": [
-        "* Withdraw Collateral (USDC) from vault -> user"
-      ],
-      "accounts": [
-        {
-          "name": "contractAuthority",
-          "isMut": true,
-          "isSigner": true
-        },
-        {
-          "name": "contractState",
-          "isMut": true,
-          "isSigner": false
-        }
-      ],
-      "args": [
-        {
-          "name": "amplitudeTest",
-          "type": "u64"
-        }
-      ]
-    },
-    {
-      "name": "adminTriggersSettleMode",
-      "accounts": [
-        {
-          "name": "contractAuthority",
-          "isMut": false,
-          "isSigner": true
-        },
-        {
-          "name": "contractState",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "switchboardFeed",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "pythFeed",
-          "isMut": false,
-          "isSigner": false
-        }
-      ],
-      "args": [
-        {
-          "name": "testSettlementPrice",
-          "type": "u64"
-        }
-      ]
     }
   ],
   "accounts": [
@@ -1174,15 +1119,7 @@ export type VayooContracts = {
             "type": "u64"
           },
           {
-            "name": "vayooPrecisions",
-            "type": "u8"
-          },
-          {
             "name": "limitingAmplitude",
-            "type": "u64"
-          },
-          {
-            "name": "bandsShift",
             "type": "u64"
           },
           {
@@ -1219,10 +1156,6 @@ export type VayooContracts = {
           },
           {
             "name": "globalCurrentIssuedLcontract",
-            "type": "u64"
-          },
-          {
-            "name": "testMode",
             "type": "u64"
           },
           {
@@ -1488,48 +1421,38 @@ export type VayooContracts = {
     },
     {
       "code": 6021,
-      "name": "IsSettling",
-      "msg": "Contract is in settling mode"
-    },
-    {
-      "code": 6022,
       "name": "ErrorAccounting",
       "msg": "Error in internal accounting"
     },
     {
-      "code": 6023,
+      "code": 6022,
       "name": "LeakInFAccount",
       "msg": "LeakInFreeAccountUser"
     },
     {
-      "code": 6024,
+      "code": 6023,
       "name": "InvalidFeedType",
       "msg": "Invalid Feed Type"
     },
     {
-      "code": 6025,
+      "code": 6024,
       "name": "InvalidSwitchboardAccount",
       "msg": "Not a valid Switchboard account"
     },
     {
-      "code": 6026,
+      "code": 6025,
       "name": "StaleFeed",
       "msg": "Switchboard feed has not been updated in 5 minutes"
     },
     {
-      "code": 6027,
+      "code": 6026,
       "name": "ConfidenceIntervalExceeded",
       "msg": "Switchboard feed exceeded provided confidence interval"
     },
     {
-      "code": 6028,
+      "code": 6027,
       "name": "InvalidOraclefeed",
       "msg": "Invalid Feed"
-    },
-    {
-      "code": 6029,
-      "name": "NoTestInProd",
-      "msg": "Cant be used in prod mode"
     }
   ]
 };
@@ -2590,61 +2513,6 @@ export const IDL: VayooContracts = {
           "type": "u64"
         }
       ]
-    },
-    {
-      "name": "adminSetsAmplitude",
-      "docs": [
-        "* Withdraw Collateral (USDC) from vault -> user"
-      ],
-      "accounts": [
-        {
-          "name": "contractAuthority",
-          "isMut": true,
-          "isSigner": true
-        },
-        {
-          "name": "contractState",
-          "isMut": true,
-          "isSigner": false
-        }
-      ],
-      "args": [
-        {
-          "name": "amplitudeTest",
-          "type": "u64"
-        }
-      ]
-    },
-    {
-      "name": "adminTriggersSettleMode",
-      "accounts": [
-        {
-          "name": "contractAuthority",
-          "isMut": false,
-          "isSigner": true
-        },
-        {
-          "name": "contractState",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "switchboardFeed",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "pythFeed",
-          "isMut": false,
-          "isSigner": false
-        }
-      ],
-      "args": [
-        {
-          "name": "testSettlementPrice",
-          "type": "u64"
-        }
-      ]
     }
   ],
   "accounts": [
@@ -2710,15 +2578,7 @@ export const IDL: VayooContracts = {
             "type": "u64"
           },
           {
-            "name": "vayooPrecisions",
-            "type": "u8"
-          },
-          {
             "name": "limitingAmplitude",
-            "type": "u64"
-          },
-          {
-            "name": "bandsShift",
             "type": "u64"
           },
           {
@@ -2755,10 +2615,6 @@ export const IDL: VayooContracts = {
           },
           {
             "name": "globalCurrentIssuedLcontract",
-            "type": "u64"
-          },
-          {
-            "name": "testMode",
             "type": "u64"
           },
           {
@@ -3024,48 +2880,38 @@ export const IDL: VayooContracts = {
     },
     {
       "code": 6021,
-      "name": "IsSettling",
-      "msg": "Contract is in settling mode"
-    },
-    {
-      "code": 6022,
       "name": "ErrorAccounting",
       "msg": "Error in internal accounting"
     },
     {
-      "code": 6023,
+      "code": 6022,
       "name": "LeakInFAccount",
       "msg": "LeakInFreeAccountUser"
     },
     {
-      "code": 6024,
+      "code": 6023,
       "name": "InvalidFeedType",
       "msg": "Invalid Feed Type"
     },
     {
-      "code": 6025,
+      "code": 6024,
       "name": "InvalidSwitchboardAccount",
       "msg": "Not a valid Switchboard account"
     },
     {
-      "code": 6026,
+      "code": 6025,
       "name": "StaleFeed",
       "msg": "Switchboard feed has not been updated in 5 minutes"
     },
     {
-      "code": 6027,
+      "code": 6026,
       "name": "ConfidenceIntervalExceeded",
       "msg": "Switchboard feed exceeded provided confidence interval"
     },
     {
-      "code": 6028,
+      "code": 6027,
       "name": "InvalidOraclefeed",
       "msg": "Invalid Feed"
-    },
-    {
-      "code": 6029,
-      "name": "NoTestInProd",
-      "msg": "Cant be used in prod mode"
     }
   ]
 };
