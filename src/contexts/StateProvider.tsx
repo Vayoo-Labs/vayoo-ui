@@ -196,6 +196,30 @@ export function VMStateProvider({ children = undefined as any }) {
       6
     );
 
+    if (contractState?.oracleFeedType == OracleFeedType.Pyth) {
+      assetPrice =
+        poolPrice.toNumber() +
+        contractState?.startingPrice.toNumber()! /
+          selectedContract?.oracleExponent! -
+        contractState?.limitingAmplitude.toNumber()! / 2;
+      accounts = {
+        ...accounts,
+        pythFeed: selectedContract?.oracleFeed,
+      };
+    } else if (contractState?.oracleFeedType == OracleFeedType.Switchboard) {
+      assetPrice =
+        poolPrice.toNumber() +
+        contractState?.startingPrice.toNumber()! /
+          selectedContract?.oracleExponent! -
+        contractState?.limitingAmplitude.toNumber()! /
+          2 /
+          selectedContract?.oracleExponent!;
+      accounts = {
+        ...accounts,
+        switchboardFeed: selectedContract?.oracleFeed,
+      };
+    }
+
     if (wallet.connected && wallet.publicKey) {
       const userStateKey = getUserStatePDA(
         selectedContract?.name!,
@@ -236,30 +260,6 @@ export function VMStateProvider({ children = undefined as any }) {
       const userState = await program.account.userState.fetchNullable(
         userStateKey
       );
-
-      if (contractState?.oracleFeedType == OracleFeedType.Pyth) {
-        assetPrice =
-          poolPrice.toNumber() +
-          contractState?.startingPrice.toNumber()! /
-            selectedContract?.oracleExponent! -
-          contractState?.limitingAmplitude.toNumber()! / 2;
-        accounts = {
-          ...accounts,
-          pythFeed: selectedContract?.oracleFeed,
-        };
-      } else if (contractState?.oracleFeedType == OracleFeedType.Switchboard) {
-        assetPrice =
-          poolPrice.toNumber() +
-          contractState?.startingPrice.toNumber()! /
-            selectedContract?.oracleExponent! -
-          contractState?.limitingAmplitude.toNumber()! /
-            2 /
-            selectedContract?.oracleExponent!;
-        accounts = {
-          ...accounts,
-          switchboardFeed: selectedContract?.oracleFeed,
-        };
-      }
 
       let userPosition: UserPosition;
       if (userState?.lcontractMintedAsMm.toNumber()! > 0) {
