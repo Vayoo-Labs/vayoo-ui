@@ -20,6 +20,7 @@ import { initUserState } from "./utils/vayoo-web3";
 import StatsComponent from "./components/stats";
 import twitterLogo from "./assets/twitter-logo.svg";
 import telegramLogo from "./assets/telegram-logo.svg";
+import vayooMarketsLogo from "./assets/Vayoo__Mist+Limegreen Transparent.svg"
 import ContractDropDownSelectorComponent from "./components/contractDropdownSelector";
 import { TVChartContainer } from "./components/TradingView";
 import YourMmAccount from "./components/yourMmAccount";
@@ -75,7 +76,7 @@ function App() {
             }/${wallet.publicKey.toString()}`
           )
         ).data!;
-        if (!rank.err) {
+        if (!rank?.err) {
           setLocalState((prev) => ({
             ...prev,
             userExist,
@@ -179,11 +180,11 @@ function App() {
           <div className="w-full flex justify-between p-3 max-w-9xl items-center">
             <div className="flex justify-between gap-5 items-center">
               <a href="https://vayoo.markets">
-                <div className="ml-2 flex gap-0 items-center">
-                  <p className="text-lime-200 text-2xl italic">Vayoo</p>
-                  <p className="text-slate-300 text-2xl italic">Markets</p>
-                  <p className="text-lime-200 text-2xl italic">.</p>
-                </div>
+              <img
+                  className="ml-2 h-6"
+                  src={vayooMarketsLogo}
+                  alt="Logo of Vayoo Markets"
+                />
               </a>
               {wallet.connected && localState.rank && (
                 <div
