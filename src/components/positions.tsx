@@ -4,10 +4,10 @@ import {
   useSelectedContract,
   useVMState,
 } from "../contexts/StateProvider";
-import { UserPosition } from "../utils/types";
+import { OracleFeedType, UserPosition } from "../utils/types";
 import { PriceMath } from "@orca-so/whirlpools-sdk";
 import { fetchAxiosWithRetry } from "../utils/web3-utils";
-import { VAYOO_BACKEND_ENDPOINT } from "../utils/constants";
+import { VAYOO_BACKEND_ENDPOINT, decimalPrecisionForLargePricedAssets, decimalPrecisionForSmallPricedAssets } from "../utils/constants";
 import { useWallet } from "@solana/wallet-adapter-react";
 
 const Positions = () => {
@@ -96,11 +96,20 @@ const Positions = () => {
         upnl = (poolPrice - entryPoolPrice) * localState.position;
       }
       const upnlIsGains = upnl! > 0;
-      let entryPrice =
+      let entryPrice: any;
+      if (state.contractState?.oracleFeedType == OracleFeedType.Pyth) {
+        entryPrice =
         state?.contractState?.startingPrice.toNumber()! /
           state?.contractState?.oraclePriceMultiplier.toNumber()! -
         state?.contractState?.limitingAmplitude.toNumber()! / 2 +
         entryPoolPrice;
+      } else if (state.contractState?.oracleFeedType == OracleFeedType.Switchboard) {
+        entryPrice =
+        state?.contractState?.startingPrice.toNumber()! /
+          state?.contractState?.oraclePriceMultiplier.toNumber()! -
+        state?.contractState?.limitingAmplitude.toNumber()! / 2 / state.contractState.oraclePriceMultiplier.toNumber() +
+        entryPoolPrice;
+      }
       if (isNaN(entryPrice) || entryPoolPrice == 0 || Math.abs(pnlUserDump["currentPos"]) != localState.position) {
         entryPrice = null;
         upnl = null;
@@ -162,10 +171,11 @@ const Positions = () => {
             {localState.positionMargin.toFixed(2)} $
           </div>
           <div className="text-gray-300 text-sm">
-            {localState.entryPrice ? localState.entryPrice?.toFixed(2) : "-"}
+            {localState.entryPrice ? (state?.assetPrice! > 1 ? localState.entryPrice?.toFixed(decimalPrecisionForLargePricedAssets) : localState.entryPrice.toFixed(decimalPrecisionForSmallPricedAssets)) : "-"}
           </div>
           <div className="text-gray-300 text-sm">
-            {state?.assetPrice.toFixed(2)}
+          {state?.assetPrice! > 1 ? (state?.assetPrice?.toFixed(decimalPrecisionForLargePricedAssets)) : (state?.assetPrice?.toFixed
+              (decimalPrecisionForSmallPricedAssets))}
           </div>
           <div
             className={`text-sm text-gray-300 ${
