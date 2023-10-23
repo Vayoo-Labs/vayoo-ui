@@ -1,4 +1,4 @@
 # vayoo-ui
 
-build deps: yarn
-run locally: yarn dev
+  - build deps: yarn
+  - run locally: yarn dev
